@@ -24,7 +24,7 @@ CREATE TABLE exercise_sets (
     exercise_id INT           NOT NULL,
     set_number  INT           NOT NULL,
     reps        INT           NULL,
-    weight      DECIMAL(10,2) NOT NULL DEFAULT 0,
+    weight      DECIMAL(10,2) NULL,
     created_at  DATETIME2     NOT NULL DEFAULT GETDATE(),
 
     CONSTRAINT FK_exercise_sets_exercise
@@ -33,7 +33,7 @@ CREATE TABLE exercise_sets (
         ON DELETE CASCADE,
 
     CONSTRAINT CHK_set_number CHECK (set_number > 0),
-    CONSTRAINT CHK_set_weight CHECK (weight >= 0),
+    CONSTRAINT CHK_set_weight CHECK (weight IS NULL OR weight >= 0),
     CONSTRAINT UQ_exercise_set UNIQUE (exercise_id, set_number)
 );
 

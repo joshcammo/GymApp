@@ -11,7 +11,7 @@ import { RouteProp } from '@react-navigation/native';
 
 import { COLORS } from '../constants/colors';
 import { RootStackParamList, WeightUnit } from '../types';
-import { workoutApi } from '../services/api';
+import { workoutApi, SetInput } from '../services/api';
 
 type Nav   = NativeStackNavigationProp<RootStackParamList, 'AddExercise'>;
 type Route = RouteProp<RootStackParamList, 'AddExercise'>;
@@ -19,16 +19,33 @@ interface Props { navigation: Nav; route: Route }
 
 const UNIT_KEY = '@gym_tracker_last_unit';
 
+/** A row in the per-set editor — strings so the input controls them */
+interface SetRow {
+  reps:   string;
+  weight: string;
+}
+
+const emptyRow = (): SetRow => ({ reps: '', weight: '' });
+
 export function AddExerciseScreen({ navigation, route }: Props) {
   const { date, dayFull, editExercise } = route.params;
   const isEditing = !!editExercise;
 
-  const [name,   setName]   = useState(editExercise?.name   ?? '');
-  const [sets,   setSets]   = useState(editExercise ? String(editExercise.sets)   : '');
-  const [reps,   setReps]   = useState(editExercise?.reps   ? String(editExercise.reps)   : '');
-  const [weight, setWeight] = useState(editExercise ? String(editExercise.weight) : '');
-  const [unit,   setUnit]   = useState<WeightUnit>(editExercise?.unit ?? 'KG');
-  const [notes,  setNotes]  = useState(editExercise?.notes  ?? '');
+  const [name,  setName]  = useState(editExercise?.name  ?? '');
+  const [unit,  setUnit]  = useState<WeightUnit>(editExercise?.unit ?? 'KG');
+  const [notes, setNotes] = useState(editExercise?.notes ?? '');
+
+  // Initialise sets — from existing exercise if editing, else one empty row
+  const [setRows, setSetRows] = useState<SetRow[]>(() => {
+    if (editExercise && editExercise.sets.length > 0) {
+      return editExercise.sets.map(s => ({
+        reps:   s.reps   != null ? String(s.reps)   : '',
+        weight: s.weight != null ? String(s.weight) : '',
+      }));
+    }
+    return [emptyRow()];
+  });
+
   const [saving, setSaving] = useState(false);
 
   // Restore last-used unit on first open (skip if editing)
@@ -45,13 +62,42 @@ export function AddExerciseScreen({ navigation, route }: Props) {
     });
   }, [navigation, isEditing]);
 
+  // ── Set row helpers ──────────────────────────────────────────
+  const updateRow = (index: number, field: keyof SetRow, value: string) => {
+    setSetRows(prev => prev.map((r, i) => i === index ? { ...r, [field]: value } : r));
+  };
+
+  const addRow = () => {
+    if (setRows.length >= 100) return;
+    setSetRows(prev => [...prev, emptyRow()]);
+  };
+
+  const removeRow = (index: number) => {
+    if (setRows.length <= 1) return; // keep at least one
+    setSetRows(prev => prev.filter((_, i) => i !== index));
+  };
+
   // ── Validation ───────────────────────────────────────────────
   const validate = (): string | null => {
-    if (!name.trim())                          return 'Please enter an exercise name.';
-    if (!sets || isNaN(+sets) || +sets < 1)   return 'Please enter a valid number of sets (≥ 1).';
-    if (reps && (isNaN(+reps) || +reps < 1))  return 'Reps must be a positive number.';
-    if (!weight || isNaN(+weight) || +weight < 0) return 'Please enter a valid weight (≥ 0).';
-    return null;
+    if (!name.trim()) return 'Please enter an exercise name.';
+    if (setRows.length === 0) return 'Add at least one set.';
+
+    for (let i = 0; i < setRows.length; i++) {
+  const r = setRows[i];
+  const setLabel = `Set ${i + 1}`;
+  // Weight is optional (bodyweight exercises). But if entered, must be valid.
+  if (r.weight && (isNaN(+r.weight) || +r.weight < 0)) {
+    return `${setLabel}: weight must be 0 or higher.`;
+  }
+  if (r.reps && (isNaN(+r.reps) || +r.reps < 1)) {
+    return `${setLabel}: reps must be a positive number.`;
+  }
+  // At least one of reps or weight should be filled — otherwise it's an empty set
+  if (!r.reps && !r.weight) {
+    return `${setLabel}: enter at least reps or weight.`;
+  }
+}
+return null;
   };
 
   // ── Save ─────────────────────────────────────────────────────
@@ -63,14 +109,17 @@ export function AddExerciseScreen({ navigation, route }: Props) {
     try {
       await AsyncStorage.setItem(UNIT_KEY, unit);
 
+      const sets: SetInput[] = setRows.map(r => ({
+        reps:   r.reps   ? Number(r.reps)   : null,
+        weight: r.weight ? Number(r.weight) : null,
+      }));
+
       const payload = {
-        name:   name.trim(),
+        name:  name.trim(),
         date,
-        sets:   Number(sets),
-        reps:   reps ? Number(reps) : null,
-        weight: Number(weight),
         unit,
-        notes:  notes.trim() || null,
+        notes: notes.trim() || null,
+        sets,
       };
 
       if (isEditing && editExercise) {
@@ -122,66 +171,84 @@ export function AddExerciseScreen({ navigation, route }: Props) {
             autoFocus={!isEditing}
           />
 
-          {/* ── Sets + Reps row ── */}
-          <View style={styles.row}>
-            <View style={styles.halfField}>
-              <Text style={styles.label}>Sets</Text>
-              <TextInput
-                style={styles.input}
-                value={sets}
-                onChangeText={setSets}
-                placeholder="e.g. 4"
-                placeholderTextColor={COLORS.textMuted}
-                keyboardType="number-pad"
-                returnKeyType="next"
-              />
-            </View>
-            <View style={styles.halfField}>
-              <Text style={styles.label}>
-                Reps <Text style={styles.optional}>(optional)</Text>
-              </Text>
-              <TextInput
-                style={styles.input}
-                value={reps}
-                onChangeText={setReps}
-                placeholder="e.g. 8"
-                placeholderTextColor={COLORS.textMuted}
-                keyboardType="number-pad"
-                returnKeyType="next"
-              />
-            </View>
+          {/* ── Unit toggle (KG / LBS) ── */}
+          <Text style={styles.label}>Weight Unit</Text>
+          <View style={[styles.unitToggle, { marginBottom: 24 }]}>
+            {(['KG', 'LBS'] as WeightUnit[]).map(u => (
+              <TouchableOpacity
+                key={u}
+                style={[styles.unitBtn, unit === u && styles.unitBtnActive]}
+                onPress={() => setUnit(u)}
+              >
+                <Text style={[styles.unitBtnText, unit === u && styles.unitBtnTextActive]}>
+                  {u}
+                </Text>
+              </TouchableOpacity>
+            ))}
           </View>
 
-          {/* ── Weight + Unit ── */}
-          <Text style={styles.label}>Weight</Text>
-          <View style={styles.weightRow}>
-            <TextInput
-              style={[styles.input, styles.weightInput]}
-              value={weight}
-              onChangeText={setWeight}
-              placeholder="e.g. 80"
-              placeholderTextColor={COLORS.textMuted}
-              keyboardType="decimal-pad"
-              returnKeyType="done"
-            />
-            {/* Unit toggle */}
-            <View style={styles.unitToggle}>
-              {(['KG', 'LBS'] as WeightUnit[]).map(u => (
-                <TouchableOpacity
-                  key={u}
-                  style={[styles.unitBtn, unit === u && styles.unitBtnActive]}
-                  onPress={() => setUnit(u)}
-                >
-                  <Text style={[styles.unitBtnText, unit === u && styles.unitBtnTextActive]}>
-                    {u}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+          {/* ── Sets section ── */}
+          <View style={styles.setsHeader}>
+            <Text style={styles.label}>Sets</Text>
+            <Text style={styles.setsCount}>{setRows.length}</Text>
           </View>
+
+          {/* Column headings */}
+          <View style={styles.setRowHeader}>
+            <Text style={[styles.setRowHeaderText, { width: 40 }]}>#</Text>
+            <Text style={[styles.setRowHeaderText, { flex: 1 }]}>Reps</Text>
+            <Text style={[styles.setRowHeaderText, { flex: 1 }]}>Weight ({unit})</Text>
+            <View style={{ width: 36 }} />
+          </View>
+
+          {/* The set rows */}
+          {setRows.map((row, i) => (
+            <View key={i} style={styles.setRow}>
+              <Text style={styles.setNumber}>{i + 1}</Text>
+
+              <TextInput
+                style={[styles.input, styles.setInput]}
+                value={row.reps}
+                onChangeText={v => updateRow(i, 'reps', v)}
+                placeholder="—"
+                placeholderTextColor={COLORS.textMuted}
+                keyboardType="number-pad"
+                returnKeyType="next"
+              />
+
+              <TextInput
+                style={[styles.input, styles.setInput]}
+                value={row.weight}
+                onChangeText={v => updateRow(i, 'weight', v)}
+                placeholder="0"
+                placeholderTextColor={COLORS.textMuted}
+                keyboardType="decimal-pad"
+                returnKeyType="next"
+              />
+
+              <TouchableOpacity
+                style={[styles.removeBtn, setRows.length <= 1 && styles.removeBtnDisabled]}
+                onPress={() => removeRow(i)}
+                disabled={setRows.length <= 1}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Text style={styles.removeBtnText}>−</Text>
+              </TouchableOpacity>
+            </View>
+          ))}
+
+          {/* Add set button */}
+          <TouchableOpacity
+            style={styles.addSetBtn}
+            onPress={addRow}
+            activeOpacity={0.7}
+            disabled={setRows.length >= 100}
+          >
+            <Text style={styles.addSetBtnText}>+ Add Set</Text>
+          </TouchableOpacity>
 
           {/* ── Notes ── */}
-          <Text style={styles.label}>
+          <Text style={[styles.label, { marginTop: 24 }]}>
             Notes <Text style={styles.optional}>(optional)</Text>
           </Text>
           <TextInput
@@ -265,23 +332,6 @@ const styles = StyleSheet.create({
     fontSize:        16,
     marginBottom:    20,
   },
-  row: {
-    flexDirection: 'row',
-    gap:           12,
-  },
-  halfField: {
-    flex: 1,
-  },
-  weightRow: {
-    flexDirection: 'row',
-    alignItems:    'flex-start',
-    gap:           12,
-    marginBottom:  20,
-  },
-  weightInput: {
-    flex:        1,
-    marginBottom: 0,
-  },
   unitToggle: {
     flexDirection:   'row',
     backgroundColor: COLORS.card,
@@ -308,8 +358,84 @@ const styles = StyleSheet.create({
   unitBtnTextActive: {
     color: '#FFFFFF',
   },
+  // ── Sets section ──
+  setsHeader: {
+    flexDirection:  'row',
+    alignItems:     'center',
+    justifyContent: 'space-between',
+    marginBottom:   8,
+  },
+  setsCount: {
+    fontSize:   13,
+    color:      COLORS.textMuted,
+    fontWeight: '600',
+  },
+  setRowHeader: {
+    flexDirection: 'row',
+    alignItems:    'center',
+    gap:           8,
+    marginBottom:  6,
+  },
+  setRowHeaderText: {
+    fontSize:      11,
+    color:         COLORS.textMuted,
+    fontWeight:    '600',
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
+  },
+  setRow: {
+    flexDirection: 'row',
+    alignItems:    'center',
+    gap:           8,
+    marginBottom:  8,
+  },
+  setNumber: {
+    width:      40,
+    fontSize:   15,
+    fontWeight: '700',
+    color:      COLORS.text,
+    textAlign:  'center',
+  },
+  setInput: {
+    flex:         1,
+    marginBottom: 0,
+    paddingVertical: 12,
+    textAlign:    'center',
+  },
+  removeBtn: {
+    width:           36,
+    height:          36,
+    borderRadius:    8,
+    backgroundColor: COLORS.dangerBg,
+    alignItems:      'center',
+    justifyContent:  'center',
+  },
+  removeBtnDisabled: {
+    opacity: 0.3,
+  },
+  removeBtnText: {
+    fontSize:   22,
+    color:      COLORS.danger,
+    fontWeight: '700',
+    lineHeight: 22,
+  },
+  addSetBtn: {
+    marginTop:       8,
+    paddingVertical: 12,
+    borderRadius:    12,
+    borderWidth:      1,
+    borderStyle:     'dashed',
+    borderColor:      COLORS.border,
+    alignItems:      'center',
+  },
+  addSetBtnText: {
+    fontSize:   14,
+    fontWeight: '700',
+    color:      COLORS.primary,
+    letterSpacing: 0.4,
+  },
   notesInput: {
-    height:     90,
+    height:           90,
     textAlignVertical: 'top',
   },
   saveBtn: {
@@ -318,7 +444,7 @@ const styles = StyleSheet.create({
     height:          54,
     justifyContent:  'center',
     alignItems:      'center',
-    marginTop:        8,
+    marginTop:        16,
     shadowColor:     COLORS.primary,
     shadowOpacity:   0.35,
     shadowRadius:    14,

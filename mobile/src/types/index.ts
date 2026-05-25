@@ -1,14 +1,20 @@
 export type WeightUnit = 'KG' | 'LBS';
 
+/** A single set within an exercise */
+export interface ExerciseSet {
+  id?:        number;
+  set_number: number;
+  reps?:      number | null;
+  weight?:    number | null;
+}
+
 export interface Exercise {
   id:         number;
   name:       string;
-  date:       string;       // 'YYYY-MM-DD'
-  sets:       number;
-  reps?:      number | null;
-  weight:     number;
+  date:       string;        // 'YYYY-MM-DD'
   unit:       WeightUnit;
   notes?:     string | null;
+  sets:       ExerciseSet[]; // ordered by set_number
   created_at: string;
   updated_at: string;
 }

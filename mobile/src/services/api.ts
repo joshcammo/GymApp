@@ -1,5 +1,5 @@
 import axios, { AxiosError } from 'axios';
-import { Exercise, WeightUnit } from '../types';
+import { Exercise, ExerciseSet, WeightUnit } from '../types';
 import { API_BASE_URL } from '../config';
 
 const client = axios.create({
@@ -17,14 +17,18 @@ function handleError(err: unknown): never {
   throw err;
 }
 
-export interface CreateExerciseDto {
-  name:    string;
-  date:    string;       // 'YYYY-MM-DD'
-  sets:    number;
+/** Payload shape for a single set on create/update */
+export interface SetInput {
   reps?:   number | null;
-  weight:  number;
-  unit:    WeightUnit;
-  notes?:  string | null;
+  weight?: number | null;
+}
+
+export interface CreateExerciseDto {
+  name:   string;
+  date:   string;       // 'YYYY-MM-DD'
+  unit:   WeightUnit;
+  notes?: string | null;
+  sets:   SetInput[];   // non-empty
 }
 
 export const workoutApi = {
@@ -46,7 +50,7 @@ export const workoutApi = {
     } catch (e) { handleError(e); }
   },
 
-  /** Create a new exercise */
+  /** Create a new exercise (with one or more sets) */
   create: async (dto: CreateExerciseDto): Promise<Exercise> => {
     try {
       const { data } = await client.post<Exercise>('/workouts', dto);
@@ -54,7 +58,7 @@ export const workoutApi = {
     } catch (e) { handleError(e); }
   },
 
-  /** Update an existing exercise */
+  /** Update an existing exercise. If `sets` is provided, all sets are replaced. */
   update: async (id: number, dto: Partial<CreateExerciseDto>): Promise<Exercise> => {
     try {
       const { data } = await client.put<Exercise>(`/workouts/${id}`, dto);
@@ -62,7 +66,7 @@ export const workoutApi = {
     } catch (e) { handleError(e); }
   },
 
-  /** Delete an exercise */
+  /** Delete an exercise (cascades to its sets) */
   delete: async (id: number): Promise<void> => {
     try {
       await client.delete(`/workouts/${id}`);

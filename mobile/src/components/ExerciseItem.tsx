@@ -10,13 +10,14 @@ interface Props {
 }
 
 export function ExerciseItem({ exercise, onEdit, onDelete }: Props) {
-  const detail = [
-    `${exercise.sets} sets`,
-    exercise.reps ? `${exercise.reps} reps` : null,
-    `${exercise.weight} ${exercise.unit}`,
-  ]
-    .filter(Boolean)
-    .join('  ·  ');
+  const setsCount = exercise.sets.length;
+
+  // Determine if all sets are identical (same reps + weight)
+  // If so, show a compact summary; otherwise show each set on its own line.
+  const allIdentical = setsCount > 0 && exercise.sets.every(s =>
+    s.reps   === exercise.sets[0].reps &&
+    s.weight === exercise.sets[0].weight
+  );
 
   return (
     <TouchableOpacity style={styles.container} onPress={onEdit} activeOpacity={0.8}>
@@ -24,7 +25,35 @@ export function ExerciseItem({ exercise, onEdit, onDelete }: Props) {
 
       <View style={styles.body}>
         <Text style={styles.name}>{exercise.name}</Text>
-        <Text style={styles.detail}>{detail}</Text>
+
+        {allIdentical ? (
+          // Compact view: "3 sets · 8 reps · 60 KG" or "3 sets · 10 reps · Bodyweight"
+          <Text style={styles.detail}>
+            {[
+              `${setsCount} ${setsCount === 1 ? 'set' : 'sets'}`,
+              exercise.sets[0].reps ? `${exercise.sets[0].reps} reps` : null,
+              exercise.sets[0].weight != null
+                ? `${exercise.sets[0].weight} ${exercise.unit}`
+                : 'Bodyweight',
+            ]
+              .filter(Boolean)
+              .join('  ·  ')}
+          </Text>
+        ) : (
+          // Per-set view: "Set 1 — 8 × 60 KG" or "Set 1 — 12 reps" (bodyweight)
+          <View style={styles.setsList}>
+            {exercise.sets.map(s => (
+              <Text key={s.set_number} style={styles.setLine}>
+                <Text style={styles.setLabel}>Set {s.set_number}</Text>
+                {' — '}
+                {s.weight != null
+                  ? `${s.reps ? `${s.reps} × ` : ''}${s.weight} ${exercise.unit}`
+                  : `${s.reps ?? '?'} reps`}
+              </Text>
+            ))}
+          </View>
+        )}
+
         {exercise.notes ? (
           <Text style={styles.notes} numberOfLines={1}>{exercise.notes}</Text>
         ) : null}
@@ -70,10 +99,23 @@ const styles = StyleSheet.create({
     color:      COLORS.text,
   },
   detail: {
-    fontSize:   13,
-    color:      COLORS.textSub,
-    marginTop:   4,
+    fontSize:      13,
+    color:         COLORS.textSub,
+    marginTop:     4,
     letterSpacing: 0.2,
+  },
+  setsList: {
+    marginTop: 4,
+  },
+  setLine: {
+    fontSize:      13,
+    color:         COLORS.textSub,
+    letterSpacing: 0.2,
+    lineHeight:    20,
+  },
+  setLabel: {
+    color:      COLORS.textMuted,
+    fontWeight: '600',
   },
   notes: {
     fontSize:  12,

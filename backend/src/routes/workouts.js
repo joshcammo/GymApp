@@ -18,7 +18,7 @@ function validateRequest(req, res) {
 const setsValidation = [
   body('sets').isArray({ min: 1, max: 100 }).withMessage('sets must be a non-empty array (max 100)'),
   body('sets.*.reps').optional({ nullable: true }).isInt({ min: 1, max: 1000 }),
-  body('sets.*.weight').isFloat({ min: 0 }).withMessage('each set\'s weight must be ≥ 0'),
+  body('sets.*.weight').optional({ nullable: true }).isFloat({ min: 0 }).withMessage('each set\'s weight must be ≥ 0'),
 ];
 
 /**
@@ -231,7 +231,7 @@ router.post(
           .input('exerciseId', sql.Int,            newExerciseId)
           .input('setNumber',  sql.Int,            i + 1)
           .input('reps',       sql.Int,            setData.reps ?? null)
-          .input('weight',     sql.Decimal(10, 2), setData.weight)
+          .input('weight',     sql.Decimal(10, 2), setData.weight ?? null)
           .query(`
             INSERT INTO exercise_sets (exercise_id, set_number, reps, weight)
             VALUES (@exerciseId, @setNumber, @reps, @weight)
@@ -267,7 +267,7 @@ router.put(
     // sets is optional on PUT — if omitted, existing sets are left alone
     body('sets').optional().isArray({ min: 1, max: 100 }),
     body('sets.*.reps').optional({ nullable: true }).isInt({ min: 1, max: 1000 }),
-    body('sets.*.weight').optional().isFloat({ min: 0 }),
+    body('sets.*.weight').optional({ nullable: true }).isFloat({ min: 0 }),
   ],
   async (req, res) => {
     if (!validateRequest(req, res)) return;
@@ -314,7 +314,7 @@ router.put(
             .input('exerciseId', sql.Int,            id)
             .input('setNumber',  sql.Int,            i + 1)
             .input('reps',       sql.Int,            setData.reps ?? null)
-            .input('weight',     sql.Decimal(10, 2), setData.weight)
+            .input('weight',     sql.Decimal(10, 2), setData.weight ?? null)
             .query(`
               INSERT INTO exercise_sets (exercise_id, set_number, reps, weight)
               VALUES (@exerciseId, @setNumber, @reps, @weight)
