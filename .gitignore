@@ -39,3 +39,6 @@ android/
 .cache/
 
 .azure/
+
+# Migration exports (personal data)
+migration/data/
