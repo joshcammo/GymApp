@@ -7,12 +7,17 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
+import { Feather } from '@expo/vector-icons';
 
 import { COLORS } from '../constants/colors';
+import { FONT, RADIUS } from '../constants/theme';
 import { RootStackParamList, Exercise } from '../types';
 import { workoutApi } from '../services/api';
 import { ExerciseItem } from '../components/ExerciseItem';
 import { EmptyState } from '../components/EmptyState';
+import { GradientButton } from '../components/GradientButton';
+import { haptics } from '../utils/haptics';
+import { parseDateStr } from '../utils/dateUtils';
 
 type Nav   = NativeStackNavigationProp<RootStackParamList, 'DayDetail'>;
 type Route = RouteProp<RootStackParamList, 'DayDetail'>;
@@ -24,7 +29,7 @@ export function DayDetailScreen({ navigation, route }: Props) {
   const [loading,   setLoading]   = useState(true);
 
   // Pretty header date: 'Thursday, 22 May'
-  const displayDate = new Date(`${date}T12:00:00`).toLocaleDateString('en-GB', {
+  const displayDate = parseDateStr(date).toLocaleDateString('en-GB', {
     weekday: 'long',
     day:     'numeric',
     month:   'long',
@@ -39,7 +44,8 @@ export function DayDetailScreen({ navigation, route }: Props) {
           style={styles.headerAdd}
           onPress={() => navigation.navigate('AddExercise', { date, dayFull })}
         >
-          <Text style={styles.headerAddText}>+ Add</Text>
+          <Feather name="plus" size={15} color={COLORS.primary} />
+          <Text style={styles.headerAddText}>Add</Text>
         </TouchableOpacity>
       ),
     });
@@ -66,6 +72,7 @@ export function DayDetailScreen({ navigation, route }: Props) {
   };
 
   const handleDelete = (id: number, name: string) => {
+    haptics.warning();
     Alert.alert(
       'Delete Exercise',
       `Remove "${name}" from this day?`,
@@ -77,6 +84,7 @@ export function DayDetailScreen({ navigation, route }: Props) {
           onPress: async () => {
             try {
               await workoutApi.delete(id);
+              haptics.success();
               setExercises(prev => prev.filter(e => e.id !== id));
             } catch (e) {
               Alert.alert('Error', 'Could not delete exercise. Please try again.');
@@ -100,7 +108,7 @@ export function DayDetailScreen({ navigation, route }: Props) {
       ) : exercises.length === 0 ? (
         <EmptyState
           message="No exercises logged"
-          subMessage="Tap '+ Add' in the top-right corner to log your first exercise for this day."
+          subMessage="Tap 'Add' in the top-right corner to log your first exercise for this day."
         />
       ) : (
         <FlatList
@@ -118,13 +126,12 @@ export function DayDetailScreen({ navigation, route }: Props) {
       )}
 
       {/* Floating action button */}
-      <TouchableOpacity
+      <GradientButton
+        title="Add Exercise"
+        icon="plus"
         style={styles.fab}
         onPress={() => navigation.navigate('AddExercise', { date, dayFull })}
-        activeOpacity={0.85}
-      >
-        <Text style={styles.fabText}>+ Add Exercise</Text>
-      </TouchableOpacity>
+      />
     </SafeAreaView>
   );
 }
@@ -135,12 +142,12 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.bg,
   },
   dateLabel: {
-    fontSize:          15,
+    fontSize:          14,
     color:             COLORS.textMuted,
     paddingHorizontal: 20,
-    paddingVertical:    10,
+    paddingVertical:   10,
     borderBottomWidth:  1,
-    borderBottomColor:  COLORS.border,
+    borderBottomColor:  COLORS.divider,
   },
   centred: {
     flex:           1,
@@ -152,33 +159,23 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   headerAdd: {
-    paddingHorizontal: 4,
+    flexDirection:     'row',
+    alignItems:        'center',
+    gap:               4,
+    paddingHorizontal: 10,
+    paddingVertical:    6,
+    borderRadius:      RADIUS.pill,
+    backgroundColor:   COLORS.primaryBg,
   },
   headerAddText: {
-    fontSize:   16,
-    fontWeight: '700',
+    fontFamily: FONT.bold,
+    fontSize:   14,
     color:      COLORS.primary,
   },
   fab: {
-    position:        'absolute',
-    bottom:          32,
-    left:            24,
-    right:           24,
-    backgroundColor: COLORS.primary,
-    borderRadius:    14,
-    height:          52,
-    justifyContent:  'center',
-    alignItems:      'center',
-    shadowColor:     COLORS.primary,
-    shadowOpacity:   0.4,
-    shadowRadius:    16,
-    shadowOffset:    { width: 0, height: 6 },
-    elevation:        8,
-  },
-  fabText: {
-    fontSize:   17,
-    fontWeight: '800',
-    color:      '#FFFFFF',
-    letterSpacing: 0.3,
+    position: 'absolute',
+    bottom:   32,
+    left:     24,
+    right:    24,
   },
 });

@@ -1,13 +1,17 @@
 import React, { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
-  StyleSheet, Alert, ActivityIndicator,
-  KeyboardAvoidingView, Platform,
+  StyleSheet, Alert,
+  KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { COLORS } from '../constants/colors';
+import { FONT, RADIUS } from '../constants/theme';
 import { supabase } from '../lib/supabase';
+import { Logo } from '../components/Logo';
+import { GradientButton } from '../components/GradientButton';
+import { haptics } from '../utils/haptics';
 
 export function LoginScreen() {
   const [mode,            setMode]            = useState<'signIn' | 'signUp'>('signIn');
@@ -19,6 +23,7 @@ export function LoginScreen() {
   const isSignUp = mode === 'signUp';
 
   const toggleMode = () => {
+    haptics.tap();
     setMode(m => (m === 'signIn' ? 'signUp' : 'signIn'));
     setPassword('');
     setConfirmPassword('');
@@ -37,6 +42,7 @@ export function LoginScreen() {
         password,
       });
       if (error) throw error;
+      haptics.success();
       // On success, the auth state listener in App.tsx switches to the main stack.
     } catch (e) {
       Alert.alert('Sign in failed', (e as Error).message ?? 'Check your credentials and connection.');
@@ -76,6 +82,8 @@ export function LoginScreen() {
         setMode('signIn');
         setPassword('');
         setConfirmPassword('');
+      } else {
+        haptics.success();
       }
       // If a session was returned, the auth state listener in App.tsx switches to the main stack.
     } catch (e) {
@@ -93,70 +101,75 @@ export function LoginScreen() {
         style={styles.flexFill}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <View style={styles.content}>
-          <Text style={styles.title}>Gym Tracker</Text>
-          <Text style={styles.subtitle}>
-            {isSignUp ? 'Create an account to get started' : 'Sign in to view your workouts'}
-          </Text>
+        <ScrollView
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          {/* ── Brand hero ── */}
+          <View style={styles.hero}>
+            <Logo size={88} withWordmark />
+            <Text style={styles.subtitle}>
+              {isSignUp ? 'Create an account to get started' : 'Sign in to view your workouts'}
+            </Text>
+          </View>
 
-          <Text style={styles.label}>Email</Text>
-          <TextInput
-            style={styles.input}
-            value={email}
-            onChangeText={setEmail}
-            placeholder="you@example.com"
-            placeholderTextColor={COLORS.textMuted}
-            autoCapitalize="none"
-            autoComplete="email"
-            keyboardType="email-address"
-            returnKeyType="next"
-          />
+          {/* ── Form card ── */}
+          <View style={styles.formCard}>
+            <Text style={styles.label}>Email</Text>
+            <TextInput
+              style={styles.input}
+              value={email}
+              onChangeText={setEmail}
+              placeholder="you@example.com"
+              placeholderTextColor={COLORS.textMuted}
+              autoCapitalize="none"
+              autoComplete="email"
+              keyboardType="email-address"
+              returnKeyType="next"
+            />
 
-          <Text style={styles.label}>Password</Text>
-          <TextInput
-            style={styles.input}
-            value={password}
-            onChangeText={setPassword}
-            placeholder="••••••••"
-            placeholderTextColor={COLORS.textMuted}
-            secureTextEntry
-            autoCapitalize="none"
-            autoComplete={isSignUp ? 'password-new' : 'password'}
-            returnKeyType={isSignUp ? 'next' : 'done'}
-            onSubmitEditing={isSignUp ? undefined : handleSubmit}
-          />
+            <Text style={styles.label}>Password</Text>
+            <TextInput
+              style={styles.input}
+              value={password}
+              onChangeText={setPassword}
+              placeholder="••••••••"
+              placeholderTextColor={COLORS.textMuted}
+              secureTextEntry
+              autoCapitalize="none"
+              autoComplete={isSignUp ? 'password-new' : 'password'}
+              returnKeyType={isSignUp ? 'next' : 'done'}
+              onSubmitEditing={isSignUp ? undefined : handleSubmit}
+            />
 
-          {isSignUp && (
-            <>
-              <Text style={styles.label}>Confirm Password</Text>
-              <TextInput
-                style={styles.input}
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                placeholder="••••••••"
-                placeholderTextColor={COLORS.textMuted}
-                secureTextEntry
-                autoCapitalize="none"
-                autoComplete="password-new"
-                returnKeyType="done"
-                onSubmitEditing={handleSubmit}
-              />
-            </>
-          )}
-
-          <TouchableOpacity
-            style={[styles.signInBtn, submitting && styles.signInBtnDisabled]}
-            onPress={handleSubmit}
-            disabled={submitting}
-            activeOpacity={0.85}
-          >
-            {submitting ? (
-              <ActivityIndicator color="#FFFFFF" />
-            ) : (
-              <Text style={styles.signInBtnText}>{isSignUp ? 'Sign Up' : 'Sign In'}</Text>
+            {isSignUp && (
+              <>
+                <Text style={styles.label}>Confirm Password</Text>
+                <TextInput
+                  style={styles.input}
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  placeholder="••••••••"
+                  placeholderTextColor={COLORS.textMuted}
+                  secureTextEntry
+                  autoCapitalize="none"
+                  autoComplete="password-new"
+                  returnKeyType="done"
+                  onSubmitEditing={handleSubmit}
+                />
+              </>
             )}
-          </TouchableOpacity>
 
+            <GradientButton
+              title={isSignUp ? 'Sign Up' : 'Sign In'}
+              onPress={handleSubmit}
+              loading={submitting}
+              style={styles.submitBtn}
+            />
+          </View>
+
+          {/* ── Mode toggle ── */}
           <TouchableOpacity
             style={styles.toggleModeBtn}
             onPress={toggleMode}
@@ -168,7 +181,7 @@ export function LoginScreen() {
               <Text style={styles.toggleModeTextAccent}>{isSignUp ? 'Sign In' : 'Sign Up'}</Text>
             </Text>
           </TouchableOpacity>
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -181,66 +194,52 @@ const styles = StyleSheet.create({
   },
   flexFill: { flex: 1 },
   content: {
-    flex:              1,
+    flexGrow:          1,
     justifyContent:    'center',
     paddingHorizontal: 24,
+    paddingVertical:   32,
   },
-  title: {
-    fontSize:     28,
-    fontWeight:   '800',
-    color:        COLORS.text,
-    textAlign:    'center',
-    marginBottom: 8,
+  hero: {
+    alignItems:   'center',
+    marginBottom: 36,
   },
   subtitle: {
-    fontSize:     14,
-    color:        COLORS.textSub,
-    textAlign:    'center',
-    marginBottom: 40,
+    marginTop:  12,
+    fontSize:   14,
+    color:      COLORS.textSub,
+    textAlign:  'center',
+  },
+  formCard: {
+    backgroundColor: COLORS.bgAlt,
+    borderRadius:    RADIUS.xl,
+    borderWidth:      1,
+    borderColor:      COLORS.cardBorder,
+    padding:         20,
   },
   label: {
-    fontSize:     13,
-    fontWeight:   '600',
-    color:        COLORS.textSub,
-    marginBottom:  8,
-    letterSpacing: 0.4,
+    fontFamily:    FONT.semibold,
+    fontSize:      12,
+    color:         COLORS.textSub,
+    marginBottom:   8,
+    letterSpacing: 1,
     textTransform: 'uppercase',
   },
   input: {
     backgroundColor:   COLORS.card,
-    borderRadius:      12,
+    borderRadius:      RADIUS.md,
     borderWidth:        1,
     borderColor:        COLORS.border,
     paddingHorizontal: 16,
     paddingVertical:   14,
     color:             COLORS.text,
     fontSize:          16,
-    marginBottom:      20,
+    marginBottom:      18,
   },
-  signInBtn: {
-    backgroundColor: COLORS.primary,
-    borderRadius:    14,
-    height:          54,
-    justifyContent:  'center',
-    alignItems:      'center',
-    marginTop:        8,
-    shadowColor:     COLORS.primary,
-    shadowOpacity:   0.35,
-    shadowRadius:    14,
-    shadowOffset:    { width: 0, height: 5 },
-    elevation:        6,
-  },
-  signInBtnDisabled: {
-    opacity: 0.6,
-  },
-  signInBtnText: {
-    fontSize:   17,
-    fontWeight: '800',
-    color:      '#FFFFFF',
-    letterSpacing: 0.3,
+  submitBtn: {
+    marginTop: 6,
   },
   toggleModeBtn: {
-    marginTop:  20,
+    marginTop:  24,
     alignItems: 'center',
   },
   toggleModeText: {
@@ -248,7 +247,7 @@ const styles = StyleSheet.create({
     color:    COLORS.textSub,
   },
   toggleModeTextAccent: {
+    fontFamily: FONT.bold,
     color:      COLORS.primary,
-    fontWeight: '700',
   },
 });

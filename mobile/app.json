@@ -5,9 +5,11 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
+    "icon": "./assets/icon.png",
     "splash": {
+      "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#111111"
+      "backgroundColor": "#0B0B0E"
     },
     "ios": {
       "supportsTablet": false,
@@ -15,7 +17,8 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#111111"
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0B0B0E"
       },
       "package": "com.gymtracker.app"
     },

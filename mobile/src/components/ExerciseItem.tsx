@@ -1,7 +1,11 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Feather } from '@expo/vector-icons';
+
 import { COLORS } from '../constants/colors';
-import { Exercise } from '../types';
+import { FONT, RADIUS } from '../constants/theme';
+import { Exercise, ExerciseSet } from '../types';
+import { PressableScale } from './PressableScale';
 
 interface Props {
   exercise: Exercise;
@@ -9,129 +13,134 @@ interface Props {
   onDelete: () => void;
 }
 
+/** '8 × 60 KG', '60 KG' (no reps) or '12 reps' (bodyweight) */
+function setSummary(s: ExerciseSet, unit: string): string {
+  if (s.weight != null) {
+    return s.reps ? `${s.reps} × ${s.weight} ${unit}` : `${s.weight} ${unit}`;
+  }
+  return `${s.reps ?? '?'} reps`;
+}
+
 export function ExerciseItem({ exercise, onEdit, onDelete }: Props) {
   const setsCount = exercise.sets.length;
 
-  // Determine if all sets are identical (same reps + weight)
-  // If so, show a compact summary; otherwise show each set on its own line.
+  // If every set is identical, collapse them into one summary chip.
   const allIdentical = setsCount > 0 && exercise.sets.every(s =>
     s.reps   === exercise.sets[0].reps &&
     s.weight === exercise.sets[0].weight
   );
 
   return (
-    <TouchableOpacity style={styles.container} onPress={onEdit} activeOpacity={0.8}>
-      <View style={styles.dot} />
-
-      <View style={styles.body}>
+    <PressableScale style={styles.container} onPress={onEdit} pressScale={0.98}>
+      <View style={styles.topRow}>
+        <View style={styles.accentBar} />
         <Text style={styles.name}>{exercise.name}</Text>
-
-        {allIdentical ? (
-          // Compact view: "3 sets · 8 reps · 60 KG" or "3 sets · 10 reps · Bodyweight"
-          <Text style={styles.detail}>
-            {[
-              `${setsCount} ${setsCount === 1 ? 'set' : 'sets'}`,
-              exercise.sets[0].reps ? `${exercise.sets[0].reps} reps` : null,
-              exercise.sets[0].weight != null
-                ? `${exercise.sets[0].weight} ${exercise.unit}`
-                : 'Bodyweight',
-            ]
-              .filter(Boolean)
-              .join('  ·  ')}
-          </Text>
-        ) : (
-          // Per-set view: "Set 1 — 8 × 60 KG" or "Set 1 — 12 reps" (bodyweight)
-          <View style={styles.setsList}>
-            {exercise.sets.map(s => (
-              <Text key={s.set_number} style={styles.setLine}>
-                <Text style={styles.setLabel}>Set {s.set_number}</Text>
-                {' — '}
-                {s.weight != null
-                  ? `${s.reps ? `${s.reps} × ` : ''}${s.weight} ${exercise.unit}`
-                  : `${s.reps ?? '?'} reps`}
-              </Text>
-            ))}
-          </View>
-        )}
-
-        {exercise.notes ? (
-          <Text style={styles.notes} numberOfLines={1}>{exercise.notes}</Text>
-        ) : null}
+        <TouchableOpacity
+          style={styles.deleteBtn}
+          onPress={onDelete}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Feather name="trash-2" size={15} color={COLORS.danger} />
+        </TouchableOpacity>
       </View>
 
-      <TouchableOpacity
-        style={styles.deleteBtn}
-        onPress={onDelete}
-        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-      >
-        <Text style={styles.deleteIcon}>✕</Text>
-      </TouchableOpacity>
-    </TouchableOpacity>
+      {/* Set chips */}
+      <View style={styles.chipsRow}>
+        {allIdentical ? (
+          <View style={styles.chip}>
+            <Text style={styles.chipCount}>{setsCount} × </Text>
+            <Text style={styles.chipText}>{setSummary(exercise.sets[0], exercise.unit)}</Text>
+          </View>
+        ) : (
+          exercise.sets.map(s => (
+            <View key={s.set_number} style={styles.chip}>
+              <Text style={styles.chipText}>{setSummary(s, exercise.unit)}</Text>
+            </View>
+          ))
+        )}
+      </View>
+
+      {exercise.notes ? (
+        <View style={styles.notesRow}>
+          <Feather name="edit-3" size={11} color={COLORS.textMuted} />
+          <Text style={styles.notes} numberOfLines={1}>{exercise.notes}</Text>
+        </View>
+      ) : null}
+    </PressableScale>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection:   'row',
-    alignItems:      'center',
     backgroundColor: COLORS.card,
-    borderRadius:    12,
+    borderRadius:    RADIUS.lg,
     padding:         16,
     marginBottom:    10,
-    borderWidth:     1,
-    borderColor:     COLORS.cardBorder,
+    borderWidth:      1,
+    borderColor:      COLORS.cardBorder,
   },
-  dot: {
-    width:           8,
-    height:          8,
-    borderRadius:    4,
+  topRow: {
+    flexDirection: 'row',
+    alignItems:    'center',
+  },
+  accentBar: {
+    width:           3,
+    height:          18,
+    borderRadius:    2,
     backgroundColor: COLORS.primary,
-    marginRight:     14,
-    alignSelf:       'flex-start',
-    marginTop:       5,
-  },
-  body: {
-    flex: 1,
+    marginRight:     10,
   },
   name: {
+    flex:       1,
+    fontFamily: FONT.semibold,
     fontSize:   17,
-    fontWeight: '700',
     color:      COLORS.text,
   },
-  detail: {
-    fontSize:      13,
-    color:         COLORS.textSub,
-    marginTop:     4,
-    letterSpacing: 0.2,
-  },
-  setsList: {
-    marginTop: 4,
-  },
-  setLine: {
-    fontSize:      13,
-    color:         COLORS.textSub,
-    letterSpacing: 0.2,
-    lineHeight:    20,
-  },
-  setLabel: {
-    color:      COLORS.textMuted,
-    fontWeight: '600',
-  },
-  notes: {
-    fontSize:  12,
-    color:     COLORS.textMuted,
-    marginTop:  4,
-    fontStyle: 'italic',
-  },
   deleteBtn: {
-    padding:         6,
+    width:           30,
+    height:          30,
+    borderRadius:    RADIUS.sm,
     backgroundColor: COLORS.dangerBg,
-    borderRadius:    8,
+    alignItems:      'center',
+    justifyContent:  'center',
     marginLeft:      12,
   },
-  deleteIcon: {
-    fontSize:   13,
-    color:      COLORS.danger,
-    fontWeight: '700',
+  chipsRow: {
+    flexDirection: 'row',
+    flexWrap:      'wrap',
+    gap:           6,
+    marginTop:     10,
+  },
+  chip: {
+    flexDirection:     'row',
+    alignItems:        'center',
+    backgroundColor:   COLORS.bgAlt,
+    borderRadius:      RADIUS.pill,
+    borderWidth:        1,
+    borderColor:        COLORS.border,
+    paddingHorizontal: 11,
+    paddingVertical:    5,
+  },
+  chipCount: {
+    fontFamily: FONT.bold,
+    fontSize:   12,
+    color:      COLORS.primary,
+  },
+  chipText: {
+    fontFamily: FONT.medium,
+    fontSize:   12,
+    color:      COLORS.textSub,
+  },
+  notesRow: {
+    flexDirection: 'row',
+    alignItems:    'center',
+    gap:           6,
+    marginTop:     10,
+  },
+  notes: {
+    flex:      1,
+    fontSize:  12,
+    color:     COLORS.textMuted,
+    fontStyle: 'italic',
   },
 });

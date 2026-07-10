@@ -1,23 +1,27 @@
 import React, { useState, useCallback } from 'react';
 import {
-  View, Text, ScrollView, StyleSheet, Alert,
+  View, ScrollView, StyleSheet, Alert,
   ActivityIndicator, RefreshControl, StatusBar,
-  TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { Feather } from '@expo/vector-icons';
 
 import { COLORS } from '../constants/colors';
+import { RADIUS } from '../constants/theme';
 import { RootStackParamList, DayInfo, Exercise } from '../types';
 import { workoutApi } from '../services/api';
 import { supabase } from '../lib/supabase';
+import { Logo, Wordmark } from '../components/Logo';
+import { PressableScale } from '../components/PressableScale';
 import { WeekNavigator } from '../components/WeekNavigator';
 import { DayCard } from '../components/DayCard';
 import { EmptyState } from '../components/EmptyState';
+import { haptics } from '../utils/haptics';
 import {
   getISOWeek, getWeekStart, getWeekDays,
-  toDateStr, fmtShortDate, fmtWeekRange,
+  toDateStr, fmtWeekRange,
   getDayShort, getDayFull, isToday, isPastDay,
 } from '../utils/dateUtils';
 
@@ -67,6 +71,7 @@ export function HomeScreen({ navigation }: Props) {
   };
 
   const handleSignOut = () => {
+    haptics.warning();
     Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
       { text: 'Cancel', style: 'cancel' },
       {
@@ -87,7 +92,7 @@ export function HomeScreen({ navigation }: Props) {
       date:        ds,
       dayShort:    getDayShort(date),
       dayFull:     getDayFull(date),
-      displayDate: fmtShortDate(date),
+      dayOfMonth:  date.getDate(),
       isToday:     isToday(date),
       isPast:      isPastDay(date),
       exercises:   exercises.filter(e => e.date === ds),
@@ -101,15 +106,18 @@ export function HomeScreen({ navigation }: Props) {
 
       {/* ── Header ── */}
       <View style={styles.header}>
-        <Text style={styles.title}>GymTracker</Text>
-        <View style={styles.headerRight}>
-          <View style={styles.weekPill}>
-            <Text style={styles.weekPillText}>Week {weekNumber}</Text>
-          </View>
-          <TouchableOpacity onPress={handleSignOut} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-            <Text style={styles.signOutText}>Sign Out</Text>
-          </TouchableOpacity>
+        <View style={styles.brand}>
+          <Logo size={34} />
+          <Wordmark fontSize={19} letterSpacing={2} />
         </View>
+        <PressableScale
+          onPress={handleSignOut}
+          style={styles.signOutBtn}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          pressScale={0.9}
+        >
+          <Feather name="log-out" size={17} color={COLORS.textSub} />
+        </PressableScale>
       </View>
 
       {/* ── Week navigator ── */}
@@ -127,11 +135,23 @@ export function HomeScreen({ navigation }: Props) {
           <ActivityIndicator size="large" color={COLORS.primary} />
         </View>
       ) : error ? (
-        <EmptyState
-          emoji="⚠️"
-          message="Could not load workouts"
-          subMessage={`${error}\n\nMake sure the backend is running.`}
-        />
+        <ScrollView
+          contentContainerStyle={styles.errorContent}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={COLORS.primary}
+              colors={[COLORS.primary]}
+            />
+          }
+        >
+          <EmptyState
+            emoji="⚠️"
+            message="Could not load workouts"
+            subMessage={`${error}\n\nCheck your connection and pull to retry.`}
+          />
+        </ScrollView>
       ) : (
         <ScrollView
           style={styles.scroll}
@@ -175,37 +195,23 @@ const styles = StyleSheet.create({
     justifyContent:    'space-between',
     alignItems:        'center',
     paddingHorizontal: 20,
-    paddingTop:         8,
+    paddingTop:        10,
     paddingBottom:     16,
   },
-  title: {
-    fontSize:      28,
-    fontWeight:    '800',
-    color:         COLORS.text,
-    letterSpacing: -0.5,
-  },
-  headerRight: {
+  brand: {
     flexDirection: 'row',
     alignItems:    'center',
-    gap:           14,
+    gap:           10,
   },
-  weekPill: {
-    backgroundColor: COLORS.primaryBg,
-    borderRadius:    20,
-    paddingHorizontal: 14,
-    paddingVertical:    6,
-    borderWidth:     1,
-    borderColor:     COLORS.primary,
-  },
-  weekPillText: {
-    color:      COLORS.primary,
-    fontWeight: '700',
-    fontSize:   13,
-  },
-  signOutText: {
-    color:      COLORS.textMuted,
-    fontWeight: '600',
-    fontSize:   13,
+  signOutBtn: {
+    width:           38,
+    height:          38,
+    borderRadius:    RADIUS.pill,
+    backgroundColor: COLORS.card,
+    borderWidth:      1,
+    borderColor:      COLORS.border,
+    alignItems:      'center',
+    justifyContent:  'center',
   },
   centred: {
     flex:           1,
@@ -215,6 +221,9 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   scrollContent: {
     paddingHorizontal: 16,
-    paddingTop:        12,
+    paddingTop:        4,
+  },
+  errorContent: {
+    flexGrow: 1,
   },
 });

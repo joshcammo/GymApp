@@ -1,6 +1,9 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+
 import { COLORS } from '../constants/colors';
+import { FONT } from '../constants/theme';
+import { Logo } from './Logo';
 
 interface Props {
   emoji?:      string;
@@ -8,10 +11,16 @@ interface Props {
   subMessage?: string;
 }
 
-export function EmptyState({ emoji = '🏋️', message, subMessage }: Props) {
+export function EmptyState({ emoji, message, subMessage }: Props) {
   return (
     <View style={styles.container}>
-      <Text style={styles.emoji}>{emoji}</Text>
+      {emoji ? (
+        <Text style={styles.emoji}>{emoji}</Text>
+      ) : (
+        <View style={styles.logoWrap}>
+          <Logo size={64} />
+        </View>
+      )}
       <Text style={styles.message}>{message}</Text>
       {subMessage ? <Text style={styles.sub}>{subMessage}</Text> : null}
     </View>
@@ -20,27 +29,31 @@ export function EmptyState({ emoji = '🏋️', message, subMessage }: Props) {
 
 const styles = StyleSheet.create({
   container: {
-    flex:           1,
-    justifyContent: 'center',
-    alignItems:     'center',
+    flex:              1,
+    justifyContent:    'center',
+    alignItems:        'center',
     paddingHorizontal: 32,
-    paddingBottom:  80,
+    paddingBottom:     80,
   },
   emoji: {
-    fontSize:    52,
+    fontSize:     52,
     marginBottom: 16,
   },
+  logoWrap: {
+    marginBottom: 20,
+    opacity:      0.55,
+  },
   message: {
-    fontSize:   20,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontSize:   19,
     color:      COLORS.textSub,
     textAlign:  'center',
   },
   sub: {
-    fontSize:  14,
-    color:     COLORS.textMuted,
-    textAlign: 'center',
-    marginTop:  8,
+    fontSize:   14,
+    color:      COLORS.textMuted,
+    textAlign:  'center',
+    marginTop:   8,
     lineHeight: 20,
   },
 });

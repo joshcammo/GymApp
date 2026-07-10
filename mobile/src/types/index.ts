@@ -23,7 +23,7 @@ export interface DayInfo {
   date:         string;   // 'YYYY-MM-DD'
   dayShort:     string;   // 'MON'
   dayFull:      string;   // 'Monday'
-  displayDate:  string;   // 'May 22'
+  dayOfMonth:   number;   // 22
   isToday:      boolean;
   isPast:       boolean;
   exercises:    Exercise[];

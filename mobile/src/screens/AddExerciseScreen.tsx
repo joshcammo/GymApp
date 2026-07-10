@@ -1,17 +1,22 @@
 import React, { useState, useEffect, useLayoutEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
-  ScrollView, StyleSheet, Alert, ActivityIndicator,
+  ScrollView, StyleSheet, Alert,
   KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
+import { Feather } from '@expo/vector-icons';
 
 import { COLORS } from '../constants/colors';
+import { FONT, RADIUS } from '../constants/theme';
 import { RootStackParamList, WeightUnit } from '../types';
 import { workoutApi, SetInput } from '../services/api';
+import { GradientButton } from '../components/GradientButton';
+import { haptics } from '../utils/haptics';
+import { parseDateStr } from '../utils/dateUtils';
 
 type Nav   = NativeStackNavigationProp<RootStackParamList, 'AddExercise'>;
 type Route = RouteProp<RootStackParamList, 'AddExercise'>;
@@ -69,12 +74,19 @@ export function AddExerciseScreen({ navigation, route }: Props) {
 
   const addRow = () => {
     if (setRows.length >= 100) return;
+    haptics.tap();
     setSetRows(prev => [...prev, emptyRow()]);
   };
 
   const removeRow = (index: number) => {
     if (setRows.length <= 1) return; // keep at least one
+    haptics.tap();
     setSetRows(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const selectUnit = (u: WeightUnit) => {
+    haptics.tap();
+    setUnit(u);
   };
 
   // ── Validation ───────────────────────────────────────────────
@@ -83,21 +95,21 @@ export function AddExerciseScreen({ navigation, route }: Props) {
     if (setRows.length === 0) return 'Add at least one set.';
 
     for (let i = 0; i < setRows.length; i++) {
-  const r = setRows[i];
-  const setLabel = `Set ${i + 1}`;
-  // Weight is optional (bodyweight exercises). But if entered, must be valid.
-  if (r.weight && (isNaN(+r.weight) || +r.weight < 0)) {
-    return `${setLabel}: weight must be 0 or higher.`;
-  }
-  if (r.reps && (isNaN(+r.reps) || +r.reps < 1)) {
-    return `${setLabel}: reps must be a positive number.`;
-  }
-  // At least one of reps or weight should be filled — otherwise it's an empty set
-  if (!r.reps && !r.weight) {
-    return `${setLabel}: enter at least reps or weight.`;
-  }
-}
-return null;
+      const r = setRows[i];
+      const setLabel = `Set ${i + 1}`;
+      // Weight is optional (bodyweight exercises). But if entered, must be valid.
+      if (r.weight && (isNaN(+r.weight) || +r.weight < 0)) {
+        return `${setLabel}: weight must be 0 or higher.`;
+      }
+      if (r.reps && (isNaN(+r.reps) || +r.reps < 1)) {
+        return `${setLabel}: reps must be a positive number.`;
+      }
+      // At least one of reps or weight should be filled — otherwise it's an empty set
+      if (!r.reps && !r.weight) {
+        return `${setLabel}: enter at least reps or weight.`;
+      }
+    }
+    return null;
   };
 
   // ── Save ─────────────────────────────────────────────────────
@@ -128,6 +140,7 @@ return null;
         await workoutApi.create(payload);
       }
 
+      haptics.success();
       navigation.goBack();
     } catch (e) {
       Alert.alert('Error', (e as Error).message ?? 'Could not save exercise. Check your connection.');
@@ -151,132 +164,137 @@ return null;
         >
           {/* Date chip */}
           <View style={styles.datePill}>
+            <Feather name="calendar" size={13} color={COLORS.primary} />
             <Text style={styles.datePillText}>
-              {dayFull} — {new Date(`${date}T12:00:00`).toLocaleDateString('en-GB', {
+              {dayFull} — {parseDateStr(date).toLocaleDateString('en-GB', {
                 day: 'numeric', month: 'long', year: 'numeric',
               })}
             </Text>
           </View>
 
-          {/* ── Exercise name ── */}
-          <Text style={styles.label}>Exercise Name</Text>
-          <TextInput
-            style={styles.input}
-            value={name}
-            onChangeText={setName}
-            placeholder="e.g. Bench Press"
-            placeholderTextColor={COLORS.textMuted}
-            autoCapitalize="words"
-            returnKeyType="next"
-            autoFocus={!isEditing}
-          />
+          {/* ── Exercise card ── */}
+          <View style={styles.sectionCard}>
+            <Text style={styles.label}>Exercise Name</Text>
+            <TextInput
+              style={styles.input}
+              value={name}
+              onChangeText={setName}
+              placeholder="e.g. Bench Press"
+              placeholderTextColor={COLORS.textMuted}
+              autoCapitalize="words"
+              returnKeyType="next"
+              autoFocus={!isEditing}
+            />
 
-          {/* ── Unit toggle (KG / LBS) ── */}
-          <Text style={styles.label}>Weight Unit</Text>
-          <View style={[styles.unitToggle, { marginBottom: 24 }]}>
-            {(['KG', 'LBS'] as WeightUnit[]).map(u => (
-              <TouchableOpacity
-                key={u}
-                style={[styles.unitBtn, unit === u && styles.unitBtnActive]}
-                onPress={() => setUnit(u)}
-              >
-                <Text style={[styles.unitBtnText, unit === u && styles.unitBtnTextActive]}>
-                  {u}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          {/* ── Sets section ── */}
-          <View style={styles.setsHeader}>
-            <Text style={styles.label}>Sets</Text>
-            <Text style={styles.setsCount}>{setRows.length}</Text>
-          </View>
-
-          {/* Column headings */}
-          <View style={styles.setRowHeader}>
-            <Text style={[styles.setRowHeaderText, { width: 40 }]}>#</Text>
-            <Text style={[styles.setRowHeaderText, { flex: 1 }]}>Reps</Text>
-            <Text style={[styles.setRowHeaderText, { flex: 1 }]}>Weight ({unit})</Text>
-            <View style={{ width: 36 }} />
-          </View>
-
-          {/* The set rows */}
-          {setRows.map((row, i) => (
-            <View key={i} style={styles.setRow}>
-              <Text style={styles.setNumber}>{i + 1}</Text>
-
-              <TextInput
-                style={[styles.input, styles.setInput]}
-                value={row.reps}
-                onChangeText={v => updateRow(i, 'reps', v)}
-                placeholder="—"
-                placeholderTextColor={COLORS.textMuted}
-                keyboardType="number-pad"
-                returnKeyType="next"
-              />
-
-              <TextInput
-                style={[styles.input, styles.setInput]}
-                value={row.weight}
-                onChangeText={v => updateRow(i, 'weight', v)}
-                placeholder="0"
-                placeholderTextColor={COLORS.textMuted}
-                keyboardType="decimal-pad"
-                returnKeyType="next"
-              />
-
-              <TouchableOpacity
-                style={[styles.removeBtn, setRows.length <= 1 && styles.removeBtnDisabled]}
-                onPress={() => removeRow(i)}
-                disabled={setRows.length <= 1}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <Text style={styles.removeBtnText}>−</Text>
-              </TouchableOpacity>
+            {/* Unit toggle (KG / LBS) */}
+            <Text style={styles.label}>Weight Unit</Text>
+            <View style={styles.unitToggle}>
+              {(['KG', 'LBS'] as WeightUnit[]).map(u => (
+                <TouchableOpacity
+                  key={u}
+                  style={[styles.unitBtn, unit === u && styles.unitBtnActive]}
+                  onPress={() => selectUnit(u)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.unitBtnText, unit === u && styles.unitBtnTextActive]}>
+                    {u}
+                  </Text>
+                </TouchableOpacity>
+              ))}
             </View>
-          ))}
+          </View>
 
-          {/* Add set button */}
-          <TouchableOpacity
-            style={styles.addSetBtn}
-            onPress={addRow}
-            activeOpacity={0.7}
-            disabled={setRows.length >= 100}
-          >
-            <Text style={styles.addSetBtnText}>+ Add Set</Text>
-          </TouchableOpacity>
+          {/* ── Sets card ── */}
+          <View style={styles.sectionCard}>
+            <View style={styles.setsHeader}>
+              <Text style={styles.label}>Sets</Text>
+              <View style={styles.setsCountBubble}>
+                <Text style={styles.setsCount}>{setRows.length}</Text>
+              </View>
+            </View>
 
-          {/* ── Notes ── */}
-          <Text style={[styles.label, { marginTop: 24 }]}>
-            Notes <Text style={styles.optional}>(optional)</Text>
-          </Text>
-          <TextInput
-            style={[styles.input, styles.notesInput]}
-            value={notes}
-            onChangeText={setNotes}
-            placeholder="e.g. Felt strong today, paused reps"
-            placeholderTextColor={COLORS.textMuted}
-            multiline
-            returnKeyType="default"
-            maxLength={500}
-          />
+            {/* Column headings */}
+            <View style={styles.setRowHeader}>
+              <Text style={[styles.setRowHeaderText, { width: 36 }]}>#</Text>
+              <Text style={[styles.setRowHeaderText, { flex: 1 }]}>Reps</Text>
+              <Text style={[styles.setRowHeaderText, { flex: 1 }]}>Weight ({unit})</Text>
+              <View style={{ width: 36 }} />
+            </View>
+
+            {/* The set rows */}
+            {setRows.map((row, i) => (
+              <View key={i} style={styles.setRow}>
+                <View style={styles.setNumberBadge}>
+                  <Text style={styles.setNumber}>{i + 1}</Text>
+                </View>
+
+                <TextInput
+                  style={[styles.input, styles.setInput]}
+                  value={row.reps}
+                  onChangeText={v => updateRow(i, 'reps', v)}
+                  placeholder="—"
+                  placeholderTextColor={COLORS.textMuted}
+                  keyboardType="number-pad"
+                  returnKeyType="next"
+                />
+
+                <TextInput
+                  style={[styles.input, styles.setInput]}
+                  value={row.weight}
+                  onChangeText={v => updateRow(i, 'weight', v)}
+                  placeholder="0"
+                  placeholderTextColor={COLORS.textMuted}
+                  keyboardType="decimal-pad"
+                  returnKeyType="next"
+                />
+
+                <TouchableOpacity
+                  style={[styles.removeBtn, setRows.length <= 1 && styles.removeBtnDisabled]}
+                  onPress={() => removeRow(i)}
+                  disabled={setRows.length <= 1}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <Feather name="minus" size={17} color={COLORS.danger} />
+                </TouchableOpacity>
+              </View>
+            ))}
+
+            {/* Add set button */}
+            <TouchableOpacity
+              style={styles.addSetBtn}
+              onPress={addRow}
+              activeOpacity={0.7}
+              disabled={setRows.length >= 100}
+            >
+              <Feather name="plus" size={15} color={COLORS.primary} />
+              <Text style={styles.addSetBtnText}>Add Set</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* ── Notes card ── */}
+          <View style={styles.sectionCard}>
+            <Text style={styles.label}>
+              Notes <Text style={styles.optional}>(optional)</Text>
+            </Text>
+            <TextInput
+              style={[styles.input, styles.notesInput]}
+              value={notes}
+              onChangeText={setNotes}
+              placeholder="e.g. Felt strong today, paused reps"
+              placeholderTextColor={COLORS.textMuted}
+              multiline
+              returnKeyType="default"
+              maxLength={500}
+            />
+          </View>
 
           {/* ── Save button ── */}
-          <TouchableOpacity
-            style={[styles.saveBtn, saving && styles.saveBtnDisabled]}
+          <GradientButton
+            title={isEditing ? 'Save Changes' : 'Log Exercise'}
             onPress={handleSave}
-            disabled={saving}
-            activeOpacity={0.85}
-          >
-            {saving ? (
-              <ActivityIndicator color="#FFFFFF" />
-            ) : (
-              <Text style={styles.saveBtnText}>
-                {isEditing ? 'Save Changes' : 'Log Exercise'}
-              </Text>
-            )}
-          </TouchableOpacity>
+            loading={saving}
+            style={styles.saveBtn}
+          />
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -290,69 +308,80 @@ const styles = StyleSheet.create({
   },
   scroll: { flex: 1 },
   content: {
-    padding:       20,
+    padding:       16,
     paddingBottom: 40,
   },
   datePill: {
+    flexDirection:     'row',
+    alignItems:        'center',
+    gap:               7,
     alignSelf:         'flex-start',
     backgroundColor:   COLORS.primaryBg,
-    borderRadius:      20,
+    borderRadius:      RADIUS.pill,
     paddingHorizontal: 14,
-    paddingVertical:    6,
-    marginBottom:      24,
+    paddingVertical:    7,
+    marginBottom:      16,
     borderWidth:        1,
     borderColor:        COLORS.primary,
   },
   datePillText: {
+    fontFamily: FONT.semibold,
     color:      COLORS.primary,
-    fontWeight: '600',
     fontSize:   13,
   },
+  sectionCard: {
+    backgroundColor: COLORS.bgAlt,
+    borderRadius:    RADIUS.lg,
+    borderWidth:      1,
+    borderColor:      COLORS.cardBorder,
+    padding:         16,
+    marginBottom:    14,
+  },
   label: {
-    fontSize:     13,
-    fontWeight:   '600',
-    color:        COLORS.textSub,
-    marginBottom:  8,
-    letterSpacing: 0.4,
+    fontFamily:    FONT.semibold,
+    fontSize:      12,
+    color:         COLORS.textSub,
+    marginBottom:   8,
+    letterSpacing: 1,
     textTransform: 'uppercase',
   },
   optional: {
-    fontWeight:    '400',
     color:         COLORS.textMuted,
     textTransform: 'none',
   },
   input: {
-    backgroundColor: COLORS.card,
-    borderRadius:    12,
-    borderWidth:      1,
-    borderColor:      COLORS.border,
+    backgroundColor:   COLORS.card,
+    borderRadius:      RADIUS.md,
+    borderWidth:        1,
+    borderColor:        COLORS.border,
     paddingHorizontal: 16,
     paddingVertical:   14,
-    color:           COLORS.text,
-    fontSize:        16,
-    marginBottom:    20,
+    color:             COLORS.text,
+    fontSize:          16,
+    marginBottom:      18,
   },
   unitToggle: {
     flexDirection:   'row',
     backgroundColor: COLORS.card,
-    borderRadius:    12,
+    borderRadius:    RADIUS.md,
     borderWidth:      1,
     borderColor:      COLORS.border,
-    overflow:        'hidden',
+    padding:          4,
     alignSelf:       'flex-start',
   },
   unitBtn: {
-    paddingHorizontal: 18,
-    paddingVertical:   14,
+    paddingHorizontal: 20,
+    paddingVertical:   10,
     minWidth:          64,
     alignItems:        'center',
+    borderRadius:      RADIUS.sm,
   },
   unitBtnActive: {
     backgroundColor: COLORS.primary,
   },
   unitBtnText: {
-    fontSize:   15,
-    fontWeight: '700',
+    fontFamily: FONT.bold,
+    fontSize:   14,
     color:      COLORS.textMuted,
   },
   unitBtnTextActive: {
@@ -363,12 +392,21 @@ const styles = StyleSheet.create({
     flexDirection:  'row',
     alignItems:     'center',
     justifyContent: 'space-between',
-    marginBottom:   8,
+  },
+  setsCountBubble: {
+    backgroundColor:   COLORS.primaryBg,
+    borderRadius:      RADIUS.pill,
+    minWidth:          24,
+    height:            24,
+    paddingHorizontal: 7,
+    alignItems:        'center',
+    justifyContent:    'center',
+    marginBottom:      8,
   },
   setsCount: {
-    fontSize:   13,
-    color:      COLORS.textMuted,
-    fontWeight: '600',
+    fontFamily: FONT.bold,
+    fontSize:   12,
+    color:      COLORS.primary,
   },
   setRowHeader: {
     flexDirection: 'row',
@@ -377,11 +415,12 @@ const styles = StyleSheet.create({
     marginBottom:  6,
   },
   setRowHeaderText: {
-    fontSize:      11,
+    fontFamily:    FONT.medium,
+    fontSize:      10,
     color:         COLORS.textMuted,
-    fontWeight:    '600',
-    letterSpacing: 0.4,
+    letterSpacing: 0.8,
     textTransform: 'uppercase',
+    textAlign:     'center',
   },
   setRow: {
     flexDirection: 'row',
@@ -389,23 +428,31 @@ const styles = StyleSheet.create({
     gap:           8,
     marginBottom:  8,
   },
+  setNumberBadge: {
+    width:           36,
+    height:          36,
+    borderRadius:    RADIUS.sm,
+    backgroundColor: COLORS.card,
+    borderWidth:      1,
+    borderColor:      COLORS.border,
+    alignItems:      'center',
+    justifyContent:  'center',
+  },
   setNumber: {
-    width:      40,
-    fontSize:   15,
-    fontWeight: '700',
-    color:      COLORS.text,
-    textAlign:  'center',
+    fontFamily: FONT.bold,
+    fontSize:   14,
+    color:      COLORS.textSub,
   },
   setInput: {
-    flex:         1,
-    marginBottom: 0,
+    flex:            1,
+    marginBottom:    0,
     paddingVertical: 12,
-    textAlign:    'center',
+    textAlign:       'center',
   },
   removeBtn: {
     width:           36,
     height:          36,
-    borderRadius:    8,
+    borderRadius:    RADIUS.sm,
     backgroundColor: COLORS.dangerBg,
     alignItems:      'center',
     justifyContent:  'center',
@@ -413,51 +460,30 @@ const styles = StyleSheet.create({
   removeBtnDisabled: {
     opacity: 0.3,
   },
-  removeBtnText: {
-    fontSize:   22,
-    color:      COLORS.danger,
-    fontWeight: '700',
-    lineHeight: 22,
-  },
   addSetBtn: {
+    flexDirection:   'row',
+    gap:             6,
     marginTop:       8,
     paddingVertical: 12,
-    borderRadius:    12,
+    borderRadius:    RADIUS.md,
     borderWidth:      1,
     borderStyle:     'dashed',
     borderColor:      COLORS.border,
     alignItems:      'center',
+    justifyContent:  'center',
   },
   addSetBtnText: {
-    fontSize:   14,
-    fontWeight: '700',
-    color:      COLORS.primary,
+    fontFamily:    FONT.bold,
+    fontSize:      14,
+    color:         COLORS.primary,
     letterSpacing: 0.4,
   },
   notesInput: {
-    height:           90,
+    height:            90,
     textAlignVertical: 'top',
+    marginBottom:      0,
   },
   saveBtn: {
-    backgroundColor: COLORS.primary,
-    borderRadius:    14,
-    height:          54,
-    justifyContent:  'center',
-    alignItems:      'center',
-    marginTop:        16,
-    shadowColor:     COLORS.primary,
-    shadowOpacity:   0.35,
-    shadowRadius:    14,
-    shadowOffset:    { width: 0, height: 5 },
-    elevation:        6,
-  },
-  saveBtnDisabled: {
-    opacity: 0.6,
-  },
-  saveBtnText: {
-    fontSize:   17,
-    fontWeight: '800',
-    color:      '#FFFFFF',
-    letterSpacing: 0.3,
+    marginTop: 4,
   },
 });
