@@ -1,0 +1,15 @@
+{
+  "name": "gym-tracker-migration",
+  "version": "1.0.0",
+  "private": true,
+  "description": "One-time data migration: Azure SQL -> Supabase",
+  "scripts": {
+    "export": "node export-azure-data.js",
+    "import": "node import-to-supabase.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.4",
+    "dotenv": "^16.4.5",
+    "mssql": "^11.0.1"
+  }
+}
