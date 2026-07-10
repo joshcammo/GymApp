@@ -5,15 +5,21 @@ import {
   KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { COLORS } from '../constants/colors';
 import { FONT, RADIUS } from '../constants/theme';
+import { authStyles } from '../constants/authStyles';
+import { RootStackParamList } from '../types';
 import { supabase } from '../lib/supabase';
 import { Logo } from '../components/Logo';
 import { GradientButton } from '../components/GradientButton';
 import { haptics } from '../utils/haptics';
 
-export function LoginScreen() {
+type Nav = NativeStackNavigationProp<RootStackParamList, 'Login'>;
+interface Props { navigation: Nav }
+
+export function LoginScreen({ navigation }: Props) {
   const [mode,            setMode]            = useState<'signIn' | 'signUp'>('signIn');
   const [email,           setEmail]           = useState('');
   const [password,        setPassword]        = useState('');
@@ -115,10 +121,10 @@ export function LoginScreen() {
           </View>
 
           {/* ── Form card ── */}
-          <View style={styles.formCard}>
-            <Text style={styles.label}>Email</Text>
+          <View style={authStyles.formCard}>
+            <Text style={authStyles.label}>Email</Text>
             <TextInput
-              style={styles.input}
+              style={authStyles.input}
               value={email}
               onChangeText={setEmail}
               placeholder="you@example.com"
@@ -129,9 +135,9 @@ export function LoginScreen() {
               returnKeyType="next"
             />
 
-            <Text style={styles.label}>Password</Text>
+            <Text style={authStyles.label}>Password</Text>
             <TextInput
-              style={styles.input}
+              style={authStyles.input}
               value={password}
               onChangeText={setPassword}
               placeholder="••••••••"
@@ -145,9 +151,9 @@ export function LoginScreen() {
 
             {isSignUp && (
               <>
-                <Text style={styles.label}>Confirm Password</Text>
+                <Text style={authStyles.label}>Confirm Password</Text>
                 <TextInput
-                  style={styles.input}
+                  style={authStyles.input}
                   value={confirmPassword}
                   onChangeText={setConfirmPassword}
                   placeholder="••••••••"
@@ -167,6 +173,17 @@ export function LoginScreen() {
               loading={submitting}
               style={styles.submitBtn}
             />
+
+            {!isSignUp && (
+              <TouchableOpacity
+                style={styles.forgotBtn}
+                onPress={() => navigation.navigate('ForgotPassword')}
+                disabled={submitting}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.forgotText}>Forgot password?</Text>
+              </TouchableOpacity>
+            )}
           </View>
 
           {/* ── Mode toggle ── */}
@@ -209,34 +226,16 @@ const styles = StyleSheet.create({
     color:      COLORS.textSub,
     textAlign:  'center',
   },
-  formCard: {
-    backgroundColor: COLORS.bgAlt,
-    borderRadius:    RADIUS.xl,
-    borderWidth:      1,
-    borderColor:      COLORS.cardBorder,
-    padding:         20,
-  },
-  label: {
-    fontFamily:    FONT.semibold,
-    fontSize:      12,
-    color:         COLORS.textSub,
-    marginBottom:   8,
-    letterSpacing: 1,
-    textTransform: 'uppercase',
-  },
-  input: {
-    backgroundColor:   COLORS.card,
-    borderRadius:      RADIUS.md,
-    borderWidth:        1,
-    borderColor:        COLORS.border,
-    paddingHorizontal: 16,
-    paddingVertical:   14,
-    color:             COLORS.text,
-    fontSize:          16,
-    marginBottom:      18,
-  },
   submitBtn: {
     marginTop: 6,
+  },
+  forgotBtn: {
+    marginTop:  16,
+    alignItems: 'center',
+  },
+  forgotText: {
+    fontSize: 13,
+    color:    COLORS.textSub,
   },
   toggleModeBtn: {
     marginTop:  24,
