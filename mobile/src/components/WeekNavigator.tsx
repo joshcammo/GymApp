@@ -1,6 +1,11 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
+import { Feather } from '@expo/vector-icons';
+
 import { COLORS } from '../constants/colors';
+import { FONT, RADIUS } from '../constants/theme';
+import { PressableScale } from './PressableScale';
+import { haptics } from '../utils/haptics';
 
 interface Props {
   weekNumber: number;
@@ -13,15 +18,23 @@ interface Props {
 export function WeekNavigator({ weekNumber, weekRange, weekOffset, onPrev, onNext }: Props) {
   const isCurrentWeek = weekOffset === 0;
 
+  const prev = () => { haptics.tap(); onPrev(); };
+  const next = () => { haptics.tap(); onNext(); };
+
   return (
     <View style={styles.container}>
-      <TouchableOpacity onPress={onPrev} style={styles.arrow} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
-        <Text style={styles.arrowText}>‹</Text>
-      </TouchableOpacity>
+      <PressableScale
+        onPress={prev}
+        style={styles.arrowBtn}
+        hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+        pressScale={0.9}
+      >
+        <Feather name="chevron-left" size={22} color={COLORS.textSub} />
+      </PressableScale>
 
       <View style={styles.middle}>
         <View style={styles.weekRow}>
-          <Text style={styles.weekLabel}>Week</Text>
+          <Text style={styles.weekLabel}>WEEK</Text>
           <Text style={styles.weekNumber}>{weekNumber}</Text>
           {isCurrentWeek && (
             <View style={styles.nowBadge}>
@@ -32,69 +45,78 @@ export function WeekNavigator({ weekNumber, weekRange, weekOffset, onPrev, onNex
         <Text style={styles.range}>{weekRange}</Text>
       </View>
 
-      <TouchableOpacity onPress={onNext} style={styles.arrow} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
-        <Text style={styles.arrowText}>›</Text>
-      </TouchableOpacity>
+      <PressableScale
+        onPress={next}
+        style={styles.arrowBtn}
+        hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+        pressScale={0.9}
+      >
+        <Feather name="chevron-right" size={22} color={COLORS.textSub} />
+      </PressableScale>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection:  'row',
-    alignItems:     'center',
-    paddingHorizontal: 20,
-    paddingVertical:   14,
-    backgroundColor: COLORS.bgAlt,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    flexDirection:    'row',
+    alignItems:       'center',
+    marginHorizontal: 16,
+    marginBottom:     14,
+    paddingHorizontal: 14,
+    paddingVertical:   12,
+    backgroundColor:  COLORS.bgAlt,
+    borderRadius:     RADIUS.lg,
+    borderWidth:       1,
+    borderColor:       COLORS.cardBorder,
   },
-  arrow: {
-    width: 36,
-    alignItems: 'center',
-  },
-  arrowText: {
-    fontSize: 28,
-    color:    COLORS.textSub,
-    lineHeight: 32,
+  arrowBtn: {
+    width:           40,
+    height:          40,
+    borderRadius:    RADIUS.pill,
+    backgroundColor: COLORS.card,
+    borderWidth:      1,
+    borderColor:      COLORS.border,
+    alignItems:      'center',
+    justifyContent:  'center',
   },
   middle: {
-    flex:      1,
+    flex:       1,
     alignItems: 'center',
   },
   weekRow: {
     flexDirection: 'row',
     alignItems:    'center',
-    gap:           6,
+    gap:           7,
   },
   weekLabel: {
-    fontSize:   14,
-    color:      COLORS.textMuted,
-    fontWeight: '500',
+    fontFamily:    FONT.semibold,
+    fontSize:      11,
+    color:         COLORS.textMuted,
+    letterSpacing: 1.5,
   },
   weekNumber: {
-    fontSize:   22,
-    fontWeight: '800',
+    fontFamily: FONT.bold,
+    fontSize:   24,
     color:      COLORS.text,
-    letterSpacing: -0.5,
   },
   nowBadge: {
-    backgroundColor: COLORS.primaryBg,
-    borderRadius:    6,
-    paddingHorizontal: 7,
+    backgroundColor:   COLORS.primaryBg,
+    borderRadius:      RADIUS.pill,
+    paddingHorizontal: 8,
     paddingVertical:   2,
-    borderWidth: 1,
-    borderColor: COLORS.primary,
+    borderWidth:       1,
+    borderColor:       COLORS.primary,
   },
   nowText: {
-    fontSize:   10,
-    fontWeight: '700',
-    color:      COLORS.primary,
-    letterSpacing: 0.5,
+    fontFamily:    FONT.bold,
+    fontSize:      10,
+    color:         COLORS.primary,
+    letterSpacing: 1,
   },
   range: {
-    fontSize:  13,
+    fontSize:  12,
     color:     COLORS.textMuted,
-    marginTop: 3,
+    marginTop: 2,
   },
 });

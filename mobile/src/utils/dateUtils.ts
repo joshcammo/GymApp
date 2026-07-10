@@ -39,9 +39,9 @@ export function toDateStr(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
-/** 'May 22' */
-export function fmtShortDate(date: Date): string {
-  return date.toLocaleDateString('en-GB', { month: 'short', day: 'numeric' });
+/** Parse a 'YYYY-MM-DD' string at midday, avoiding timezone day-rollover */
+export function parseDateStr(dateStr: string): Date {
+  return new Date(`${dateStr}T12:00:00`);
 }
 
 /** 'May 19 – May 25, 2024' */

@@ -1,31 +1,36 @@
 /**
- * App colour palette — dark gym theme with orange accent
+ * App colour palette — deep charcoal gym theme with ember-orange accent.
+ *
+ * Layering model (darkest → lightest):
+ *   bg → bgAlt → card → cardRaised
+ * Borders are translucent white so they read consistently on every layer.
  */
 export const COLORS = {
   // Backgrounds
-  bg:          '#111111',
-  bgAlt:       '#181818',
-  card:        '#1E1E1E',
-  cardBorder:  '#2A2A2A',
+  bg:          '#0B0B0E',
+  bgAlt:       '#111116',
+  card:        '#17171D',
+  cardRaised:  '#1D1D25',
+  cardBorder:  'rgba(255, 255, 255, 0.07)',
 
-  // Primary accent — energetic orange
+  // Primary accent — ember orange
   primary:     '#FF6B2B',
-  primaryDark: '#CC5520',
+  primaryDark: '#E5541A',
   primaryLight:'#FF8C55',
-  primaryBg:   'rgba(255, 107, 43, 0.14)',
+  primaryBg:   'rgba(255, 107, 43, 0.12)',
 
   // Text
-  text:        '#FFFFFF',
-  textSub:     '#AAAAAA',
-  textMuted:   '#555555',
+  text:        '#F7F7F9',
+  textSub:     '#A8A8B3',
+  textMuted:   '#62626E',
 
   // UI
-  border:      '#2C2C2C',
-  divider:     '#242424',
+  border:      'rgba(255, 255, 255, 0.08)',
+  divider:     'rgba(255, 255, 255, 0.05)',
 
   // Semantic
-  danger:      '#FF4545',
-  dangerBg:    'rgba(255, 69, 69, 0.12)',
-  success:     '#44D188',
-  successBg:   'rgba(68, 209, 136, 0.12)',
+  danger:      '#FF5C5C',
+  dangerBg:    'rgba(255, 92, 92, 0.12)',
+  success:     '#3EDC97',
+  successBg:   'rgba(62, 220, 151, 0.12)',
 } as const;

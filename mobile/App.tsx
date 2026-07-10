@@ -6,8 +6,15 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import type { Session } from '@supabase/supabase-js';
+import {
+  useFonts,
+  SpaceGrotesk_500Medium,
+  SpaceGrotesk_600SemiBold,
+  SpaceGrotesk_700Bold,
+} from '@expo-google-fonts/space-grotesk';
 
 import { COLORS } from './src/constants/colors';
+import { FONT } from './src/constants/theme';
 import { RootStackParamList } from './src/types';
 import { supabase } from './src/lib/supabase';
 import { LoginScreen }       from './src/screens/LoginScreen';
@@ -18,8 +25,16 @@ import { AddExerciseScreen } from './src/screens/AddExerciseScreen';
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function App() {
-  const [session, setSession]         = useState<Session | null>(null);
+  const [session, setSession]           = useState<Session | null>(null);
   const [initializing, setInitializing] = useState(true);
+
+  // If loading fails we proceed with system fonts rather than blocking the app.
+  const [fontsLoaded, fontError] = useFonts({
+    SpaceGrotesk_500Medium,
+    SpaceGrotesk_600SemiBold,
+    SpaceGrotesk_700Bold,
+  });
+  const fontsReady = fontsLoaded || !!fontError;
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -34,7 +49,7 @@ export default function App() {
     return () => subscription.subscription.unsubscribe();
   }, []);
 
-  if (initializing) {
+  if (initializing || !fontsReady) {
     return (
       <View style={{ flex: 1, backgroundColor: COLORS.bg, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator color={COLORS.primary} size="large" />
@@ -51,12 +66,12 @@ export default function App() {
             headerStyle: {
               backgroundColor: COLORS.bgAlt,
             },
-            headerTintColor:       COLORS.text,
+            headerTintColor: COLORS.text,
             headerTitleStyle: {
-              fontWeight: '700',
-              fontSize:    17,
+              fontFamily: FONT.semibold,
+              fontSize:   17,
             },
-            headerShadowVisible:   false,
+            headerShadowVisible: false,
             contentStyle: {
               backgroundColor: COLORS.bg,
             },
