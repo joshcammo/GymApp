@@ -10,9 +10,19 @@ import { COLORS } from '../constants/colors';
 import { supabase } from '../lib/supabase';
 
 export function LoginScreen() {
-  const [email,    setEmail]    = useState('');
-  const [password, setPassword] = useState('');
-  const [signingIn, setSigningIn] = useState(false);
+  const [mode,            setMode]            = useState<'signIn' | 'signUp'>('signIn');
+  const [email,           setEmail]           = useState('');
+  const [password,        setPassword]        = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [submitting,      setSubmitting]      = useState(false);
+
+  const isSignUp = mode === 'signUp';
+
+  const toggleMode = () => {
+    setMode(m => (m === 'signIn' ? 'signUp' : 'signIn'));
+    setPassword('');
+    setConfirmPassword('');
+  };
 
   const handleSignIn = async () => {
     if (!email.trim() || !password) {
@@ -20,7 +30,7 @@ export function LoginScreen() {
       return;
     }
 
-    setSigningIn(true);
+    setSubmitting(true);
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email:    email.trim(),
@@ -31,9 +41,51 @@ export function LoginScreen() {
     } catch (e) {
       Alert.alert('Sign in failed', (e as Error).message ?? 'Check your credentials and connection.');
     } finally {
-      setSigningIn(false);
+      setSubmitting(false);
     }
   };
+
+  const handleSignUp = async () => {
+    if (!email.trim() || !password || !confirmPassword) {
+      Alert.alert('Missing info', 'Fill in your email and password.');
+      return;
+    }
+    if (password.length < 6) {
+      Alert.alert('Weak password', 'Password must be at least 6 characters.');
+      return;
+    }
+    if (password !== confirmPassword) {
+      Alert.alert('Passwords don’t match', 'Double-check your password and try again.');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email:    email.trim(),
+        password,
+      });
+      if (error) throw error;
+
+      if (!data.session) {
+        // Email confirmation is required before a session is issued.
+        Alert.alert(
+          'Confirm your email',
+          'We sent you a confirmation link. Verify your email, then sign in.'
+        );
+        setMode('signIn');
+        setPassword('');
+        setConfirmPassword('');
+      }
+      // If a session was returned, the auth state listener in App.tsx switches to the main stack.
+    } catch (e) {
+      Alert.alert('Sign up failed', (e as Error).message ?? 'Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleSubmit = () => (isSignUp ? handleSignUp() : handleSignIn());
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -43,7 +95,9 @@ export function LoginScreen() {
       >
         <View style={styles.content}>
           <Text style={styles.title}>Gym Tracker</Text>
-          <Text style={styles.subtitle}>Sign in to view your workouts</Text>
+          <Text style={styles.subtitle}>
+            {isSignUp ? 'Create an account to get started' : 'Sign in to view your workouts'}
+          </Text>
 
           <Text style={styles.label}>Email</Text>
           <TextInput
@@ -67,22 +121,52 @@ export function LoginScreen() {
             placeholderTextColor={COLORS.textMuted}
             secureTextEntry
             autoCapitalize="none"
-            autoComplete="password"
-            returnKeyType="done"
-            onSubmitEditing={handleSignIn}
+            autoComplete={isSignUp ? 'password-new' : 'password'}
+            returnKeyType={isSignUp ? 'next' : 'done'}
+            onSubmitEditing={isSignUp ? undefined : handleSubmit}
           />
 
+          {isSignUp && (
+            <>
+              <Text style={styles.label}>Confirm Password</Text>
+              <TextInput
+                style={styles.input}
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                placeholder="••••••••"
+                placeholderTextColor={COLORS.textMuted}
+                secureTextEntry
+                autoCapitalize="none"
+                autoComplete="password-new"
+                returnKeyType="done"
+                onSubmitEditing={handleSubmit}
+              />
+            </>
+          )}
+
           <TouchableOpacity
-            style={[styles.signInBtn, signingIn && styles.signInBtnDisabled]}
-            onPress={handleSignIn}
-            disabled={signingIn}
+            style={[styles.signInBtn, submitting && styles.signInBtnDisabled]}
+            onPress={handleSubmit}
+            disabled={submitting}
             activeOpacity={0.85}
           >
-            {signingIn ? (
+            {submitting ? (
               <ActivityIndicator color="#FFFFFF" />
             ) : (
-              <Text style={styles.signInBtnText}>Sign In</Text>
+              <Text style={styles.signInBtnText}>{isSignUp ? 'Sign Up' : 'Sign In'}</Text>
             )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.toggleModeBtn}
+            onPress={toggleMode}
+            disabled={submitting}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.toggleModeText}>
+              {isSignUp ? 'Already have an account? ' : "Don't have an account? "}
+              <Text style={styles.toggleModeTextAccent}>{isSignUp ? 'Sign In' : 'Sign Up'}</Text>
+            </Text>
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
@@ -154,5 +238,17 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color:      '#FFFFFF',
     letterSpacing: 0.3,
+  },
+  toggleModeBtn: {
+    marginTop:  20,
+    alignItems: 'center',
+  },
+  toggleModeText: {
+    fontSize: 14,
+    color:    COLORS.textSub,
+  },
+  toggleModeTextAccent: {
+    color:      COLORS.primary,
+    fontWeight: '700',
   },
 });

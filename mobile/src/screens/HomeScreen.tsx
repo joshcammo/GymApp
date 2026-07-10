@@ -1,7 +1,8 @@
 import React, { useState, useCallback } from 'react';
 import {
-  View, Text, ScrollView, StyleSheet,
+  View, Text, ScrollView, StyleSheet, Alert,
   ActivityIndicator, RefreshControl, StatusBar,
+  TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -10,6 +11,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { COLORS } from '../constants/colors';
 import { RootStackParamList, DayInfo, Exercise } from '../types';
 import { workoutApi } from '../services/api';
+import { supabase } from '../lib/supabase';
 import { WeekNavigator } from '../components/WeekNavigator';
 import { DayCard } from '../components/DayCard';
 import { EmptyState } from '../components/EmptyState';
@@ -64,6 +66,20 @@ export function HomeScreen({ navigation }: Props) {
     loadData(false);
   };
 
+  const handleSignOut = () => {
+    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text:  'Sign Out',
+        style: 'destructive',
+        onPress: () => {
+          // On success, the auth state listener in App.tsx switches to the login stack.
+          supabase.auth.signOut();
+        },
+      },
+    ]);
+  };
+
   // ── Build per-day info ────────────────────────────────────────
   const days: DayInfo[] = weekDays.map(date => {
     const ds = toDateStr(date);
@@ -86,8 +102,13 @@ export function HomeScreen({ navigation }: Props) {
       {/* ── Header ── */}
       <View style={styles.header}>
         <Text style={styles.title}>GymTracker</Text>
-        <View style={styles.weekPill}>
-          <Text style={styles.weekPillText}>Week {weekNumber}</Text>
+        <View style={styles.headerRight}>
+          <View style={styles.weekPill}>
+            <Text style={styles.weekPillText}>Week {weekNumber}</Text>
+          </View>
+          <TouchableOpacity onPress={handleSignOut} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <Text style={styles.signOutText}>Sign Out</Text>
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -163,6 +184,11 @@ const styles = StyleSheet.create({
     color:         COLORS.text,
     letterSpacing: -0.5,
   },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems:    'center',
+    gap:           14,
+  },
   weekPill: {
     backgroundColor: COLORS.primaryBg,
     borderRadius:    20,
@@ -174,6 +200,11 @@ const styles = StyleSheet.create({
   weekPillText: {
     color:      COLORS.primary,
     fontWeight: '700',
+    fontSize:   13,
+  },
+  signOutText: {
+    color:      COLORS.textMuted,
+    fontWeight: '600',
     fontSize:   13,
   },
   centred: {
