@@ -17,10 +17,12 @@ import { COLORS } from './src/constants/colors';
 import { FONT } from './src/constants/theme';
 import { RootStackParamList } from './src/types';
 import { supabase } from './src/lib/supabase';
-import { LoginScreen }       from './src/screens/LoginScreen';
-import { HomeScreen }        from './src/screens/HomeScreen';
-import { DayDetailScreen }   from './src/screens/DayDetailScreen';
-import { AddExerciseScreen } from './src/screens/AddExerciseScreen';
+import { LoginScreen }           from './src/screens/LoginScreen';
+import { HomeScreen }            from './src/screens/HomeScreen';
+import { SettingsScreen }        from './src/screens/SettingsScreen';
+import { ChangePasswordScreen }  from './src/screens/ChangePasswordScreen';
+import { DayDetailScreen }       from './src/screens/DayDetailScreen';
+import { AddExerciseScreen }     from './src/screens/AddExerciseScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -84,6 +86,15 @@ export default function App() {
                 name="Home"
                 component={HomeScreen}
                 options={{ headerShown: false }}
+              />
+              <Stack.Screen
+                name="Settings"
+                component={SettingsScreen}
+              />
+              <Stack.Screen
+                name="ChangePassword"
+                component={ChangePasswordScreen}
+                options={{ title: 'Change Password' }}
               />
               <Stack.Screen
                 name="DayDetail"

@@ -8,6 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { COLORS } from '../constants/colors';
 import { FONT, RADIUS } from '../constants/theme';
+import { formStyles } from '../constants/formStyles';
 import { supabase } from '../lib/supabase';
 import { Logo } from '../components/Logo';
 import { GradientButton } from '../components/GradientButton';
@@ -116,9 +117,9 @@ export function LoginScreen() {
 
           {/* ── Form card ── */}
           <View style={styles.formCard}>
-            <Text style={styles.label}>Email</Text>
+            <Text style={formStyles.label}>Email</Text>
             <TextInput
-              style={styles.input}
+              style={formStyles.input}
               value={email}
               onChangeText={setEmail}
               placeholder="you@example.com"
@@ -129,9 +130,9 @@ export function LoginScreen() {
               returnKeyType="next"
             />
 
-            <Text style={styles.label}>Password</Text>
+            <Text style={formStyles.label}>Password</Text>
             <TextInput
-              style={styles.input}
+              style={formStyles.input}
               value={password}
               onChangeText={setPassword}
               placeholder="••••••••"
@@ -145,9 +146,9 @@ export function LoginScreen() {
 
             {isSignUp && (
               <>
-                <Text style={styles.label}>Confirm Password</Text>
+                <Text style={formStyles.label}>Confirm Password</Text>
                 <TextInput
-                  style={styles.input}
+                  style={formStyles.input}
                   value={confirmPassword}
                   onChangeText={setConfirmPassword}
                   placeholder="••••••••"
@@ -215,25 +216,6 @@ const styles = StyleSheet.create({
     borderWidth:      1,
     borderColor:      COLORS.cardBorder,
     padding:         20,
-  },
-  label: {
-    fontFamily:    FONT.semibold,
-    fontSize:      12,
-    color:         COLORS.textSub,
-    marginBottom:   8,
-    letterSpacing: 1,
-    textTransform: 'uppercase',
-  },
-  input: {
-    backgroundColor:   COLORS.card,
-    borderRadius:      RADIUS.md,
-    borderWidth:        1,
-    borderColor:        COLORS.border,
-    paddingHorizontal: 16,
-    paddingVertical:   14,
-    color:             COLORS.text,
-    fontSize:          16,
-    marginBottom:      18,
   },
   submitBtn: {
     marginTop: 6,
