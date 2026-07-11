@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import {
-  View, ScrollView, StyleSheet, Alert,
+  View, ScrollView, StyleSheet,
   ActivityIndicator, RefreshControl, StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -12,13 +12,11 @@ import { COLORS } from '../constants/colors';
 import { RADIUS } from '../constants/theme';
 import { RootStackParamList, DayInfo, Exercise } from '../types';
 import { workoutApi } from '../services/api';
-import { supabase } from '../lib/supabase';
 import { Logo, Wordmark } from '../components/Logo';
 import { PressableScale } from '../components/PressableScale';
 import { WeekNavigator } from '../components/WeekNavigator';
 import { DayCard } from '../components/DayCard';
 import { EmptyState } from '../components/EmptyState';
-import { haptics } from '../utils/haptics';
 import {
   getISOWeek, getWeekStart, getWeekDays,
   toDateStr, fmtWeekRange,
@@ -70,21 +68,6 @@ export function HomeScreen({ navigation }: Props) {
     loadData(false);
   };
 
-  const handleSignOut = () => {
-    haptics.warning();
-    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text:  'Sign Out',
-        style: 'destructive',
-        onPress: () => {
-          // On success, the auth state listener in App.tsx switches to the login stack.
-          supabase.auth.signOut();
-        },
-      },
-    ]);
-  };
-
   // ── Build per-day info ────────────────────────────────────────
   const days: DayInfo[] = weekDays.map(date => {
     const ds = toDateStr(date);
@@ -111,12 +94,12 @@ export function HomeScreen({ navigation }: Props) {
           <Wordmark fontSize={19} letterSpacing={2} />
         </View>
         <PressableScale
-          onPress={handleSignOut}
-          style={styles.signOutBtn}
+          onPress={() => navigation.navigate('Settings')}
+          style={styles.settingsBtn}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           pressScale={0.9}
         >
-          <Feather name="log-out" size={17} color={COLORS.textSub} />
+          <Feather name="settings" size={17} color={COLORS.textSub} />
         </PressableScale>
       </View>
 
@@ -203,7 +186,7 @@ const styles = StyleSheet.create({
     alignItems:    'center',
     gap:           10,
   },
-  signOutBtn: {
+  settingsBtn: {
     width:           38,
     height:          38,
     borderRadius:    RADIUS.pill,

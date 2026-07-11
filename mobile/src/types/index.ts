@@ -31,8 +31,10 @@ export interface DayInfo {
 
 /** Navigation param types */
 export type RootStackParamList = {
-  Login:       undefined;
-  Home:        undefined;
-  DayDetail:   { date: string; dayFull: string };
-  AddExercise: { date: string; dayFull: string; editExercise?: Exercise };
+  Login:          undefined;
+  Home:           undefined;
+  Settings:       undefined;
+  ChangePassword: undefined;
+  DayDetail:      { date: string; dayFull: string };
+  AddExercise:    { date: string; dayFull: string; editExercise?: Exercise };
 };

@@ -12,6 +12,7 @@ import { Feather } from '@expo/vector-icons';
 
 import { COLORS } from '../constants/colors';
 import { FONT, RADIUS } from '../constants/theme';
+import { formStyles } from '../constants/formStyles';
 import { RootStackParamList, WeightUnit } from '../types';
 import { workoutApi, SetInput } from '../services/api';
 import { GradientButton } from '../components/GradientButton';
@@ -174,9 +175,9 @@ export function AddExerciseScreen({ navigation, route }: Props) {
 
           {/* ── Exercise card ── */}
           <View style={styles.sectionCard}>
-            <Text style={styles.label}>Exercise Name</Text>
+            <Text style={formStyles.label}>Exercise Name</Text>
             <TextInput
-              style={styles.input}
+              style={formStyles.input}
               value={name}
               onChangeText={setName}
               placeholder="e.g. Bench Press"
@@ -187,7 +188,7 @@ export function AddExerciseScreen({ navigation, route }: Props) {
             />
 
             {/* Unit toggle (KG / LBS) */}
-            <Text style={styles.label}>Weight Unit</Text>
+            <Text style={formStyles.label}>Weight Unit</Text>
             <View style={styles.unitToggle}>
               {(['KG', 'LBS'] as WeightUnit[]).map(u => (
                 <TouchableOpacity
@@ -207,7 +208,7 @@ export function AddExerciseScreen({ navigation, route }: Props) {
           {/* ── Sets card ── */}
           <View style={styles.sectionCard}>
             <View style={styles.setsHeader}>
-              <Text style={styles.label}>Sets</Text>
+              <Text style={formStyles.label}>Sets</Text>
               <View style={styles.setsCountBubble}>
                 <Text style={styles.setsCount}>{setRows.length}</Text>
               </View>
@@ -229,7 +230,7 @@ export function AddExerciseScreen({ navigation, route }: Props) {
                 </View>
 
                 <TextInput
-                  style={[styles.input, styles.setInput]}
+                  style={[formStyles.input, styles.setInput]}
                   value={row.reps}
                   onChangeText={v => updateRow(i, 'reps', v)}
                   placeholder="—"
@@ -239,7 +240,7 @@ export function AddExerciseScreen({ navigation, route }: Props) {
                 />
 
                 <TextInput
-                  style={[styles.input, styles.setInput]}
+                  style={[formStyles.input, styles.setInput]}
                   value={row.weight}
                   onChangeText={v => updateRow(i, 'weight', v)}
                   placeholder="0"
@@ -273,11 +274,11 @@ export function AddExerciseScreen({ navigation, route }: Props) {
 
           {/* ── Notes card ── */}
           <View style={styles.sectionCard}>
-            <Text style={styles.label}>
+            <Text style={formStyles.label}>
               Notes <Text style={styles.optional}>(optional)</Text>
             </Text>
             <TextInput
-              style={[styles.input, styles.notesInput]}
+              style={[formStyles.input, styles.notesInput]}
               value={notes}
               onChangeText={setNotes}
               placeholder="e.g. Felt strong today, paused reps"
@@ -337,28 +338,9 @@ const styles = StyleSheet.create({
     padding:         16,
     marginBottom:    14,
   },
-  label: {
-    fontFamily:    FONT.semibold,
-    fontSize:      12,
-    color:         COLORS.textSub,
-    marginBottom:   8,
-    letterSpacing: 1,
-    textTransform: 'uppercase',
-  },
   optional: {
     color:         COLORS.textMuted,
     textTransform: 'none',
-  },
-  input: {
-    backgroundColor:   COLORS.card,
-    borderRadius:      RADIUS.md,
-    borderWidth:        1,
-    borderColor:        COLORS.border,
-    paddingHorizontal: 16,
-    paddingVertical:   14,
-    color:             COLORS.text,
-    fontSize:          16,
-    marginBottom:      18,
   },
   unitToggle: {
     flexDirection:   'row',
