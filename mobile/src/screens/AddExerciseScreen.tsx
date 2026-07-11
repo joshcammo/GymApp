@@ -2,7 +2,7 @@ import React, { useState, useEffect, useLayoutEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
   ScrollView, StyleSheet, Alert,
-  KeyboardAvoidingView, Platform,
+  KeyboardAvoidingView, Keyboard, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -16,6 +16,7 @@ import { formStyles } from '../constants/formStyles';
 import { RootStackParamList, WeightUnit } from '../types';
 import { workoutApi, SetInput } from '../services/api';
 import { GradientButton } from '../components/GradientButton';
+import { ExercisePickerModal } from '../components/ExercisePickerModal';
 import { haptics } from '../utils/haptics';
 import { parseDateStr } from '../utils/dateUtils';
 
@@ -52,7 +53,8 @@ export function AddExerciseScreen({ navigation, route }: Props) {
     return [emptyRow()];
   });
 
-  const [saving, setSaving] = useState(false);
+  const [saving,        setSaving]        = useState(false);
+  const [pickerVisible, setPickerVisible] = useState(false);
 
   // Restore last-used unit on first open (skip if editing)
   useEffect(() => {
@@ -175,7 +177,24 @@ export function AddExerciseScreen({ navigation, route }: Props) {
 
           {/* ── Exercise card ── */}
           <View style={styles.sectionCard}>
-            <Text style={formStyles.label}>Exercise Name</Text>
+            <View style={styles.nameHeader}>
+              <Text style={formStyles.label}>Exercise Name</Text>
+              <TouchableOpacity
+                style={styles.browseBtn}
+                onPress={() => {
+                  haptics.tap();
+                  // The autoFocused name field's keyboard would otherwise
+                  // stay up and cover the bottom of the picker sheet.
+                  Keyboard.dismiss();
+                  setPickerVisible(true);
+                }}
+                activeOpacity={0.7}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Feather name="grid" size={13} color={COLORS.primary} />
+                <Text style={styles.browseBtnText}>Browse</Text>
+              </TouchableOpacity>
+            </View>
             <TextInput
               style={formStyles.input}
               value={name}
@@ -298,6 +317,15 @@ export function AddExerciseScreen({ navigation, route }: Props) {
           />
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <ExercisePickerModal
+        visible={pickerVisible}
+        onClose={() => setPickerVisible(false)}
+        onSelect={selected => {
+          setName(selected);
+          setPickerVisible(false);
+        }}
+      />
     </SafeAreaView>
   );
 }
@@ -337,6 +365,26 @@ const styles = StyleSheet.create({
     borderColor:      COLORS.cardBorder,
     padding:         16,
     marginBottom:    14,
+  },
+  nameHeader: {
+    flexDirection:  'row',
+    alignItems:     'center',
+    justifyContent: 'space-between',
+  },
+  browseBtn: {
+    flexDirection:     'row',
+    alignItems:        'center',
+    gap:               5,
+    backgroundColor:   COLORS.primaryBg,
+    borderRadius:      RADIUS.pill,
+    paddingHorizontal: 10,
+    paddingVertical:    4,
+    marginBottom:       8,
+  },
+  browseBtnText: {
+    fontFamily: FONT.bold,
+    fontSize:   12,
+    color:      COLORS.primary,
   },
   optional: {
     color:         COLORS.textMuted,
