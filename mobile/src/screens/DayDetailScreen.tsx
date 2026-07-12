@@ -127,7 +127,7 @@ export function DayDetailScreen({ navigation, route }: Props) {
 
       {/* Floating action button */}
       <GradientButton
-        title="Add Exercise"
+        title="Add Exercise."
         icon="plus"
         style={styles.fab}
         onPress={() => navigation.navigate('AddExercise', { date, dayFull })}
