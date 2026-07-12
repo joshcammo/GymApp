@@ -35,6 +35,11 @@ export function ExerciseItem({ exercise, onEdit, onDelete }: Props) {
       <View style={styles.topRow}>
         <View style={styles.accentBar} />
         <Text style={styles.name}>{exercise.name}</Text>
+        {exercise.has_pr && (
+          <View style={styles.prBadge}>
+            <Feather name="award" size={11} color={COLORS.success} />
+          </View>
+        )}
         <TouchableOpacity
           style={styles.deleteBtn}
           onPress={onDelete}
@@ -104,6 +109,17 @@ const styles = StyleSheet.create({
     alignItems:      'center',
     justifyContent:  'center',
     marginLeft:      12,
+  },
+  prBadge: {
+    width:           22,
+    height:          22,
+    borderRadius:    RADIUS.pill,
+    backgroundColor: COLORS.successBg,
+    borderWidth:      1,
+    borderColor:      COLORS.success,
+    alignItems:      'center',
+    justifyContent:  'center',
+    marginLeft:      8,
   },
   chipsRow: {
     flexDirection: 'row',

@@ -18,6 +18,7 @@ interface ExerciseRow {
   notes:      string | null;
   created_at: string;
   updated_at: string;
+  has_pr:     boolean;
   exercise_sets: SetRow[];
 }
 
@@ -32,6 +33,7 @@ function mapRow(row: ExerciseRow): Exercise {
     notes:      row.notes,
     created_at: row.created_at,
     updated_at: row.updated_at,
+    has_pr:     row.has_pr,
     sets: [...row.exercise_sets]
       .sort((a, b) => a.set_number - b.set_number)
       .map(s => ({ id: s.id, set_number: s.set_number, reps: s.reps, weight: s.weight })),
@@ -56,10 +58,29 @@ export interface CreateExerciseDto {
   sets:   SetInput[];   // non-empty
 }
 
+/** Per-set PR flags, as returned by the create/update RPCs. */
+export interface SetPrResult {
+  set_number:   number;
+  is_weight_pr: boolean;
+  is_e1rm_pr:   boolean;
+}
+
+export interface SaveExerciseResult {
+  exercise: Exercise;
+  prSets:   SetPrResult[];
+}
+
+/** Live "is this set currently a record" flags, from the exercise_set_pr_flags view. */
+export interface SetRecordFlags {
+  set_id:       number;
+  is_weight_pr: boolean;
+  is_e1rm_pr:   boolean;
+}
+
 /** Fetch one exercise (with its sets) by id, in the same shape the RPCs need to return. */
 async function fetchExerciseById(id: number): Promise<Exercise> {
   const { data, error } = await supabase
-    .from('exercises')
+    .from('exercises_with_pr')
     .select(EXERCISE_SELECT)
     .eq('id', id)
     .single();
@@ -71,7 +92,7 @@ export const workoutApi = {
   /** All exercises in [startDate, endDate] */
   getByRange: async (startDate: string, endDate: string): Promise<Exercise[]> => {
     const { data, error } = await supabase
-      .from('exercises')
+      .from('exercises_with_pr')
       .select(EXERCISE_SELECT)
       .gte('date', startDate)
       .lte('date', endDate)
@@ -84,7 +105,7 @@ export const workoutApi = {
   /** All exercises on a single day */
   getByDate: async (date: string): Promise<Exercise[]> => {
     const { data, error } = await supabase
-      .from('exercises')
+      .from('exercises_with_pr')
       .select(EXERCISE_SELECT)
       .eq('date', date)
       .order('created_at', { ascending: true });
@@ -92,9 +113,19 @@ export const workoutApi = {
     return (data as unknown as ExerciseRow[]).map(mapRow);
   },
 
+  /** Live per-set record flags for one exercise (used by the edit screen). */
+  getSetRecordFlags: async (exerciseId: number): Promise<SetRecordFlags[]> => {
+    const { data, error } = await supabase
+      .from('exercise_set_pr_flags')
+      .select('set_id, is_weight_pr, is_e1rm_pr')
+      .eq('exercise_id', exerciseId);
+    checkError(error);
+    return data as SetRecordFlags[];
+  },
+
   /** Create a new exercise (with one or more sets), via the transactional RPC */
-  create: async (dto: CreateExerciseDto): Promise<Exercise> => {
-    const { data: newId, error } = await supabase.rpc('create_exercise_with_sets', {
+  create: async (dto: CreateExerciseDto): Promise<SaveExerciseResult> => {
+    const { data, error } = await supabase.rpc('create_exercise_with_sets', {
       p_name:  dto.name,
       p_date:  dto.date,
       p_unit:  dto.unit,
@@ -103,12 +134,14 @@ export const workoutApi = {
       p_sets:  dto.sets,
     });
     checkError(error);
-    return fetchExerciseById(newId as number);
+    const { id, sets: prSets } = data as { id: number; sets: SetPrResult[] };
+    const exercise = await fetchExerciseById(id);
+    return { exercise, prSets };
   },
 
   /** Update an existing exercise. If `sets` is provided, all sets are replaced. */
-  update: async (id: number, dto: Partial<CreateExerciseDto>): Promise<Exercise> => {
-    const { error } = await supabase.rpc('update_exercise_with_sets', {
+  update: async (id: number, dto: Partial<CreateExerciseDto>): Promise<SaveExerciseResult> => {
+    const { data, error } = await supabase.rpc('update_exercise_with_sets', {
       p_id:    id,
       p_name:  dto.name ?? null,
       p_unit:  dto.unit ?? null,
@@ -120,7 +153,9 @@ export const workoutApi = {
       p_sets:  dto.sets ?? null,
     });
     checkError(error);
-    return fetchExerciseById(id);
+    const { sets: prSets } = (data ?? { sets: [] }) as { sets: SetPrResult[] };
+    const exercise = await fetchExerciseById(id);
+    return { exercise, prSets };
   },
 
   /** Delete an exercise (cascades to its sets) */
