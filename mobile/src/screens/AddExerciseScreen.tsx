@@ -14,7 +14,7 @@ import { COLORS } from '../constants/colors';
 import { FONT, RADIUS } from '../constants/theme';
 import { formStyles } from '../constants/formStyles';
 import { RootStackParamList, WeightUnit } from '../types';
-import { workoutApi, SetInput } from '../services/api';
+import { workoutApi, SetInput, SetPrResult } from '../services/api';
 import { GradientButton } from '../components/GradientButton';
 import { ExercisePickerModal } from '../components/ExercisePickerModal';
 import { haptics } from '../utils/haptics';
@@ -26,8 +26,12 @@ interface Props { navigation: Nav; route: Route }
 
 const UNIT_KEY = '@gym_tracker_last_unit';
 
-/** A row in the per-set editor — strings so the input controls them */
+/** A row in the per-set editor — strings so the input controls them.
+ *  `id` (the underlying exercise_sets.id) is carried through so a live
+ *  record badge stays attached to the right row even if earlier rows are
+ *  added/removed before saving; new/unsaved rows have no id yet. */
 interface SetRow {
+  id?:    number;
   reps:   string;
   weight: string;
 }
@@ -46,6 +50,7 @@ export function AddExerciseScreen({ navigation, route }: Props) {
   const [setRows, setSetRows] = useState<SetRow[]>(() => {
     if (editExercise && editExercise.sets.length > 0) {
       return editExercise.sets.map(s => ({
+        id:     s.id,
         reps:   s.reps   != null ? String(s.reps)   : '',
         weight: s.weight != null ? String(s.weight) : '',
       }));
@@ -55,6 +60,10 @@ export function AddExerciseScreen({ navigation, route }: Props) {
 
   const [saving,        setSaving]        = useState(false);
   const [pickerVisible, setPickerVisible] = useState(false);
+  const [prSets,        setPrSets]        = useState<SetPrResult[]>([]);
+  // set ids that are *currently* record holders (live, from exercise_set_pr_flags) —
+  // separate from prSets above, which only reflects the moment a save just happened.
+  const [recordSetIds, setRecordSetIds] = useState<Set<number>>(new Set());
 
   // Restore last-used unit on first open (skip if editing)
   useEffect(() => {
@@ -63,6 +72,21 @@ export function AddExerciseScreen({ navigation, route }: Props) {
       if (saved === 'KG' || saved === 'LBS') setUnit(saved);
     });
   }, []);
+
+  // Load live "currently a record" flags for the sets being edited. A brand-new
+  // exercise has no prior sets to check, so this only applies when editing.
+  useEffect(() => {
+    if (!isEditing || !editExercise) return;
+    workoutApi.getSetRecordFlags(editExercise.id).then(flags => {
+      const ids = flags
+        .filter(f => f.is_weight_pr || f.is_e1rm_pr)
+        .map(f => f.set_id);
+      setRecordSetIds(new Set(ids));
+    }).catch(() => {
+      // Best-effort — a failed fetch here just means no live badges show, it
+      // shouldn't block editing/saving the exercise.
+    });
+  }, [isEditing, editExercise]);
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -137,13 +161,21 @@ export function AddExerciseScreen({ navigation, route }: Props) {
         sets,
       };
 
-      if (isEditing && editExercise) {
-        await workoutApi.update(editExercise.id, payload);
-      } else {
-        await workoutApi.create(payload);
-      }
+      const { prSets: newPrSets } = isEditing && editExercise
+        ? await workoutApi.update(editExercise.id, payload)
+        : await workoutApi.create(payload);
 
       haptics.success();
+
+      const hasPr = newPrSets.some(s => s.is_weight_pr || s.is_e1rm_pr);
+      if (hasPr) {
+        // Save has already completed — this is a deliberate pause so the
+        // PR badge is visible before the screen navigates away, not added
+        // latency on the save itself.
+        setPrSets(newPrSets);
+        await new Promise(resolve => setTimeout(resolve, 800));
+      }
+
       navigation.goBack();
     } catch (e) {
       Alert.alert('Error', (e as Error).message ?? 'Could not save exercise. Check your connection.');
@@ -242,10 +274,19 @@ export function AddExerciseScreen({ navigation, route }: Props) {
             </View>
 
             {/* The set rows */}
-            {setRows.map((row, i) => (
+            {setRows.map((row, i) => {
+              const pr = prSets.find(s => s.set_number === i + 1);
+              const isPr = (!!pr && (pr.is_weight_pr || pr.is_e1rm_pr))
+                || (row.id != null && recordSetIds.has(row.id));
+              return (
               <View key={i} style={styles.setRow}>
                 <View style={styles.setNumberBadge}>
                   <Text style={styles.setNumber}>{i + 1}</Text>
+                  {isPr && (
+                    <View style={styles.prBadge}>
+                      <Feather name="award" size={11} color="#FFFFFF" />
+                    </View>
+                  )}
                 </View>
 
                 <TextInput
@@ -277,7 +318,8 @@ export function AddExerciseScreen({ navigation, route }: Props) {
                   <Feather name="minus" size={17} color={COLORS.danger} />
                 </TouchableOpacity>
               </View>
-            ))}
+              );
+            })}
 
             {/* Add set button */}
             <TouchableOpacity
@@ -467,6 +509,19 @@ const styles = StyleSheet.create({
     borderColor:      COLORS.border,
     alignItems:      'center',
     justifyContent:  'center',
+  },
+  prBadge: {
+    position:        'absolute',
+    top:              -6,
+    right:            -6,
+    width:            18,
+    height:           18,
+    borderRadius:     9,
+    backgroundColor:  COLORS.success,
+    borderWidth:       2,
+    borderColor:       COLORS.bgAlt,
+    alignItems:       'center',
+    justifyContent:   'center',
   },
   setNumber: {
     fontFamily: FONT.bold,

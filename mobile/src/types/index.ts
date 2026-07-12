@@ -17,6 +17,8 @@ export interface Exercise {
   sets:       ExerciseSet[]; // ordered by set_number
   created_at: string;
   updated_at: string;
+  /** True if any of this exercise's sets is currently a weight or e1RM record, computed live. */
+  has_pr:     boolean;
 }
 
 export interface DayInfo {
