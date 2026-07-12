@@ -46,7 +46,16 @@ jobs:
 
       # Commit message is passed via env, not interpolated directly into the
       # run script, so it can't be used for shell/script injection.
+      #
+      # EXPO_PUBLIC_* vars are required here, not just at runtime: Expo's build
+      # tooling inlines process.env.EXPO_PUBLIC_* into the bundle at build time.
+      # mobile/.env is gitignored (never present in this checkout), and without
+      # these set, mobile/src/config/index.ts throws on app startup before any
+      # UI renders — every previous run of this workflow published a bundle
+      # that crashed immediately for exactly this reason.
       - name: Publish EAS Update
         env:
           UPDATE_MESSAGE: ${{ github.event.head_commit.message }}
+          EXPO_PUBLIC_SUPABASE_URL: ${{ vars.EXPO_PUBLIC_SUPABASE_URL }}
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
         run: eas update --branch production --message "$UPDATE_MESSAGE" --non-interactive
