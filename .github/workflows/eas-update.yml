@@ -1,0 +1,52 @@
+name: EAS Update (production)
+
+# Publishes an OTA JS/asset update to the "production" EAS Update channel
+# whenever mobile app code changes land on main. Installed builds on that
+# channel pick this up automatically next time the app is opened — no new
+# build, no new QR code. Native/config changes (new permissions, native
+# modules, app.json plugin changes) are NOT covered by this — those need a
+# new `eas build`, run manually.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "mobile/**"
+      - ".github/workflows/eas-update.yml"
+
+# Avoid two publishes racing onto the same channel if commits land close together.
+concurrency:
+  group: eas-update-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - run: npm ci
+
+      # Commit message is passed via env, not interpolated directly into the
+      # run script, so it can't be used for shell/script injection.
+      - name: Publish EAS Update
+        env:
+          UPDATE_MESSAGE: ${{ github.event.head_commit.message }}
+        run: eas update --branch production --message "$UPDATE_MESSAGE" --non-interactive
