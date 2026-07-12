@@ -15,10 +15,10 @@
 -- by the history-remap step before the identity switch) and the
 -- pg_trgm groundwork for the custom-exercise near-duplicate guard.
 --
--- Seed: 112 global exercises across 11 muscle groups (incl. CORE).
+-- Seed: 114 global exercises across 11 muscle groups (incl. CORE).
 -- The 48 names already in the app's client-side picker are kept
 -- verbatim so their bundled illustrations keep working; image_key
--- slugs for the 64 new entries have art coming with the picker PR.
+-- slugs for the 66 new entries have art coming with the picker PR.
 -- ================================================================
 
 -- Trigram similarity, used by the upcoming custom-exercise
@@ -80,7 +80,7 @@ alter table public.exercises
 
 create index idx_exercises_user_def on public.exercises (user_id, exercise_def_id);
 
--- ── Seed: global catalog (112 exercises) ────────────────────────
+-- ── Seed: global catalog (114 exercises) ────────────────────────
 insert into public.exercise_defs
   (name, muscle_group, secondary_muscles, equipment, movement_pattern, image_key)
 values
@@ -98,7 +98,7 @@ values
   ('Pec Deck',               'CHEST', '{}',                       'MACHINE',    'ISOLATION', 'pec-deck'),
   ('Incline Cable Fly',      'CHEST', '{SHOULDERS}',              'CABLE',      'ISOLATION', 'incline-cable-fly'),
 
-  -- Back (14)
+  -- Back (15)
   ('Deadlift',              'BACK', '{HAMSTRINGS,GLUTES,FOREARMS}', 'BARBELL',    'HINGE',     'deadlift'),
   ('Pull-Ups',              'BACK', '{BICEPS,FOREARMS}',            'BODYWEIGHT', 'PULL',      'pull-ups'),
   ('Lat Pulldown',          'BACK', '{BICEPS}',                     'CABLE',      'PULL',      'lat-pulldown'),
@@ -113,6 +113,7 @@ values
   ('Barbell Shrug',         'BACK', '{FOREARMS}',                   'BARBELL',    'ISOLATION', 'barbell-shrug'),
   ('Rack Pull',             'BACK', '{HAMSTRINGS,GLUTES,FOREARMS}', 'BARBELL',    'HINGE',     'rack-pull'),
   ('Inverted Row',          'BACK', '{BICEPS,CORE}',                'BODYWEIGHT', 'PULL',      'inverted-row'),
+  ('Neutral-Grip Pull-Ups', 'BACK', '{BICEPS,FOREARMS}',            'BODYWEIGHT', 'PULL',      'neutral-grip-pull-ups'),
 
   -- Shoulders (12)
   ('Overhead Press',          'SHOULDERS', '{TRICEPS,CORE}',       'BARBELL',  'PUSH',      'overhead-press'),
@@ -128,7 +129,7 @@ values
   ('Push Press',              'SHOULDERS', '{TRICEPS,QUADS,CORE}', 'BARBELL',  'PUSH',      'push-press'),
   ('Reverse Pec Deck',        'SHOULDERS', '{BACK}',               'MACHINE',  'ISOLATION', 'reverse-pec-deck'),
 
-  -- Biceps (10)
+  -- Biceps (11)
   ('Barbell Curl',          'BICEPS', '{FOREARMS}',      'BARBELL',    'ISOLATION', 'barbell-curl'),
   ('Dumbbell Curl',         'BICEPS', '{FOREARMS}',      'DUMBBELL',   'ISOLATION', 'dumbbell-curl'),
   ('Hammer Curl',           'BICEPS', '{FOREARMS}',      'DUMBBELL',   'ISOLATION', 'hammer-curl'),
@@ -139,6 +140,7 @@ values
   ('Chin-Ups',              'BICEPS', '{BACK,FOREARMS}', 'BODYWEIGHT', 'PULL',      'chin-ups'),
   ('EZ-Bar Curl',           'BICEPS', '{FOREARMS}',      'BARBELL',    'ISOLATION', 'ez-bar-curl'),
   ('Spider Curl',           'BICEPS', '{}',              'DUMBBELL',   'ISOLATION', 'spider-curl'),
+  ('Cable Hammer Curl',     'BICEPS', '{FOREARMS}',      'CABLE',      'ISOLATION', 'cable-hammer-curl'),
 
   -- Triceps (10)
   ('Tricep Pushdown',           'TRICEPS', '{}',                  'CABLE',      'ISOLATION', 'tricep-pushdown'),
