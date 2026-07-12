@@ -13,8 +13,8 @@ import { Feather } from '@expo/vector-icons';
 import { COLORS } from '../constants/colors';
 import { FONT, RADIUS } from '../constants/theme';
 import { formStyles } from '../constants/formStyles';
-import { RootStackParamList, WeightUnit } from '../types';
-import { workoutApi, SetInput, SetPrResult } from '../services/api';
+import { RootStackParamList, WeightUnit, ExerciseDef } from '../types';
+import { workoutApi, catalogApi, SetInput, SetPrResult, ExercisePr } from '../services/api';
 import { GradientButton } from '../components/GradientButton';
 import { ExercisePickerModal } from '../components/ExercisePickerModal';
 import { haptics } from '../utils/haptics';
@@ -42,9 +42,18 @@ export function AddExerciseScreen({ navigation, route }: Props) {
   const { date, dayFull, editExercise } = route.params;
   const isEditing = !!editExercise;
 
-  const [name,  setName]  = useState(editExercise?.name  ?? '');
+  // The chosen catalog/custom exercise. When editing a legacy entry that
+  // predates the catalog (exercise_def_id null), this starts null and the
+  // user must pick — the old free-text name is shown as a hint.
+  const [selectedDef, setSelectedDef] = useState<{ id: number; name: string } | null>(
+    editExercise?.exercise_def_id != null
+      ? { id: editExercise.exercise_def_id, name: editExercise.name }
+      : null
+  );
   const [unit,  setUnit]  = useState<WeightUnit>(editExercise?.unit ?? 'KG');
   const [notes, setNotes] = useState(editExercise?.notes ?? '');
+  // Current best for the selected exercise ("Current PR: 60 KG × 5").
+  const [currentPr, setCurrentPr] = useState<ExercisePr | null>(null);
 
   // Initialise sets — from existing exercise if editing, else one empty row
   const [setRows, setSetRows] = useState<SetRow[]>(() => {
@@ -72,6 +81,18 @@ export function AddExerciseScreen({ navigation, route }: Props) {
       if (saved === 'KG' || saved === 'LBS') setUnit(saved);
     });
   }, []);
+
+  // Fetch the current PR for whatever exercise is selected — the small
+  // "Current PR" chip under the picker field. Best-effort: a failure just
+  // means no chip.
+  useEffect(() => {
+    if (!selectedDef) { setCurrentPr(null); return; }
+    let stale = false;
+    catalogApi.getPr(selectedDef.id)
+      .then(pr => { if (!stale) setCurrentPr(pr); })
+      .catch(() => { if (!stale) setCurrentPr(null); });
+    return () => { stale = true; };
+  }, [selectedDef?.id]);
 
   // Load live "currently a record" flags for the sets being edited. A brand-new
   // exercise has no prior sets to check, so this only applies when editing.
@@ -118,7 +139,7 @@ export function AddExerciseScreen({ navigation, route }: Props) {
 
   // ── Validation ───────────────────────────────────────────────
   const validate = (): string | null => {
-    if (!name.trim()) return 'Please enter an exercise name.';
+    if (!selectedDef) return 'Please choose an exercise from the catalog.';
     if (setRows.length === 0) return 'Add at least one set.';
 
     for (let i = 0; i < setRows.length; i++) {
@@ -154,11 +175,12 @@ export function AddExerciseScreen({ navigation, route }: Props) {
       }));
 
       const payload = {
-        name:  name.trim(),
+        name:  selectedDef!.name,
         date,
         unit,
         notes: notes.trim() || null,
         sets,
+        exerciseDefId: selectedDef!.id,
       };
 
       const { prSets: newPrSets } = isEditing && editExercise
@@ -209,34 +231,36 @@ export function AddExerciseScreen({ navigation, route }: Props) {
 
           {/* ── Exercise card ── */}
           <View style={styles.sectionCard}>
-            <View style={styles.nameHeader}>
-              <Text style={formStyles.label}>Exercise Name</Text>
-              <TouchableOpacity
-                style={styles.browseBtn}
-                onPress={() => {
-                  haptics.tap();
-                  // The autoFocused name field's keyboard would otherwise
-                  // stay up and cover the bottom of the picker sheet.
-                  Keyboard.dismiss();
-                  setPickerVisible(true);
-                }}
-                activeOpacity={0.7}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <Feather name="grid" size={13} color={COLORS.primary} />
-                <Text style={styles.browseBtnText}>Browse</Text>
-              </TouchableOpacity>
-            </View>
-            <TextInput
-              style={formStyles.input}
-              value={name}
-              onChangeText={setName}
-              placeholder="e.g. Bench Press"
-              placeholderTextColor={COLORS.textMuted}
-              autoCapitalize="words"
-              returnKeyType="next"
-              autoFocus={!isEditing}
-            />
+            <Text style={formStyles.label}>Exercise</Text>
+            <TouchableOpacity
+              style={styles.pickerField}
+              onPress={() => {
+                haptics.tap();
+                Keyboard.dismiss();
+                setPickerVisible(true);
+              }}
+              activeOpacity={0.7}
+            >
+              <Feather name="grid" size={15} color={COLORS.primary} />
+              <Text style={selectedDef ? styles.pickerFieldText : styles.pickerFieldPlaceholder}>
+                {selectedDef
+                  ? selectedDef.name
+                  : editExercise
+                    ? `"${editExercise.name}" — pick its catalog exercise`
+                    : 'Choose an exercise'}
+              </Text>
+              <Feather name="chevron-down" size={16} color={COLORS.textMuted} />
+            </TouchableOpacity>
+
+            {currentPr?.best_weight ? (
+              <View style={styles.prChip}>
+                <Feather name="award" size={12} color={COLORS.success} />
+                <Text style={styles.prChipText}>
+                  Current PR: {currentPr.best_weight.weight} {currentPr.best_weight.unit}
+                  {currentPr.best_weight.reps != null ? ` × ${currentPr.best_weight.reps}` : ''}
+                </Text>
+              </View>
+            ) : null}
 
             {/* Unit toggle (KG / LBS) */}
             <Text style={formStyles.label}>Weight Unit</Text>
@@ -363,8 +387,8 @@ export function AddExerciseScreen({ navigation, route }: Props) {
       <ExercisePickerModal
         visible={pickerVisible}
         onClose={() => setPickerVisible(false)}
-        onSelect={selected => {
-          setName(selected);
+        onSelect={(def: ExerciseDef) => {
+          setSelectedDef({ id: def.id, name: def.name });
           setPickerVisible(false);
         }}
       />
@@ -408,25 +432,47 @@ const styles = StyleSheet.create({
     padding:         16,
     marginBottom:    14,
   },
-  nameHeader: {
-    flexDirection:  'row',
-    alignItems:     'center',
-    justifyContent: 'space-between',
-  },
-  browseBtn: {
+  pickerField: {
     flexDirection:     'row',
     alignItems:        'center',
-    gap:               5,
-    backgroundColor:   COLORS.primaryBg,
+    gap:               10,
+    backgroundColor:   COLORS.card,
+    borderRadius:      RADIUS.md,
+    borderWidth:        1,
+    borderColor:        COLORS.border,
+    paddingHorizontal: 14,
+    paddingVertical:   14,
+    marginBottom:      12,
+  },
+  pickerFieldText: {
+    flex:       1,
+    fontFamily: FONT.semibold,
+    fontSize:   15,
+    color:      COLORS.text,
+  },
+  pickerFieldPlaceholder: {
+    flex:       1,
+    fontFamily: FONT.medium,
+    fontSize:   14,
+    color:      COLORS.textMuted,
+  },
+  prChip: {
+    flexDirection:     'row',
+    alignItems:        'center',
+    gap:               6,
+    alignSelf:         'flex-start',
+    backgroundColor:   COLORS.successBg,
     borderRadius:      RADIUS.pill,
+    borderWidth:        1,
+    borderColor:        COLORS.success,
     paddingHorizontal: 10,
     paddingVertical:    4,
-    marginBottom:       8,
+    marginBottom:      12,
   },
-  browseBtnText: {
+  prChipText: {
     fontFamily: FONT.bold,
     fontSize:   12,
-    color:      COLORS.primary,
+    color:      COLORS.success,
   },
   optional: {
     color:         COLORS.textMuted,

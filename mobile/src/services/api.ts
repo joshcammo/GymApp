@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase';
-import { Exercise, WeightUnit } from '../types';
+import { Exercise, ExerciseDef, MuscleGroup, WeightUnit } from '../types';
 
 const EXERCISE_SELECT = '*, exercise_sets(*)';
 
@@ -18,6 +18,7 @@ interface ExerciseRow {
   notes:      string | null;
   created_at: string;
   updated_at: string;
+  exercise_def_id: number | null;
   has_pr:     boolean;
   exercise_sets: SetRow[];
 }
@@ -33,6 +34,7 @@ function mapRow(row: ExerciseRow): Exercise {
     notes:      row.notes,
     created_at: row.created_at,
     updated_at: row.updated_at,
+    exercise_def_id: row.exercise_def_id,
     has_pr:     row.has_pr,
     sets: [...row.exercise_sets]
       .sort((a, b) => a.set_number - b.set_number)
@@ -56,6 +58,8 @@ export interface CreateExerciseDto {
   unit:   WeightUnit;
   notes?: string | null;
   sets:   SetInput[];   // non-empty
+  /** Catalog/custom def id. Always set by the picker flow. */
+  exerciseDefId?: number | null;
 }
 
 /** Per-set PR flags, as returned by the create/update RPCs. */
@@ -132,6 +136,7 @@ export const workoutApi = {
       // '' (not null) tells the RPC "no notes" — see update()'s comment below.
       p_notes: dto.notes ?? '',
       p_sets:  dto.sets,
+      p_exercise_def_id: dto.exerciseDefId ?? null,
     });
     checkError(error);
     const { id, sets: prSets } = data as { id: number; sets: SetPrResult[] };
@@ -151,6 +156,8 @@ export const workoutApi = {
       // how AddExerciseScreen represents an emptied field) means clear it.
       p_notes: dto.notes === undefined ? null : (dto.notes ?? ''),
       p_sets:  dto.sets ?? null,
+      // null = leave the existing link unchanged
+      p_exercise_def_id: dto.exerciseDefId ?? null,
     });
     checkError(error);
     const { sets: prSets } = (data ?? { sets: [] }) as { sets: SetPrResult[] };
@@ -165,5 +172,79 @@ export const workoutApi = {
     if (!data || data.length === 0) {
       throw new Error('Exercise not found — it may have already been deleted.');
     }
+  },
+};
+
+// ── Exercise catalog ─────────────────────────────────────────────
+
+interface ExerciseDefRow {
+  id:               number;
+  user_id:          string | null;
+  name:             string;
+  muscle_group:     MuscleGroup;
+  equipment:        string;
+  movement_pattern: string | null;
+  image_key:        string | null;
+}
+
+/** One "did you mean?" candidate from create_custom_exercise. */
+export interface CustomSuggestion {
+  id:           number;
+  name:         string;
+  muscle_group: MuscleGroup;
+  is_custom:    boolean;
+  similarity:   number;
+}
+
+export type CreateCustomResult =
+  | { created: true;  def: { id: number; name: string; muscle_group: MuscleGroup; equipment: string } }
+  | { created: false; suggestions: CustomSuggestion[] };
+
+/** Best current lifts for one exercise def, or nulls if never logged. */
+export interface ExercisePr {
+  best_weight: { weight: number; unit: WeightUnit; reps: number | null } | null;
+  best_e1rm:   { weight: number; unit: WeightUnit; reps: number; e1rm_kg: number } | null;
+}
+
+export const catalogApi = {
+  /** Global catalog + the caller's customs (RLS scopes the rest out). */
+  list: async (): Promise<ExerciseDef[]> => {
+    const { data, error } = await supabase
+      .from('exercise_defs')
+      .select('id, user_id, name, muscle_group, equipment, movement_pattern, image_key')
+      .order('name', { ascending: true });
+    checkError(error);
+    return (data as ExerciseDefRow[]).map(d => ({
+      id:               d.id,
+      name:             d.name,
+      muscle_group:     d.muscle_group,
+      equipment:        d.equipment,
+      movement_pattern: d.movement_pattern,
+      image_key:        d.image_key,
+      is_custom:        d.user_id !== null,
+    }));
+  },
+
+  /** Create a custom exercise; may return near-match suggestions instead. */
+  createCustom: async (
+    name: string, muscleGroup: MuscleGroup, equipment: string, force = false,
+  ): Promise<CreateCustomResult> => {
+    const { data, error } = await supabase.rpc('create_custom_exercise', {
+      p_name:         name,
+      p_muscle_group: muscleGroup,
+      p_equipment:    equipment,
+      p_force:        force,
+    });
+    checkError(error);
+    return data as CreateCustomResult;
+  },
+
+  /** Current best weight set and best e1RM set for a def (kg-compared server-side). */
+  getPr: async (exerciseDefId: number): Promise<ExercisePr> => {
+    const { data, error } = await supabase.rpc('get_exercise_pr', {
+      p_exercise_def_id: exerciseDefId,
+    });
+    checkError(error);
+    return data as ExercisePr;
   },
 };
