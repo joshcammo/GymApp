@@ -37,6 +37,8 @@ export interface Exercise {
   exercise_def_id: number | null;
   /** True if any of this exercise's sets is currently a weight or e1RM record, computed live. */
   has_pr:     boolean;
+  /** Id of the same-day exercise this is paired with as a superset, if any. Always mutual. */
+  superset_partner_id: number | null;
 }
 
 export interface DayInfo {

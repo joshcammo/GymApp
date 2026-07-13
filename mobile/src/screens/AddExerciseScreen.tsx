@@ -13,10 +13,11 @@ import { Feather } from '@expo/vector-icons';
 import { COLORS } from '../constants/colors';
 import { FONT, RADIUS } from '../constants/theme';
 import { formStyles } from '../constants/formStyles';
-import { RootStackParamList, WeightUnit, ExerciseDef } from '../types';
+import { RootStackParamList, WeightUnit, ExerciseDef, Exercise } from '../types';
 import { workoutApi, catalogApi, SetInput, SetPrResult, ExercisePr } from '../services/api';
 import { GradientButton } from '../components/GradientButton';
 import { ExercisePickerModal } from '../components/ExercisePickerModal';
+import { SupersetPickerModal } from '../components/SupersetPickerModal';
 import { haptics } from '../utils/haptics';
 import { parseDateStr } from '../utils/dateUtils';
 
@@ -54,6 +55,13 @@ export function AddExerciseScreen({ navigation, route }: Props) {
   const [notes, setNotes] = useState(editExercise?.notes ?? '');
   // Current best for the selected exercise ("Current PR: 60 KG × 5").
   const [currentPr, setCurrentPr] = useState<ExercisePr | null>(null);
+
+  // Superset partner — another exercise logged the same day. `name` is
+  // carried alongside the id purely for display in the picker field.
+  const initialPartnerId = editExercise?.superset_partner_id ?? null;
+  const [supersetPartner, setSupersetPartner] = useState<{ id: number; name: string } | null>(null);
+  const [dayExercises, setDayExercises] = useState<Exercise[]>([]);
+  const [supersetPickerVisible, setSupersetPickerVisible] = useState(false);
 
   // Initialise sets — from existing exercise if editing, else one empty row
   const [setRows, setSetRows] = useState<SetRow[]>(() => {
@@ -93,6 +101,22 @@ export function AddExerciseScreen({ navigation, route }: Props) {
       .catch(() => { if (!stale) setCurrentPr(null); });
     return () => { stale = true; };
   }, [selectedDef?.id]);
+
+  // Load this day's other exercises for the superset picker, and resolve
+  // the current partner's name for display (best-effort — a failed fetch
+  // just leaves the picker with nothing to offer).
+  useEffect(() => {
+    workoutApi.getByDate(date)
+      .then(list => {
+        const others = list.filter(e => e.id !== editExercise?.id);
+        setDayExercises(others);
+        if (initialPartnerId != null) {
+          const partner = others.find(e => e.id === initialPartnerId);
+          if (partner) setSupersetPartner({ id: partner.id, name: partner.name });
+        }
+      })
+      .catch(() => {});
+  }, [date, editExercise?.id, initialPartnerId]);
 
   // Load live "currently a record" flags for the sets being edited. A brand-new
   // exercise has no prior sets to check, so this only applies when editing.
@@ -183,9 +207,14 @@ export function AddExerciseScreen({ navigation, route }: Props) {
         exerciseDefId: selectedDef!.id,
       };
 
-      const { prSets: newPrSets } = isEditing && editExercise
+      const { exercise: savedExercise, prSets: newPrSets } = isEditing && editExercise
         ? await workoutApi.update(editExercise.id, payload)
         : await workoutApi.create(payload);
+
+      const partnerId = supersetPartner?.id ?? null;
+      if (partnerId !== initialPartnerId) {
+        await workoutApi.setSupersetPartner(savedExercise.id, partnerId);
+      }
 
       haptics.success();
 
@@ -278,6 +307,26 @@ export function AddExerciseScreen({ navigation, route }: Props) {
                 </TouchableOpacity>
               ))}
             </View>
+
+            {/* Superset partner */}
+            <Text style={formStyles.label}>
+              Superset With <Text style={styles.optional}>(optional)</Text>
+            </Text>
+            <TouchableOpacity
+              style={styles.pickerField}
+              onPress={() => {
+                haptics.tap();
+                Keyboard.dismiss();
+                setSupersetPickerVisible(true);
+              }}
+              activeOpacity={0.7}
+            >
+              <Feather name="link" size={15} color={COLORS.primary} />
+              <Text style={supersetPartner ? styles.pickerFieldText : styles.pickerFieldPlaceholder}>
+                {supersetPartner ? supersetPartner.name : 'None'}
+              </Text>
+              <Feather name="chevron-down" size={16} color={COLORS.textMuted} />
+            </TouchableOpacity>
           </View>
 
           {/* ── Sets card ── */}
@@ -391,6 +440,13 @@ export function AddExerciseScreen({ navigation, route }: Props) {
           setSelectedDef({ id: def.id, name: def.name });
           setPickerVisible(false);
         }}
+      />
+
+      <SupersetPickerModal
+        visible={supersetPickerVisible}
+        exercises={dayExercises}
+        onClose={() => setSupersetPickerVisible(false)}
+        onSelect={setSupersetPartner}
       />
     </SafeAreaView>
   );

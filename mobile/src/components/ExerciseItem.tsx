@@ -11,6 +11,8 @@ interface Props {
   exercise: Exercise;
   onEdit:   () => void;
   onDelete: () => void;
+  /** Shown as a small badge next to the name when part of a superset pair. */
+  supersetLabel?: 'A1' | 'A2';
 }
 
 /** '8 × 60 KG', '60 KG' (no reps) or '12 reps' (bodyweight) */
@@ -21,7 +23,7 @@ function setSummary(s: ExerciseSet, unit: string): string {
   return `${s.reps ?? '?'} reps`;
 }
 
-export function ExerciseItem({ exercise, onEdit, onDelete }: Props) {
+export function ExerciseItem({ exercise, onEdit, onDelete, supersetLabel }: Props) {
   const setsCount = exercise.sets.length;
 
   // If every set is identical, collapse them into one summary chip.
@@ -34,6 +36,11 @@ export function ExerciseItem({ exercise, onEdit, onDelete }: Props) {
     <PressableScale style={styles.container} onPress={onEdit} pressScale={0.98}>
       <View style={styles.topRow}>
         <View style={styles.accentBar} />
+        {supersetLabel && (
+          <View style={styles.supersetBadge}>
+            <Text style={styles.supersetBadgeText}>{supersetLabel}</Text>
+          </View>
+        )}
         <Text style={styles.name}>{exercise.name}</Text>
         {exercise.has_pr && (
           <View style={styles.prBadge}>
@@ -120,6 +127,20 @@ const styles = StyleSheet.create({
     alignItems:      'center',
     justifyContent:  'center',
     marginLeft:      8,
+  },
+  supersetBadge: {
+    backgroundColor:   COLORS.primaryBg,
+    borderRadius:      RADIUS.sm,
+    borderWidth:        1,
+    borderColor:        COLORS.primary,
+    paddingHorizontal: 6,
+    paddingVertical:   2,
+    marginRight:       8,
+  },
+  supersetBadgeText: {
+    fontFamily: FONT.bold,
+    fontSize:   11,
+    color:      COLORS.primary,
   },
   chipsRow: {
     flexDirection: 'row',
