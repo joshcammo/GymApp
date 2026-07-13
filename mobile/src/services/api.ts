@@ -20,6 +20,7 @@ interface ExerciseRow {
   updated_at: string;
   exercise_def_id: number | null;
   has_pr:     boolean;
+  superset_partner_id: number | null;
   exercise_sets: SetRow[];
 }
 
@@ -36,6 +37,7 @@ function mapRow(row: ExerciseRow): Exercise {
     updated_at: row.updated_at,
     exercise_def_id: row.exercise_def_id,
     has_pr:     row.has_pr,
+    superset_partner_id: row.superset_partner_id,
     sets: [...row.exercise_sets]
       .sort((a, b) => a.set_number - b.set_number)
       .map(s => ({ id: s.id, set_number: s.set_number, reps: s.reps, weight: s.weight })),
@@ -172,6 +174,15 @@ export const workoutApi = {
     if (!data || data.length === 0) {
       throw new Error('Exercise not found — it may have already been deleted.');
     }
+  },
+
+  /** Link two same-day exercises as a superset, or unlink with partnerId = null. */
+  setSupersetPartner: async (exerciseId: number, partnerId: number | null): Promise<void> => {
+    const { error } = await supabase.rpc('set_superset_partner', {
+      p_exercise_id: exerciseId,
+      p_partner_id:  partnerId,
+    });
+    checkError(error);
   },
 };
 

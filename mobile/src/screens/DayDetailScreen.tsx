@@ -14,6 +14,7 @@ import { FONT, RADIUS } from '../constants/theme';
 import { RootStackParamList, Exercise } from '../types';
 import { workoutApi } from '../services/api';
 import { ExerciseItem } from '../components/ExerciseItem';
+import { SupersetCard } from '../components/SupersetCard';
 import { EmptyState } from '../components/EmptyState';
 import { GradientButton } from '../components/GradientButton';
 import { haptics } from '../utils/haptics';
@@ -22,6 +23,31 @@ import { parseDateStr } from '../utils/dateUtils';
 type Nav   = NativeStackNavigationProp<RootStackParamList, 'DayDetail'>;
 type Route = RouteProp<RootStackParamList, 'DayDetail'>;
 interface Props { navigation: Nav; route: Route }
+
+type GroupedItem =
+  | { type: 'single';   exercise: Exercise }
+  | { type: 'superset'; a: Exercise; b: Exercise };
+
+/** Pairs up superset partners (both always present — same-day, mutual link
+ *  enforced server-side) in list order, leaving everyone else as singles. */
+function groupExercises(exercises: Exercise[]): GroupedItem[] {
+  const byId = new Map(exercises.map(e => [e.id, e]));
+  const visited = new Set<number>();
+  const result: GroupedItem[] = [];
+
+  for (const e of exercises) {
+    if (visited.has(e.id)) continue;
+    const partner = e.superset_partner_id != null ? byId.get(e.superset_partner_id) : undefined;
+    visited.add(e.id);
+    if (partner && !visited.has(partner.id)) {
+      visited.add(partner.id);
+      result.push({ type: 'superset', a: e, b: partner });
+    } else {
+      result.push({ type: 'single', exercise: e });
+    }
+  }
+  return result;
+}
 
 export function DayDetailScreen({ navigation, route }: Props) {
   const { date, dayFull } = route.params;
@@ -112,13 +138,20 @@ export function DayDetailScreen({ navigation, route }: Props) {
         />
       ) : (
         <FlatList
-          data={exercises}
-          keyExtractor={item => String(item.id)}
-          renderItem={({ item }) => (
+          data={groupExercises(exercises)}
+          keyExtractor={item => item.type === 'single' ? String(item.exercise.id) : `superset-${item.a.id}-${item.b.id}`}
+          renderItem={({ item }) => item.type === 'single' ? (
             <ExerciseItem
-              exercise={item}
-              onEdit={()   => handleEdit(item)}
-              onDelete={() => handleDelete(item.id, item.name)}
+              exercise={item.exercise}
+              onEdit={()   => handleEdit(item.exercise)}
+              onDelete={() => handleDelete(item.exercise.id, item.exercise.name)}
+            />
+          ) : (
+            <SupersetCard
+              a={item.a}
+              b={item.b}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
             />
           )}
           contentContainerStyle={styles.listContent}
