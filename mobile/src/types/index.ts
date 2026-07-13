@@ -1,5 +1,20 @@
 export type WeightUnit = 'KG' | 'LBS';
 
+export type MuscleGroup =
+  | 'CHEST' | 'BACK' | 'SHOULDERS' | 'BICEPS' | 'TRICEPS' | 'FOREARMS'
+  | 'QUADS' | 'HAMSTRINGS' | 'GLUTES' | 'CALVES' | 'CORE';
+
+/** A catalog or custom exercise definition (exercise_defs row) */
+export interface ExerciseDef {
+  id:               number;
+  name:             string;
+  muscle_group:     MuscleGroup;
+  equipment:        string;
+  movement_pattern: string | null;
+  image_key:        string | null;
+  is_custom:        boolean;
+}
+
 /** A single set within an exercise */
 export interface ExerciseSet {
   id?:        number;
@@ -17,6 +32,9 @@ export interface Exercise {
   sets:       ExerciseSet[]; // ordered by set_number
   created_at: string;
   updated_at: string;
+  /** Catalog/custom def this entry is linked to; null only for
+   *  legacy rows logged before the picker cutover. */
+  exercise_def_id: number | null;
   /** True if any of this exercise's sets is currently a weight or e1RM record, computed live. */
   has_pr:     boolean;
 }
