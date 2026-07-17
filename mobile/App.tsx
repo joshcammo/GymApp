@@ -23,6 +23,8 @@ import { SettingsScreen }        from './src/screens/SettingsScreen';
 import { ChangePasswordScreen }  from './src/screens/ChangePasswordScreen';
 import { DayDetailScreen }       from './src/screens/DayDetailScreen';
 import { AddExerciseScreen }     from './src/screens/AddExerciseScreen';
+import { PresetsScreen }         from './src/screens/PresetsScreen';
+import { EditPresetScreen }      from './src/screens/EditPresetScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -103,6 +105,15 @@ export default function App() {
               <Stack.Screen
                 name="AddExercise"
                 component={AddExerciseScreen}
+              />
+              <Stack.Screen
+                name="Presets"
+                component={PresetsScreen}
+                options={{ title: 'Presets' }}
+              />
+              <Stack.Screen
+                name="EditPreset"
+                component={EditPresetScreen}
               />
             </>
           ) : (

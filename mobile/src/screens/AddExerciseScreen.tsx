@@ -18,6 +18,7 @@ import { workoutApi, catalogApi, SetInput, SetPrResult, ExercisePr } from '../se
 import { GradientButton } from '../components/GradientButton';
 import { ExercisePickerModal } from '../components/ExercisePickerModal';
 import { SupersetPickerModal } from '../components/SupersetPickerModal';
+import { RestTimer } from '../components/RestTimer';
 import { haptics } from '../utils/haptics';
 import { parseDateStr } from '../utils/dateUtils';
 
@@ -27,6 +28,14 @@ interface Props { navigation: Nav; route: Route }
 
 const UNIT_KEY = '@gym_tracker_last_unit';
 
+/** A drop performed immediately after a set, no rest between — same
+ *  string-controlled shape as a set row, minus id (drops are never
+ *  independently addressable) and never PR-eligible. */
+interface DropRow {
+  reps:   string;
+  weight: string;
+}
+
 /** A row in the per-set editor — strings so the input controls them.
  *  `id` (the underlying exercise_sets.id) is carried through so a live
  *  record badge stays attached to the right row even if earlier rows are
@@ -35,9 +44,10 @@ interface SetRow {
   id?:    number;
   reps:   string;
   weight: string;
+  drops:  DropRow[];
 }
 
-const emptyRow = (): SetRow => ({ reps: '', weight: '' });
+const emptyRow = (): SetRow => ({ reps: '', weight: '', drops: [] });
 
 export function AddExerciseScreen({ navigation, route }: Props) {
   const { date, dayFull, editExercise } = route.params;
@@ -70,6 +80,10 @@ export function AddExerciseScreen({ navigation, route }: Props) {
         id:     s.id,
         reps:   s.reps   != null ? String(s.reps)   : '',
         weight: s.weight != null ? String(s.weight) : '',
+        drops:  (s.drops ?? []).map(d => ({
+          reps:   d.reps   != null ? String(d.reps)   : '',
+          weight: d.weight != null ? String(d.weight) : '',
+        })),
       }));
     }
     return [emptyRow()];
@@ -140,7 +154,7 @@ export function AddExerciseScreen({ navigation, route }: Props) {
   }, [navigation, isEditing]);
 
   // ── Set row helpers ──────────────────────────────────────────
-  const updateRow = (index: number, field: keyof SetRow, value: string) => {
+  const updateRow = (index: number, field: 'reps' | 'weight', value: string) => {
     setSetRows(prev => prev.map((r, i) => i === index ? { ...r, [field]: value } : r));
   };
 
@@ -154,6 +168,29 @@ export function AddExerciseScreen({ navigation, route }: Props) {
     if (setRows.length <= 1) return; // keep at least one
     haptics.tap();
     setSetRows(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // ── Drop row helpers ─────────────────────────────────────────
+  const addDrop = (rowIndex: number) => {
+    haptics.tap();
+    setSetRows(prev => prev.map((r, i) =>
+      i === rowIndex ? { ...r, drops: [...r.drops, { reps: '', weight: '' }] } : r
+    ));
+  };
+
+  const removeDrop = (rowIndex: number, dropIndex: number) => {
+    haptics.tap();
+    setSetRows(prev => prev.map((r, i) =>
+      i === rowIndex ? { ...r, drops: r.drops.filter((_, di) => di !== dropIndex) } : r
+    ));
+  };
+
+  const updateDrop = (rowIndex: number, dropIndex: number, field: keyof DropRow, value: string) => {
+    setSetRows(prev => prev.map((r, i) =>
+      i === rowIndex
+        ? { ...r, drops: r.drops.map((d, di) => di === dropIndex ? { ...d, [field]: value } : d) }
+        : r
+    ));
   };
 
   const selectUnit = (u: WeightUnit) => {
@@ -180,6 +217,18 @@ export function AddExerciseScreen({ navigation, route }: Props) {
       if (!r.reps && !r.weight) {
         return `${setLabel}: enter at least reps or weight.`;
       }
+
+      for (let di = 0; di < r.drops.length; di++) {
+        const d = r.drops[di];
+        if (!d.reps && !d.weight) continue; // untouched drop row — dropped silently on save
+        const dropLabel = `${setLabel}, Drop ${di + 1}`;
+        if (d.weight && (isNaN(+d.weight) || +d.weight < 0)) {
+          return `${dropLabel}: weight must be 0 or higher.`;
+        }
+        if (d.reps && (isNaN(+d.reps) || +d.reps < 1)) {
+          return `${dropLabel}: reps must be a positive number.`;
+        }
+      }
     }
     return null;
   };
@@ -196,6 +245,15 @@ export function AddExerciseScreen({ navigation, route }: Props) {
       const sets: SetInput[] = setRows.map(r => ({
         reps:   r.reps   ? Number(r.reps)   : null,
         weight: r.weight ? Number(r.weight) : null,
+        // Untouched drop rows (both fields blank) are dropped here rather
+        // than blocked at validation — tapping "Add Drop" then changing
+        // your mind shouldn't require removing the row by hand.
+        drops: r.drops
+          .filter(d => d.reps || d.weight)
+          .map(d => ({
+            reps:   d.reps   ? Number(d.reps)   : null,
+            weight: d.weight ? Number(d.weight) : null,
+          })),
       }));
 
       const payload = {
@@ -352,43 +410,90 @@ export function AddExerciseScreen({ navigation, route }: Props) {
               const isPr = (!!pr && (pr.is_weight_pr || pr.is_e1rm_pr))
                 || (row.id != null && recordSetIds.has(row.id));
               return (
-              <View key={i} style={styles.setRow}>
-                <View style={styles.setNumberBadge}>
-                  <Text style={styles.setNumber}>{i + 1}</Text>
-                  {isPr && (
-                    <View style={styles.prBadge}>
-                      <Feather name="award" size={11} color="#FFFFFF" />
-                    </View>
-                  )}
+              <View key={i} style={styles.setBlock}>
+                <View style={styles.setRow}>
+                  <View style={styles.setNumberBadge}>
+                    <Text style={styles.setNumber}>{i + 1}</Text>
+                    {isPr && (
+                      <View style={styles.prBadge}>
+                        <Feather name="award" size={11} color="#FFFFFF" />
+                      </View>
+                    )}
+                  </View>
+
+                  <TextInput
+                    style={[formStyles.input, styles.setInput]}
+                    value={row.reps}
+                    onChangeText={v => updateRow(i, 'reps', v)}
+                    placeholder="—"
+                    placeholderTextColor={COLORS.textMuted}
+                    keyboardType="number-pad"
+                    returnKeyType="next"
+                  />
+
+                  <TextInput
+                    style={[formStyles.input, styles.setInput]}
+                    value={row.weight}
+                    onChangeText={v => updateRow(i, 'weight', v)}
+                    placeholder="0"
+                    placeholderTextColor={COLORS.textMuted}
+                    keyboardType="decimal-pad"
+                    returnKeyType="next"
+                  />
+
+                  <TouchableOpacity
+                    style={[styles.removeBtn, setRows.length <= 1 && styles.removeBtnDisabled]}
+                    onPress={() => removeRow(i)}
+                    disabled={setRows.length <= 1}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <Feather name="minus" size={17} color={COLORS.danger} />
+                  </TouchableOpacity>
                 </View>
 
-                <TextInput
-                  style={[formStyles.input, styles.setInput]}
-                  value={row.reps}
-                  onChangeText={v => updateRow(i, 'reps', v)}
-                  placeholder="—"
-                  placeholderTextColor={COLORS.textMuted}
-                  keyboardType="number-pad"
-                  returnKeyType="next"
-                />
+                {row.drops.map((drop, di) => (
+                  <View key={di} style={styles.dropRow}>
+                    <View style={styles.dropConnector}>
+                      <Feather name="corner-down-right" size={14} color={COLORS.textMuted} />
+                    </View>
 
-                <TextInput
-                  style={[formStyles.input, styles.setInput]}
-                  value={row.weight}
-                  onChangeText={v => updateRow(i, 'weight', v)}
-                  placeholder="0"
-                  placeholderTextColor={COLORS.textMuted}
-                  keyboardType="decimal-pad"
-                  returnKeyType="next"
-                />
+                    <TextInput
+                      style={[formStyles.input, styles.setInput, styles.dropInput]}
+                      value={drop.reps}
+                      onChangeText={v => updateDrop(i, di, 'reps', v)}
+                      placeholder="—"
+                      placeholderTextColor={COLORS.textMuted}
+                      keyboardType="number-pad"
+                      returnKeyType="next"
+                    />
+
+                    <TextInput
+                      style={[formStyles.input, styles.setInput, styles.dropInput]}
+                      value={drop.weight}
+                      onChangeText={v => updateDrop(i, di, 'weight', v)}
+                      placeholder="0"
+                      placeholderTextColor={COLORS.textMuted}
+                      keyboardType="decimal-pad"
+                      returnKeyType="next"
+                    />
+
+                    <TouchableOpacity
+                      style={styles.removeDropBtn}
+                      onPress={() => removeDrop(i, di)}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                      <Feather name="x" size={14} color={COLORS.danger} />
+                    </TouchableOpacity>
+                  </View>
+                ))}
 
                 <TouchableOpacity
-                  style={[styles.removeBtn, setRows.length <= 1 && styles.removeBtnDisabled]}
-                  onPress={() => removeRow(i)}
-                  disabled={setRows.length <= 1}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  style={styles.addDropBtn}
+                  onPress={() => addDrop(i)}
+                  activeOpacity={0.7}
                 >
-                  <Feather name="minus" size={17} color={COLORS.danger} />
+                  <Feather name="corner-down-right" size={12} color={COLORS.primary} />
+                  <Text style={styles.addDropBtnText}>Add Drop</Text>
                 </TouchableOpacity>
               </View>
               );
@@ -405,6 +510,8 @@ export function AddExerciseScreen({ navigation, route }: Props) {
               <Text style={styles.addSetBtnText}>Add Set</Text>
             </TouchableOpacity>
           </View>
+
+          <RestTimer />
 
           {/* ── Notes card ── */}
           <View style={styles.sectionCard}>
@@ -542,6 +649,7 @@ const styles = StyleSheet.create({
     borderColor:      COLORS.border,
     padding:          4,
     alignSelf:       'flex-start',
+    marginBottom:    12,
   },
   unitBtn: {
     paddingHorizontal: 20,
@@ -596,11 +704,14 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     textAlign:     'center',
   },
+  setBlock: {
+    marginBottom: 10,
+  },
   setRow: {
     flexDirection: 'row',
     alignItems:    'center',
     gap:           8,
-    marginBottom:  8,
+    marginBottom:  6,
   },
   setNumberBadge: {
     width:           36,
@@ -635,6 +746,40 @@ const styles = StyleSheet.create({
     marginBottom:    0,
     paddingVertical: 12,
     textAlign:       'center',
+  },
+  dropRow: {
+    flexDirection: 'row',
+    alignItems:    'center',
+    gap:           8,
+    marginLeft:    36,
+    marginBottom:  6,
+  },
+  dropConnector: {
+    width:      28,
+    alignItems: 'center',
+  },
+  dropInput: {
+    paddingVertical: 9,
+    fontSize:        14,
+  },
+  removeDropBtn: {
+    width:           28,
+    height:          28,
+    borderRadius:    RADIUS.sm,
+    backgroundColor: COLORS.dangerBg,
+    alignItems:      'center',
+    justifyContent:  'center',
+  },
+  addDropBtn: {
+    flexDirection: 'row',
+    alignItems:    'center',
+    gap:           5,
+    marginLeft:    36,
+  },
+  addDropBtnText: {
+    fontFamily: FONT.semibold,
+    fontSize:   12,
+    color:      COLORS.primary,
   },
   removeBtn: {
     width:           36,

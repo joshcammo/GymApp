@@ -50,6 +50,15 @@ export function SettingsScreen({ navigation }: Props) {
       <View style={styles.section}>
         <PressableScale
           style={styles.row}
+          onPress={() => navigation.navigate('Presets')}
+          pressScale={0.98}
+        >
+          <Feather name="layers" size={18} color={COLORS.textSub} />
+          <Text style={styles.rowText}>Presets</Text>
+          <Feather name="chevron-right" size={18} color={COLORS.textMuted} />
+        </PressableScale>
+        <PressableScale
+          style={[styles.row, styles.rowSpaced]}
           onPress={() => navigation.navigate('ChangePassword')}
           pressScale={0.98}
         >
@@ -108,6 +117,9 @@ const styles = StyleSheet.create({
     paddingVertical:   16,
     borderWidth:        1,
     borderColor:        COLORS.cardBorder,
+  },
+  rowSpaced: {
+    marginTop: 10,
   },
   rowText: {
     flex:     1,

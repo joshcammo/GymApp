@@ -9,9 +9,11 @@ interface Props {
   emoji?:      string;
   message:     string;
   subMessage?: string;
+  /** Optional extra content (e.g. a secondary action button) below the text. */
+  action?:     React.ReactNode;
 }
 
-export function EmptyState({ emoji, message, subMessage }: Props) {
+export function EmptyState({ emoji, message, subMessage, action }: Props) {
   return (
     <View style={styles.container}>
       {emoji ? (
@@ -23,6 +25,7 @@ export function EmptyState({ emoji, message, subMessage }: Props) {
       )}
       <Text style={styles.message}>{message}</Text>
       {subMessage ? <Text style={styles.sub}>{subMessage}</Text> : null}
+      {action ? <View style={styles.action}>{action}</View> : null}
     </View>
   );
 }
@@ -55,5 +58,8 @@ const styles = StyleSheet.create({
     textAlign:  'center',
     marginTop:   8,
     lineHeight: 20,
+  },
+  action: {
+    marginTop: 20,
   },
 });
