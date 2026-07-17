@@ -15,12 +15,21 @@ export interface ExerciseDef {
   is_custom:        boolean;
 }
 
+/** A reduced-weight continuation performed immediately after a set, no rest
+ *  between. Never counts toward PR detection — only the parent set does. */
+export interface DropSet {
+  reps:   number | null;
+  weight: number | null;
+}
+
 /** A single set within an exercise */
 export interface ExerciseSet {
   id?:        number;
   set_number: number;
   reps?:      number | null;
   weight?:    number | null;
+  /** Drops performed after this set, in order. Empty if none. */
+  drops:      DropSet[];
 }
 
 export interface Exercise {
@@ -51,6 +60,23 @@ export interface DayInfo {
   exercises:    Exercise[];
 }
 
+/** One exercise within a preset, in saved order. */
+export interface PresetExercise {
+  exercise_def_id: number;
+  name:            string;
+  image_key:       string | null;
+  position:        number;
+}
+
+/** A named, reusable group of exercises (e.g. "Monday - Chest and Triceps"). */
+export interface Preset {
+  id:         number;
+  name:       string;
+  created_at: string;
+  updated_at: string;
+  exercises:  PresetExercise[];
+}
+
 /** Navigation param types */
 export type RootStackParamList = {
   Login:          undefined;
@@ -59,4 +85,6 @@ export type RootStackParamList = {
   ChangePassword: undefined;
   DayDetail:      { date: string; dayFull: string };
   AddExercise:    { date: string; dayFull: string; editExercise?: Exercise };
+  Presets:        undefined;
+  EditPreset:     { preset?: Preset };
 };

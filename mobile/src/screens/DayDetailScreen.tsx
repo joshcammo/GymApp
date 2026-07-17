@@ -17,6 +17,7 @@ import { ExerciseItem } from '../components/ExerciseItem';
 import { SupersetCard } from '../components/SupersetCard';
 import { EmptyState } from '../components/EmptyState';
 import { GradientButton } from '../components/GradientButton';
+import { PresetPickerModal } from '../components/PresetPickerModal';
 import { haptics } from '../utils/haptics';
 import { parseDateStr } from '../utils/dateUtils';
 
@@ -53,6 +54,7 @@ export function DayDetailScreen({ navigation, route }: Props) {
   const { date, dayFull } = route.params;
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [loading,   setLoading]   = useState(true);
+  const [presetPickerVisible, setPresetPickerVisible] = useState(false);
 
   // Pretty header date: 'Thursday, 22 May'
   const displayDate = parseDateStr(date).toLocaleDateString('en-GB', {
@@ -66,13 +68,22 @@ export function DayDetailScreen({ navigation, route }: Props) {
     navigation.setOptions({
       title: dayFull,
       headerRight: () => (
-        <TouchableOpacity
-          style={styles.headerAdd}
-          onPress={() => navigation.navigate('AddExercise', { date, dayFull })}
-        >
-          <Feather name="plus" size={15} color={COLORS.primary} />
-          <Text style={styles.headerAddText}>Add</Text>
-        </TouchableOpacity>
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            style={styles.headerAdd}
+            onPress={() => { haptics.tap(); setPresetPickerVisible(true); }}
+          >
+            <Feather name="layers" size={15} color={COLORS.primary} />
+            <Text style={styles.headerAddText}>Preset</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.headerAdd}
+            onPress={() => navigation.navigate('AddExercise', { date, dayFull })}
+          >
+            <Feather name="plus" size={15} color={COLORS.primary} />
+            <Text style={styles.headerAddText}>Add</Text>
+          </TouchableOpacity>
+        </View>
       ),
     });
   }, [navigation, date, dayFull]);
@@ -135,6 +146,15 @@ export function DayDetailScreen({ navigation, route }: Props) {
         <EmptyState
           message="No exercises logged"
           subMessage="Tap 'Add' in the top-right corner to log your first exercise for this day."
+          action={
+            <TouchableOpacity
+              style={styles.loadPresetLink}
+              onPress={() => { haptics.tap(); setPresetPickerVisible(true); }}
+            >
+              <Feather name="layers" size={14} color={COLORS.primary} />
+              <Text style={styles.loadPresetLinkText}>Load a preset instead</Text>
+            </TouchableOpacity>
+          }
         />
       ) : (
         <FlatList
@@ -165,6 +185,14 @@ export function DayDetailScreen({ navigation, route }: Props) {
         style={styles.fab}
         onPress={() => navigation.navigate('AddExercise', { date, dayFull })}
       />
+
+      <PresetPickerModal
+        visible={presetPickerVisible}
+        date={date}
+        onClose={() => setPresetPickerVisible(false)}
+        onApplied={loadExercises}
+        onManage={() => navigation.navigate('Presets')}
+      />
     </SafeAreaView>
   );
 }
@@ -191,6 +219,11 @@ const styles = StyleSheet.create({
     padding:       16,
     paddingBottom: 100,
   },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems:    'center',
+    gap:           8,
+  },
   headerAdd: {
     flexDirection:     'row',
     alignItems:        'center',
@@ -203,6 +236,16 @@ const styles = StyleSheet.create({
   headerAddText: {
     fontFamily: FONT.bold,
     fontSize:   14,
+    color:      COLORS.primary,
+  },
+  loadPresetLink: {
+    flexDirection: 'row',
+    alignItems:    'center',
+    gap:           6,
+  },
+  loadPresetLinkText: {
+    fontFamily: FONT.bold,
+    fontSize:   13,
     color:      COLORS.primary,
   },
   fab: {

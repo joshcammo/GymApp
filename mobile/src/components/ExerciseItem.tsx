@@ -16,20 +16,28 @@ interface Props {
 }
 
 /** '8 × 60 KG', '60 KG' (no reps) or '12 reps' (bodyweight) */
-function setSummary(s: ExerciseSet, unit: string): string {
+function setSummary(s: { reps?: number | null; weight?: number | null }, unit: string): string {
   if (s.weight != null) {
     return s.reps ? `${s.reps} × ${s.weight} ${unit}` : `${s.weight} ${unit}`;
   }
   return `${s.reps ?? '?'} reps`;
 }
 
+/** ' → 6 × 40 KG → 4 × 20 KG', or '' if the set has no drops. */
+function dropsSummary(drops: ExerciseSet['drops'], unit: string): string {
+  if (!drops.length) return '';
+  return ' → ' + drops.map(d => setSummary(d, unit)).join(' → ');
+}
+
 export function ExerciseItem({ exercise, onEdit, onDelete, supersetLabel }: Props) {
   const setsCount = exercise.sets.length;
 
-  // If every set is identical, collapse them into one summary chip.
+  // If every set is identical (and none has drops — a drop set is never
+  // interchangeable with a plain one), collapse them into one summary chip.
   const allIdentical = setsCount > 0 && exercise.sets.every(s =>
     s.reps   === exercise.sets[0].reps &&
-    s.weight === exercise.sets[0].weight
+    s.weight === exercise.sets[0].weight &&
+    s.drops.length === 0
   );
 
   return (
@@ -66,7 +74,9 @@ export function ExerciseItem({ exercise, onEdit, onDelete, supersetLabel }: Prop
         ) : (
           exercise.sets.map(s => (
             <View key={s.set_number} style={styles.chip}>
-              <Text style={styles.chipText}>{setSummary(s, exercise.unit)}</Text>
+              <Text style={styles.chipText}>
+                {setSummary(s, exercise.unit)}{dropsSummary(s.drops, exercise.unit)}
+              </Text>
             </View>
           ))
         )}

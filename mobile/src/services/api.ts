@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase';
-import { Exercise, ExerciseDef, MuscleGroup, WeightUnit } from '../types';
+import { DropSet, Exercise, ExerciseDef, MuscleGroup, Preset, PresetExercise, WeightUnit } from '../types';
 
 const EXERCISE_SELECT = '*, exercise_sets(*)';
 
@@ -8,6 +8,7 @@ interface SetRow {
   set_number: number;
   reps:       number | null;
   weight:     number | null;
+  drops:      DropSet[];
 }
 
 interface ExerciseRow {
@@ -40,7 +41,10 @@ function mapRow(row: ExerciseRow): Exercise {
     superset_partner_id: row.superset_partner_id,
     sets: [...row.exercise_sets]
       .sort((a, b) => a.set_number - b.set_number)
-      .map(s => ({ id: s.id, set_number: s.set_number, reps: s.reps, weight: s.weight })),
+      .map(s => ({
+        id: s.id, set_number: s.set_number, reps: s.reps, weight: s.weight,
+        drops: s.drops ?? [],
+      })),
   };
 }
 
@@ -52,6 +56,8 @@ function checkError(error: { message: string } | null): void {
 export interface SetInput {
   reps?:   number | null;
   weight?: number | null;
+  /** Drops performed after this set, in order. Omit or leave empty for none. */
+  drops?:  DropSet[];
 }
 
 export interface CreateExerciseDto {
@@ -257,5 +263,67 @@ export const catalogApi = {
     });
     checkError(error);
     return data as ExercisePr;
+  },
+};
+
+// ── Presets ──────────────────────────────────────────────────────
+
+interface PresetRow {
+  id:         number;
+  name:       string;
+  created_at: string;
+  updated_at: string;
+  exercises:  PresetExercise[];
+}
+
+export const presetApi = {
+  /** All of the caller's presets, each with its ordered exercise list. */
+  list: async (): Promise<Preset[]> => {
+    const { data, error } = await supabase
+      .from('presets_with_exercises')
+      .select('id, name, created_at, updated_at, exercises')
+      .order('name', { ascending: true });
+    checkError(error);
+    return data as PresetRow[];
+  },
+
+  /** Create a new preset. `exerciseDefIds` order is preserved. */
+  create: async (name: string, exerciseDefIds: number[]): Promise<number> => {
+    const { data, error } = await supabase.rpc('create_preset', {
+      p_name: name,
+      p_exercise_def_ids: exerciseDefIds,
+    });
+    checkError(error);
+    return data as number;
+  },
+
+  /** Rename a preset and replace its entire exercise list. */
+  update: async (id: number, name: string, exerciseDefIds: number[]): Promise<void> => {
+    const { error } = await supabase.rpc('update_preset', {
+      p_id: id,
+      p_name: name,
+      p_exercise_def_ids: exerciseDefIds,
+    });
+    checkError(error);
+  },
+
+  /** Delete a preset (its preset_exercises rows cascade). */
+  delete: async (id: number): Promise<void> => {
+    const { data, error } = await supabase.from('presets').delete().eq('id', id).select('id');
+    checkError(error);
+    if (!data || data.length === 0) {
+      throw new Error('Preset not found — it may have already been deleted.');
+    }
+  },
+
+  /** Apply a preset to a day — creates one exercise (with one empty set) per
+   *  preset item, in saved order. Always appends; caller should refetch the
+   *  day's exercises afterward. */
+  applyToDay: async (presetId: number, date: string): Promise<void> => {
+    const { error } = await supabase.rpc('apply_preset_to_day', {
+      p_preset_id: presetId,
+      p_date: date,
+    });
+    checkError(error);
   },
 };
