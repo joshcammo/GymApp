@@ -93,14 +93,24 @@ export function HomeScreen({ navigation }: Props) {
           <Logo size={34} />
           <Wordmark fontSize={19} letterSpacing={2} />
         </View>
-        <PressableScale
-          onPress={() => navigation.navigate('Settings')}
-          style={styles.settingsBtn}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          pressScale={0.9}
-        >
-          <Feather name="settings" size={17} color={COLORS.textSub} />
-        </PressableScale>
+        <View style={styles.headerActions}>
+          <PressableScale
+            onPress={() => navigation.navigate('Progress')}
+            style={styles.settingsBtn}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            pressScale={0.9}
+          >
+            <Feather name="bar-chart-2" size={17} color={COLORS.textSub} />
+          </PressableScale>
+          <PressableScale
+            onPress={() => navigation.navigate('Settings')}
+            style={styles.settingsBtn}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            pressScale={0.9}
+          >
+            <Feather name="settings" size={17} color={COLORS.textSub} />
+          </PressableScale>
+        </View>
       </View>
 
       {/* ── Week navigator ── */}
@@ -184,6 +194,10 @@ const styles = StyleSheet.create({
   brand: {
     flexDirection: 'row',
     alignItems:    'center',
+    gap:           10,
+  },
+  headerActions: {
+    flexDirection: 'row',
     gap:           10,
   },
   settingsBtn: {

@@ -77,6 +77,27 @@ export interface Preset {
   exercises:  PresetExercise[];
 }
 
+/** Progress screen time-range selector. 'ALL' maps to no lower date bound. */
+export type TimeRange = '4W' | '3M' | '1Y' | 'ALL';
+
+/** One point on the 1RM trend line — the day's best estimated 1RM (Epley), kg. */
+export interface OneRmTrendPoint {
+  log_date: string;   // 'YYYY-MM-DD'
+  e1rm_kg:  number;
+}
+
+/** One point on the weekly volume trend — total weight x reps that week, kg. */
+export interface WeeklyVolumePoint {
+  week_start: string;  // 'YYYY-MM-DD', Monday
+  volume_kg:  number;
+}
+
+/** One slice of the muscle-group volume breakdown over a time window, kg. */
+export interface MuscleGroupVolume {
+  muscle_group: MuscleGroup;
+  volume_kg:    number;
+}
+
 /** Navigation param types */
 export type RootStackParamList = {
   Login:          undefined;
@@ -87,4 +108,5 @@ export type RootStackParamList = {
   AddExercise:    { date: string; dayFull: string; editExercise?: Exercise };
   Presets:        undefined;
   EditPreset:     { preset?: Preset };
+  Progress:       undefined;
 };

@@ -9,6 +9,7 @@ import { Feather } from '@expo/vector-icons';
 import { COLORS } from '../constants/colors';
 import { FONT, RADIUS } from '../constants/theme';
 import { EXERCISE_IMAGES } from '../constants/exerciseImages';
+import { MUSCLE_GROUPS, muscleGroupLabel } from '../constants/muscleGroups';
 import { ExerciseDef, MuscleGroup } from '../types';
 import { catalogApi, CustomSuggestion } from '../services/api';
 import { PressableScale } from './PressableScale';
@@ -21,20 +22,6 @@ interface Props {
   onSelect: (def: ExerciseDef) => void;
 }
 
-const MUSCLE_GROUPS: { key: MuscleGroup; label: string }[] = [
-  { key: 'CHEST',      label: 'Chest' },
-  { key: 'BACK',       label: 'Back' },
-  { key: 'SHOULDERS',  label: 'Shoulders' },
-  { key: 'BICEPS',     label: 'Biceps' },
-  { key: 'TRICEPS',    label: 'Triceps' },
-  { key: 'FOREARMS',   label: 'Forearms' },
-  { key: 'QUADS',      label: 'Quads' },
-  { key: 'HAMSTRINGS', label: 'Hamstrings' },
-  { key: 'GLUTES',     label: 'Glutes' },
-  { key: 'CALVES',     label: 'Calves' },
-  { key: 'CORE',       label: 'Core' },
-];
-
 const EQUIPMENT: { key: string; label: string }[] = [
   { key: 'BARBELL',    label: 'Barbell' },
   { key: 'DUMBBELL',   label: 'Dumbbell' },
@@ -45,9 +32,6 @@ const EQUIPMENT: { key: string; label: string }[] = [
   { key: 'BAND',       label: 'Band' },
   { key: 'OTHER',      label: 'Other' },
 ];
-
-const groupLabel = (key: MuscleGroup) =>
-  MUSCLE_GROUPS.find(g => g.key === key)?.label ?? key;
 
 /** Illustration if we have one, otherwise a placeholder icon tile. */
 function DefThumb({ def }: { def: ExerciseDef }) {
@@ -199,7 +183,7 @@ export function ExercisePickerModal({ visible, onClose, onSelect }: Props) {
 
   const title = customVisible
     ? 'Custom Exercise'
-    : group ? groupLabel(group) : 'Exercises';
+    : group ? muscleGroupLabel(group) : 'Exercises';
 
   const showBack = customVisible || !!group;
 
@@ -209,7 +193,7 @@ export function ExercisePickerModal({ visible, onClose, onSelect }: Props) {
       <View style={styles.rowText}>
         <Text style={styles.rowTitle}>{item.name}</Text>
         <Text style={styles.rowSub}>
-          {groupLabel(item.muscle_group)}
+          {muscleGroupLabel(item.muscle_group)}
           {item.is_custom ? '  ·  custom' : ''}
         </Text>
       </View>
@@ -336,7 +320,7 @@ export function ExercisePickerModal({ visible, onClose, onSelect }: Props) {
                 <View style={styles.rowText}>
                   <Text style={styles.rowTitle}>{s.name}</Text>
                   <Text style={styles.rowSub}>
-                    {groupLabel(s.muscle_group)}{s.is_custom ? '  ·  custom' : ''}
+                    {muscleGroupLabel(s.muscle_group)}{s.is_custom ? '  ·  custom' : ''}
                   </Text>
                 </View>
                 <Feather name="plus" size={18} color={COLORS.primary} />
