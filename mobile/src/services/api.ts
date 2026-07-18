@@ -1,5 +1,8 @@
 import { supabase } from '../lib/supabase';
-import { DropSet, Exercise, ExerciseDef, MuscleGroup, Preset, PresetExercise, WeightUnit } from '../types';
+import {
+  DropSet, Exercise, ExerciseDef, MuscleGroup, MuscleGroupVolume, OneRmTrendPoint,
+  Preset, PresetExercise, WeeklyVolumePoint, WeightUnit,
+} from '../types';
 
 const EXERCISE_SELECT = '*, exercise_sets(*)';
 
@@ -325,5 +328,45 @@ export const presetApi = {
       p_date: date,
     });
     checkError(error);
+  },
+};
+
+// ── Progress / analytics ────────────────────────────────────────
+// All three RPCs are kg-normalized and keyed off exercise_def_id
+// server-side (see migration 011) — nothing here does unit math or
+// exercise-identity matching client-side.
+
+export const analyticsApi = {
+  /** Best estimated 1RM (Epley) per day for one exercise, since `sinceDate` (or all time if null). */
+  get1RmTrend: async (exerciseDefId: number, sinceDate: string | null): Promise<OneRmTrendPoint[]> => {
+    const { data, error } = await supabase.rpc('exercise_1rm_trend', {
+      p_exercise_def_id: exerciseDefId,
+      p_since: sinceDate,
+    });
+    checkError(error);
+    return data as OneRmTrendPoint[];
+  },
+
+  /** Weekly total volume for one exercise. Exactly one of exerciseDefId/muscleGroup must be set. */
+  getWeeklyVolumeTrend: async (
+    filter: { exerciseDefId: number; muscleGroup?: never } | { exerciseDefId?: never; muscleGroup: MuscleGroup },
+    sinceDate: string | null,
+  ): Promise<WeeklyVolumePoint[]> => {
+    const { data, error } = await supabase.rpc('weekly_volume_trend', {
+      p_exercise_def_id: filter.exerciseDefId ?? null,
+      p_muscle_group:    filter.muscleGroup ?? null,
+      p_since:           sinceDate,
+    });
+    checkError(error);
+    return data as WeeklyVolumePoint[];
+  },
+
+  /** Total volume per muscle group since `sinceDate` (or all time if null). */
+  getMuscleGroupBreakdown: async (sinceDate: string | null): Promise<MuscleGroupVolume[]> => {
+    const { data, error } = await supabase.rpc('muscle_group_volume_breakdown', {
+      p_since: sinceDate,
+    });
+    checkError(error);
+    return data as MuscleGroupVolume[];
   },
 };

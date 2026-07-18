@@ -25,6 +25,7 @@ import { DayDetailScreen }       from './src/screens/DayDetailScreen';
 import { AddExerciseScreen }     from './src/screens/AddExerciseScreen';
 import { PresetsScreen }         from './src/screens/PresetsScreen';
 import { EditPresetScreen }      from './src/screens/EditPresetScreen';
+import { ProgressScreen }        from './src/screens/ProgressScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -114,6 +115,11 @@ export default function App() {
               <Stack.Screen
                 name="EditPreset"
                 component={EditPresetScreen}
+              />
+              <Stack.Screen
+                name="Progress"
+                component={ProgressScreen}
+                options={{ title: 'Progress' }}
               />
             </>
           ) : (
