@@ -1,6 +1,6 @@
 import { supabase } from '../lib/supabase';
 import {
-  DropSet, Exercise, ExerciseDef, MuscleGroup, MuscleGroupVolume, OneRmTrendPoint,
+  DropSet, Exercise, ExerciseDef, MuscleGroup, MuscleGroupBalance, MuscleGroupVolume, OneRmTrendPoint,
   Preset, PresetExercise, WeeklyVolumePoint, WeightUnit,
 } from '../types';
 
@@ -368,5 +368,13 @@ export const analyticsApi = {
     });
     checkError(error);
     return data as MuscleGroupVolume[];
+  },
+
+  /** Each muscle group's last 7 days of hard sets vs. its own trailing
+   *  8-week weekly average — the over/under-trained heatmap. */
+  getMuscleGroupBalance: async (): Promise<MuscleGroupBalance[]> => {
+    const { data, error } = await supabase.rpc('muscle_group_training_balance', {});
+    checkError(error);
+    return data as MuscleGroupBalance[];
   },
 };

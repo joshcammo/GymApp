@@ -98,6 +98,17 @@ export interface MuscleGroupVolume {
   volume_kg:    number;
 }
 
+/** One muscle group's recent hard-set count vs. its own trailing
+ *  baseline — backs the Progress screen's over/under-trained heatmap.
+ *  Counted in sets, not kg, so bodyweight work (logged with no weight)
+ *  counts the same as loaded work. All 11 groups are always present,
+ *  even at 0/0 (never trained). */
+export interface MuscleGroupBalance {
+  muscle_group:             MuscleGroup;
+  recent_sets:              number;
+  baseline_weekly_avg_sets: number;
+}
+
 /** The caller's own profile, or another user's as surfaced by search/friend views. */
 export interface Profile {
   id:           string;
