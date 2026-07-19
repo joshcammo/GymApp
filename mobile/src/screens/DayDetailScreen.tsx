@@ -18,6 +18,7 @@ import { SupersetCard } from '../components/SupersetCard';
 import { EmptyState } from '../components/EmptyState';
 import { GradientButton } from '../components/GradientButton';
 import { PresetPickerModal } from '../components/PresetPickerModal';
+import { SharePostModal } from '../components/SharePostModal';
 import { haptics } from '../utils/haptics';
 import { parseDateStr } from '../utils/dateUtils';
 
@@ -55,6 +56,7 @@ export function DayDetailScreen({ navigation, route }: Props) {
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [loading,   setLoading]   = useState(true);
   const [presetPickerVisible, setPresetPickerVisible] = useState(false);
+  const [sharingExercise, setSharingExercise] = useState<Exercise | null>(null);
 
   // Pretty header date: 'Thursday, 22 May'
   const displayDate = parseDateStr(date).toLocaleDateString('en-GB', {
@@ -106,6 +108,11 @@ export function DayDetailScreen({ navigation, route }: Props) {
   // ── Actions ───────────────────────────────────────────────────
   const handleEdit = (exercise: Exercise) => {
     navigation.navigate('AddExercise', { date, dayFull, editExercise: exercise });
+  };
+
+  const handleShare = (exercise: Exercise) => {
+    haptics.tap();
+    setSharingExercise(exercise);
   };
 
   const handleDelete = (id: number, name: string) => {
@@ -165,6 +172,7 @@ export function DayDetailScreen({ navigation, route }: Props) {
               exercise={item.exercise}
               onEdit={()   => handleEdit(item.exercise)}
               onDelete={() => handleDelete(item.exercise.id, item.exercise.name)}
+              onShare={item.exercise.has_pr ? () => handleShare(item.exercise) : undefined}
             />
           ) : (
             <SupersetCard
@@ -172,6 +180,7 @@ export function DayDetailScreen({ navigation, route }: Props) {
               b={item.b}
               onEdit={handleEdit}
               onDelete={handleDelete}
+              onShare={handleShare}
             />
           )}
           contentContainerStyle={styles.listContent}
@@ -192,6 +201,12 @@ export function DayDetailScreen({ navigation, route }: Props) {
         onClose={() => setPresetPickerVisible(false)}
         onApplied={loadExercises}
         onManage={() => navigation.navigate('Presets')}
+      />
+
+      <SharePostModal
+        exercise={sharingExercise}
+        onClose={() => setSharingExercise(null)}
+        onShared={() => setSharingExercise(null)}
       />
     </SafeAreaView>
   );

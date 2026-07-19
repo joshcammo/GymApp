@@ -94,6 +94,18 @@ export function isToday(date: Date): boolean {
   );
 }
 
+/** '2m', '5h', '3d', or a short date beyond a week — for post/comment timestamps. */
+export function timeAgo(isoString: string): string {
+  const minutes = Math.floor((Date.now() - new Date(isoString).getTime()) / 60_000);
+  if (minutes < 1)  return 'now';
+  if (minutes < 60) return `${minutes}m`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d`;
+  return new Date(isoString).toLocaleDateString('en-GB', { month: 'short', day: 'numeric' });
+}
+
 export function isPastDay(date: Date): boolean {
   const today = new Date();
   today.setHours(0, 0, 0, 0);

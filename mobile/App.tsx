@@ -15,8 +15,9 @@ import {
 
 import { COLORS } from './src/constants/colors';
 import { FONT } from './src/constants/theme';
-import { RootStackParamList } from './src/types';
+import { RootStackParamList, Profile } from './src/types';
 import { supabase } from './src/lib/supabase';
+import { profileApi } from './src/services/social';
 import { LoginScreen }           from './src/screens/LoginScreen';
 import { HomeScreen }            from './src/screens/HomeScreen';
 import { SettingsScreen }        from './src/screens/SettingsScreen';
@@ -26,12 +27,18 @@ import { AddExerciseScreen }     from './src/screens/AddExerciseScreen';
 import { PresetsScreen }         from './src/screens/PresetsScreen';
 import { EditPresetScreen }      from './src/screens/EditPresetScreen';
 import { ProgressScreen }        from './src/screens/ProgressScreen';
+import { SocialScreen }          from './src/screens/SocialScreen';
+import { FriendsScreen }         from './src/screens/FriendsScreen';
+import { PostDetailScreen }      from './src/screens/PostDetailScreen';
+import { UsernameSetupScreen }   from './src/screens/UsernameSetupScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function App() {
   const [session, setSession]           = useState<Session | null>(null);
   const [initializing, setInitializing] = useState(true);
+  // undefined = not yet fetched for the current session; null = fetch failed.
+  const [profile, setProfile] = useState<Profile | null | undefined>(undefined);
 
   // If loading fails we proceed with system fonts rather than blocking the app.
   const [fontsLoaded, fontError] = useFonts({
@@ -54,7 +61,20 @@ export default function App() {
     return () => subscription.subscription.unsubscribe();
   }, []);
 
-  if (initializing || !fontsReady) {
+  // Load the caller's profile (for the username gate) whenever a session
+  // appears, and drop it on sign-out so a different user's stale profile
+  // never briefly renders after switching accounts.
+  useEffect(() => {
+    if (!session) {
+      setProfile(undefined);
+      return;
+    }
+    profileApi.getMine()
+      .then(setProfile)
+      .catch(() => setProfile(null));
+  }, [session?.user.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (initializing || !fontsReady || (session && profile === undefined)) {
     return (
       <View style={{ flex: 1, backgroundColor: COLORS.bg, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator color={COLORS.primary} size="large" />
@@ -83,7 +103,18 @@ export default function App() {
             animation: 'slide_from_right',
           }}
         >
-          {session ? (
+          {session && profile && !profile.username ? (
+            <Stack.Screen
+              name="UsernameSetup"
+              options={{ headerShown: false }}
+            >
+              {() => (
+                <UsernameSetupScreen
+                  onComplete={username => setProfile(p => (p ? { ...p, username } : p))}
+                />
+              )}
+            </Stack.Screen>
+          ) : session ? (
             <>
               <Stack.Screen
                 name="Home"
@@ -120,6 +151,21 @@ export default function App() {
                 name="Progress"
                 component={ProgressScreen}
                 options={{ title: 'Progress' }}
+              />
+              <Stack.Screen
+                name="Social"
+                component={SocialScreen}
+                options={{ title: 'Social' }}
+              />
+              <Stack.Screen
+                name="Friends"
+                component={FriendsScreen}
+                options={{ title: 'Friends' }}
+              />
+              <Stack.Screen
+                name="PostDetail"
+                component={PostDetailScreen}
+                options={{ title: 'Post' }}
               />
             </>
           ) : (

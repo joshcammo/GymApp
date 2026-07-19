@@ -11,6 +11,8 @@ interface Props {
   exercise: Exercise;
   onEdit:   () => void;
   onDelete: () => void;
+  /** Opens the share-to-friends flow. Only offered when the exercise has a PR. */
+  onShare?: () => void;
   /** Shown as a small badge next to the name when part of a superset pair. */
   supersetLabel?: 'A1' | 'A2';
 }
@@ -29,7 +31,7 @@ function dropsSummary(drops: ExerciseSet['drops'], unit: string): string {
   return ' → ' + drops.map(d => setSummary(d, unit)).join(' → ');
 }
 
-export function ExerciseItem({ exercise, onEdit, onDelete, supersetLabel }: Props) {
+export function ExerciseItem({ exercise, onEdit, onDelete, onShare, supersetLabel }: Props) {
   const setsCount = exercise.sets.length;
 
   // If every set is identical (and none has drops — a drop set is never
@@ -51,9 +53,19 @@ export function ExerciseItem({ exercise, onEdit, onDelete, supersetLabel }: Prop
         )}
         <Text style={styles.name}>{exercise.name}</Text>
         {exercise.has_pr && (
-          <View style={styles.prBadge}>
-            <Feather name="award" size={11} color={COLORS.success} />
-          </View>
+          onShare ? (
+            <TouchableOpacity
+              style={styles.prBadge}
+              onPress={onShare}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Feather name="award" size={11} color={COLORS.success} />
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.prBadge}>
+              <Feather name="award" size={11} color={COLORS.success} />
+            </View>
+          )
         )}
         <TouchableOpacity
           style={styles.deleteBtn}

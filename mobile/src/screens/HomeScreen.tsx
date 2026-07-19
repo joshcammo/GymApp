@@ -95,6 +95,14 @@ export function HomeScreen({ navigation }: Props) {
         </View>
         <View style={styles.headerActions}>
           <PressableScale
+            onPress={() => navigation.navigate('Social')}
+            style={styles.settingsBtn}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            pressScale={0.9}
+          >
+            <Feather name="users" size={17} color={COLORS.textSub} />
+          </PressableScale>
+          <PressableScale
             onPress={() => navigation.navigate('Progress')}
             style={styles.settingsBtn}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}

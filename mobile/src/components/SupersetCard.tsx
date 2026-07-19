@@ -12,10 +12,11 @@ interface Props {
   b: Exercise;
   onEdit:   (exercise: Exercise) => void;
   onDelete: (id: number, name: string) => void;
+  onShare?: (exercise: Exercise) => void;
 }
 
 /** Brackets two paired exercises under a shared "Superset" header, with A1/A2 labels. */
-export function SupersetCard({ a, b, onEdit, onDelete }: Props) {
+export function SupersetCard({ a, b, onEdit, onDelete, onShare }: Props) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -27,12 +28,14 @@ export function SupersetCard({ a, b, onEdit, onDelete }: Props) {
         supersetLabel="A1"
         onEdit={()   => onEdit(a)}
         onDelete={() => onDelete(a.id, a.name)}
+        onShare={onShare ? () => onShare(a) : undefined}
       />
       <ExerciseItem
         exercise={b}
         supersetLabel="A2"
         onEdit={()   => onEdit(b)}
         onDelete={() => onDelete(b.id, b.name)}
+        onShare={onShare ? () => onShare(b) : undefined}
       />
     </View>
   );
