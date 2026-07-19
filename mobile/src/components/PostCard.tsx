@@ -7,6 +7,7 @@ import { FONT, RADIUS } from '../constants/theme';
 import { Post } from '../types';
 import { timeAgo } from '../utils/dateUtils';
 import { PressableScale } from './PressableScale';
+import { Avatar } from './Avatar';
 import { haptics } from '../utils/haptics';
 
 interface Props {
@@ -29,9 +30,7 @@ export function PostCard({ post, onToggleLike, onPressComments, onDelete }: Prop
   return (
     <PressableScale style={styles.container} onPress={onPressComments} pressScale={0.99}>
       <View style={styles.topRow}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{name.charAt(0).toUpperCase()}</Text>
-        </View>
+        <Avatar name={name} size={36} />
         <View style={styles.identity}>
           <Text style={styles.name}>{name}</Text>
           <Text style={styles.meta}>{post.username ? `@${post.username}` : ''} · {timeAgo(post.created_at)}</Text>
@@ -101,22 +100,7 @@ const styles = StyleSheet.create({
   topRow: {
     flexDirection: 'row',
     alignItems:    'center',
-  },
-  avatar: {
-    width:           36,
-    height:          36,
-    borderRadius:    RADIUS.pill,
-    backgroundColor: COLORS.primaryBg,
-    borderWidth:      1,
-    borderColor:      COLORS.primary,
-    alignItems:      'center',
-    justifyContent:  'center',
-    marginRight:     10,
-  },
-  avatarText: {
-    fontFamily: FONT.bold,
-    fontSize:   15,
-    color:      COLORS.primary,
+    gap:           10,
   },
   identity: {
     flex: 1,

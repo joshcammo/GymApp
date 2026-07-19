@@ -295,9 +295,12 @@ begin
       using errcode = 'P0002';
   end if;
 
+  -- weight > 0, not just not null: posts.weight requires a positive value,
+  -- and a 0kg/0lb set (e.g. an explicitly-logged bodyweight entry) isn't a
+  -- lift worth sharing anyway.
   select s.reps, s.weight into v_set
   from public.exercise_sets s
-  where s.exercise_id = p_exercise_id and s.weight is not null
+  where s.exercise_id = p_exercise_id and s.weight is not null and s.weight > 0
   order by public.to_kg(s.weight, v_exercise.unit) desc, coalesce(s.reps, 0) desc, s.id
   limit 1;
 

@@ -23,7 +23,7 @@ interface Props {
 
 /** The set that share_post() will pick server-side: heaviest weight, most reps as tie-break. */
 function bestSet(exercise: Exercise) {
-  const weighted = exercise.sets.filter(s => s.weight != null);
+  const weighted = exercise.sets.filter(s => s.weight != null && s.weight > 0);
   if (weighted.length === 0) return null;
   return weighted.reduce((best, s) =>
     (s.weight! > best.weight! || (s.weight === best.weight && (s.reps ?? 0) > (best.reps ?? 0))) ? s : best

@@ -14,6 +14,7 @@ import { RootStackParamList, Post, PostComment } from '../types';
 import { postsApi } from '../services/social';
 import { supabase } from '../lib/supabase';
 import { PostCard } from '../components/PostCard';
+import { Avatar } from '../components/Avatar';
 import { EmptyState } from '../components/EmptyState';
 import { timeAgo } from '../utils/dateUtils';
 import { haptics } from '../utils/haptics';
@@ -110,11 +111,7 @@ export function PostDetailScreen({ route }: Props) {
           ListHeaderComponent={<PostCard post={post} onToggleLike={toggleLike} />}
           renderItem={({ item }) => (
             <View style={styles.commentRow}>
-              <View style={styles.commentAvatar}>
-                <Text style={styles.commentAvatarText}>
-                  {(item.display_name || item.username || '?').charAt(0).toUpperCase()}
-                </Text>
-              </View>
+              <Avatar name={item.display_name || item.username} size={28} />
               <View style={styles.commentBody}>
                 <Text style={styles.commentMeta}>
                   <Text style={styles.commentName}>{item.display_name || item.username}</Text>
@@ -175,21 +172,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap:           10,
     marginBottom:  14,
-  },
-  commentAvatar: {
-    width:           28,
-    height:          28,
-    borderRadius:    RADIUS.pill,
-    backgroundColor: COLORS.primaryBg,
-    borderWidth:      1,
-    borderColor:      COLORS.primary,
-    alignItems:      'center',
-    justifyContent:  'center',
-  },
-  commentAvatarText: {
-    fontFamily: FONT.bold,
-    fontSize:   12,
-    color:      COLORS.primary,
   },
   commentBody: {
     flex: 1,

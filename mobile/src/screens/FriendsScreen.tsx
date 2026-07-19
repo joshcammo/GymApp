@@ -12,6 +12,7 @@ import { FONT, RADIUS } from '../constants/theme';
 import { Friendship, Profile } from '../types';
 import { friendsApi, profileApi } from '../services/social';
 import { PressableScale } from '../components/PressableScale';
+import { Avatar } from '../components/Avatar';
 import { haptics } from '../utils/haptics';
 
 type SearchSection = { key: 'search'; title: string; data: Profile[] };
@@ -164,9 +165,7 @@ export function FriendsScreen() {
             const profile = item as Profile;
             return (
               <View style={styles.row}>
-                <View style={styles.avatar}>
-                  <Text style={styles.avatarText}>{(profile.display_name || profile.username || '?').charAt(0).toUpperCase()}</Text>
-                </View>
+                <Avatar name={profile.display_name || profile.username} size={40} />
                 <View style={styles.rowText}>
                   <Text style={styles.rowTitle}>{profile.display_name || profile.username}</Text>
                   <Text style={styles.rowSub}>@{profile.username}</Text>
@@ -189,9 +188,7 @@ export function FriendsScreen() {
           const busy = pendingIds.has(String(f.id));
           return (
             <View style={styles.row}>
-              <View style={styles.avatar}>
-                <Text style={styles.avatarText}>{(f.other_display_name || f.other_username || '?').charAt(0).toUpperCase()}</Text>
-              </View>
+              <Avatar name={f.other_display_name || f.other_username} size={40} />
               <View style={styles.rowText}>
                 <Text style={styles.rowTitle}>{f.other_display_name || f.other_username}</Text>
                 <Text style={styles.rowSub}>@{f.other_username}</Text>
@@ -293,21 +290,6 @@ const styles = StyleSheet.create({
     marginBottom:      8,
     borderWidth:        1,
     borderColor:        COLORS.cardBorder,
-  },
-  avatar: {
-    width:           40,
-    height:          40,
-    borderRadius:    RADIUS.pill,
-    backgroundColor: COLORS.primaryBg,
-    borderWidth:      1,
-    borderColor:      COLORS.primary,
-    alignItems:      'center',
-    justifyContent:  'center',
-  },
-  avatarText: {
-    fontFamily: FONT.bold,
-    fontSize:   16,
-    color:      COLORS.primary,
   },
   rowText: {
     flex: 1,

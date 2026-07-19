@@ -5,11 +5,11 @@ import { Friendship, FriendshipStatus, Post, PostComment, Profile } from '../typ
 export const profileApi = {
   /** The signed-in user's own profile row (always exists — created on signup). */
   getMine: async (): Promise<Profile> => {
-    const { data: auth } = await supabase.auth.getUser();
+    const { data: session } = await supabase.auth.getSession();
     const { data, error } = await supabase
       .from('profiles')
       .select('id, username, display_name')
-      .eq('id', auth.user?.id)
+      .eq('id', session.session?.user.id)
       .single();
     checkError(error);
     return data as Profile;
@@ -28,13 +28,13 @@ export const profileApi = {
     // Escape ILIKE metacharacters so a literal '%' or '_' in the query
     // can't widen the match beyond a plain prefix search.
     const escaped = q.replace(/[\\%_]/g, '\\$&');
-    const { data: auth } = await supabase.auth.getUser();
+    const { data: session } = await supabase.auth.getSession();
     const { data, error } = await supabase
       .from('profiles')
       .select('id, username, display_name')
       .not('username', 'is', null)
       .ilike('username', `${escaped}%`)
-      .neq('id', auth.user?.id ?? '')
+      .neq('id', session.session?.user.id ?? '')
       .order('username', { ascending: true })
       .limit(20);
     checkError(error);
@@ -107,12 +107,9 @@ export const postsApi = {
   },
 
   unlike: async (postId: number): Promise<void> => {
-    const { data: auth } = await supabase.auth.getUser();
-    const { error } = await supabase
-      .from('post_likes')
-      .delete()
-      .eq('post_id', postId)
-      .eq('user_id', auth.user?.id ?? '');
+    // No user_id filter needed — the post_likes_delete_own RLS policy
+    // already restricts this to the caller's own like row.
+    const { error } = await supabase.from('post_likes').delete().eq('post_id', postId);
     checkError(error);
   },
 
