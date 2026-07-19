@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View, Text, Modal, FlatList, TouchableOpacity,
   StyleSheet, ActivityIndicator,
@@ -6,7 +6,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 
-import { COLORS } from '../constants/colors';
+import { ColorTokens } from '../theme/colorways';
+import { useTheme } from '../theme/ThemeContext';
 import { FONT, RADIUS } from '../constants/theme';
 import { MyExercisePr, ShareTarget } from '../types';
 import { postsApi } from '../services/social';
@@ -23,6 +24,8 @@ interface Props {
 /** Bottom-sheet list of every exercise the caller has a current PR for, so
  *  they can share one without having to find a PR'd entry in the day view. */
 export function SharePickerModal({ visible, onClose, onPick }: Props) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [prs,     setPrs]     = useState<MyExercisePr[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState<string | null>(null);
@@ -64,13 +67,13 @@ export function SharePickerModal({ visible, onClose, onPick }: Props) {
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             style={styles.headerBtn}
           >
-            <Feather name="x" size={22} color={COLORS.textSub} />
+            <Feather name="x" size={22} color={colors.textSub} />
           </TouchableOpacity>
         </View>
 
         {loading ? (
           <View style={styles.centred}>
-            <ActivityIndicator size="large" color={COLORS.primary} />
+            <ActivityIndicator size="large" color={colors.primary} />
           </View>
         ) : error ? (
           <View style={styles.centred}>
@@ -84,7 +87,7 @@ export function SharePickerModal({ visible, onClose, onPick }: Props) {
             renderItem={({ item }) => (
               <PressableScale style={styles.row} onPress={() => pick(item)} pressScale={0.98}>
                 <View style={styles.iconTile}>
-                  <Feather name="award" size={18} color={COLORS.primary} />
+                  <Feather name="award" size={18} color={colors.primary} />
                 </View>
                 <View style={styles.rowText}>
                   <Text style={styles.rowTitle}>{item.name}</Text>
@@ -92,7 +95,7 @@ export function SharePickerModal({ visible, onClose, onPick }: Props) {
                     {item.reps ? `${item.reps} × ${item.weight} ${item.unit}` : `${item.weight} ${item.unit}`}
                   </Text>
                 </View>
-                <Feather name="chevron-right" size={18} color={COLORS.textMuted} />
+                <Feather name="chevron-right" size={18} color={colors.textMuted} />
               </PressableScale>
             )}
             ListEmptyComponent={
@@ -110,10 +113,10 @@ export function SharePickerModal({ visible, onClose, onPick }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorTokens) => StyleSheet.create({
   safe: {
     flex:            1,
-    backgroundColor: COLORS.bg,
+    backgroundColor: colors.bg,
   },
   header: {
     flexDirection:     'row',
@@ -122,7 +125,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical:   14,
     borderBottomWidth:  1,
-    borderBottomColor:  COLORS.divider,
+    borderBottomColor:  colors.divider,
   },
   headerBtn: {
     width:      32,
@@ -131,7 +134,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontFamily: FONT.semibold,
     fontSize:   17,
-    color:      COLORS.text,
+    color:      colors.text,
   },
   centred: {
     flex:           1,
@@ -139,7 +142,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   errorText: {
-    color:             COLORS.textSub,
+    color:             colors.textSub,
     fontSize:          14,
     textAlign:         'center',
     paddingHorizontal: 32,
@@ -151,19 +154,19 @@ const styles = StyleSheet.create({
     flexDirection:     'row',
     alignItems:        'center',
     gap:               14,
-    backgroundColor:   COLORS.card,
+    backgroundColor:   colors.card,
     borderRadius:      RADIUS.lg,
     padding:           10,
     paddingRight:      16,
     marginBottom:      10,
     borderWidth:        1,
-    borderColor:        COLORS.cardBorder,
+    borderColor:        colors.cardBorder,
   },
   iconTile: {
     width:           44,
     height:          44,
     borderRadius:    RADIUS.md,
-    backgroundColor: COLORS.primaryBg,
+    backgroundColor: colors.primaryBg,
     alignItems:      'center',
     justifyContent:  'center',
   },
@@ -173,11 +176,11 @@ const styles = StyleSheet.create({
   rowTitle: {
     fontFamily: FONT.medium,
     fontSize:   16,
-    color:      COLORS.text,
+    color:      colors.text,
   },
   rowSub: {
     fontSize:  12,
-    color:     COLORS.textMuted,
+    color:     colors.textMuted,
     marginTop:  2,
   },
   emptyWrap: {
@@ -187,12 +190,12 @@ const styles = StyleSheet.create({
   emptyText: {
     fontFamily: FONT.semibold,
     fontSize:   16,
-    color:      COLORS.textSub,
+    color:      colors.textSub,
     textAlign:  'center',
   },
   emptySub: {
     fontSize:   13,
-    color:      COLORS.textMuted,
+    color:      colors.textMuted,
     textAlign:  'center',
     marginTop:   8,
     lineHeight: 19,

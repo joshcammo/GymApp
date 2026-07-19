@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View, Text, TextInput, SectionList, TouchableOpacity,
   StyleSheet, ActivityIndicator, Alert,
@@ -7,7 +7,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
 
-import { COLORS } from '../constants/colors';
+import { ColorTokens } from '../theme/colorways';
+import { useTheme } from '../theme/ThemeContext';
 import { FONT, RADIUS } from '../constants/theme';
 import { Friendship, Profile } from '../types';
 import { friendsApi, profileApi } from '../services/social';
@@ -24,6 +25,8 @@ interface Props {
 }
 
 export function FriendsScreen({ onRequestsChanged }: Props) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [query,       setQuery]       = useState('');
   const [results,     setResults]     = useState<Profile[]>([]);
   const [searching,   setSearching]   = useState(false);
@@ -143,7 +146,7 @@ export function FriendsScreen({ onRequestsChanged }: Props) {
     return (
       <SafeAreaView style={styles.safe} edges={['bottom']}>
         <View style={styles.centred}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       </SafeAreaView>
     );
@@ -152,17 +155,17 @@ export function FriendsScreen({ onRequestsChanged }: Props) {
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
       <View style={styles.searchWrap}>
-        <Feather name="search" size={16} color={COLORS.textMuted} />
+        <Feather name="search" size={16} color={colors.textMuted} />
         <TextInput
           style={styles.searchInput}
           value={query}
           onChangeText={setQuery}
           placeholder="Search by username"
-          placeholderTextColor={COLORS.textMuted}
+          placeholderTextColor={colors.textMuted}
           autoCapitalize="none"
           autoCorrect={false}
         />
-        {searching && <ActivityIndicator size="small" color={COLORS.primary} />}
+        {searching && <ActivityIndicator size="small" color={colors.primary} />}
       </View>
 
       <SectionList<Profile | Friendship, SearchSection | FriendSection>
@@ -188,8 +191,8 @@ export function FriendsScreen({ onRequestsChanged }: Props) {
                   pressScale={0.95}
                 >
                   {pendingIds.has(profile.id)
-                    ? <ActivityIndicator size="small" color={COLORS.primary} />
-                    : <Feather name="user-plus" size={15} color={COLORS.primary} />}
+                    ? <ActivityIndicator size="small" color={colors.primary} />
+                    : <Feather name="user-plus" size={15} color={colors.primary} />}
                 </PressableScale>
               </View>
             );
@@ -205,32 +208,32 @@ export function FriendsScreen({ onRequestsChanged }: Props) {
                 <Text style={styles.rowSub}>@{f.other_username}</Text>
               </View>
               {section.key === 'requests' && (
-                busy ? <ActivityIndicator size="small" color={COLORS.primary} /> : (
+                busy ? <ActivityIndicator size="small" color={colors.primary} /> : (
                   <View style={styles.requestActions}>
                     <TouchableOpacity style={styles.declineBtn} onPress={() => respond(f, false)}>
-                      <Feather name="x" size={15} color={COLORS.danger} />
+                      <Feather name="x" size={15} color={colors.danger} />
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.acceptBtn} onPress={() => respond(f, true)}>
-                      <Feather name="check" size={15} color={COLORS.success} />
+                      <Feather name="check" size={15} color={colors.success} />
                     </TouchableOpacity>
                   </View>
                 )
               )}
               {section.key === 'sent' && (
-                busy ? <ActivityIndicator size="small" color={COLORS.textMuted} /> : (
+                busy ? <ActivityIndicator size="small" color={colors.textMuted} /> : (
                   <TouchableOpacity style={styles.pendingBtn} onPress={() => cancelSent(f)}>
                     <Text style={styles.pendingBtnText}>Pending</Text>
                   </TouchableOpacity>
                 )
               )}
               {section.key === 'friends' && (
-                busy ? <ActivityIndicator size="small" color={COLORS.textMuted} /> : (
+                busy ? <ActivityIndicator size="small" color={colors.textMuted} /> : (
                   <TouchableOpacity
                     style={styles.unfriendBtn}
                     onPress={() => unfriend(f)}
                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                   >
-                    <Feather name="user-minus" size={15} color={COLORS.textMuted} />
+                    <Feather name="user-minus" size={15} color={colors.textMuted} />
                   </TouchableOpacity>
                 )
               )}
@@ -249,10 +252,10 @@ export function FriendsScreen({ onRequestsChanged }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorTokens) => StyleSheet.create({
   safe: {
     flex:            1,
-    backgroundColor: COLORS.bg,
+    backgroundColor: colors.bg,
   },
   centred: {
     flex:           1,
@@ -266,16 +269,16 @@ const styles = StyleSheet.create({
     marginHorizontal:  16,
     marginTop:         12,
     marginBottom:      4,
-    backgroundColor:   COLORS.card,
+    backgroundColor:   colors.card,
     borderRadius:      RADIUS.md,
     borderWidth:        1,
-    borderColor:        COLORS.border,
+    borderColor:        colors.border,
     paddingHorizontal: 14,
   },
   searchInput: {
     flex:            1,
     paddingVertical: 12,
-    color:           COLORS.text,
+    color:           colors.text,
     fontSize:        15,
   },
   listContent: {
@@ -285,7 +288,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontFamily:    FONT.semibold,
     fontSize:      12,
-    color:         COLORS.textMuted,
+    color:         colors.textMuted,
     letterSpacing: 1,
     textTransform: 'uppercase',
     marginTop:     16,
@@ -295,12 +298,12 @@ const styles = StyleSheet.create({
     flexDirection:     'row',
     alignItems:        'center',
     gap:               12,
-    backgroundColor:   COLORS.card,
+    backgroundColor:   colors.card,
     borderRadius:      RADIUS.lg,
     padding:           12,
     marginBottom:      8,
     borderWidth:        1,
-    borderColor:        COLORS.cardBorder,
+    borderColor:        colors.cardBorder,
   },
   rowText: {
     flex: 1,
@@ -308,18 +311,18 @@ const styles = StyleSheet.create({
   rowTitle: {
     fontFamily: FONT.medium,
     fontSize:   15,
-    color:      COLORS.text,
+    color:      colors.text,
   },
   rowSub: {
     fontSize:  12,
-    color:     COLORS.textMuted,
+    color:     colors.textMuted,
     marginTop:  2,
   },
   addBtn: {
     width:           34,
     height:          34,
     borderRadius:    RADIUS.pill,
-    backgroundColor: COLORS.primaryBg,
+    backgroundColor: colors.primaryBg,
     alignItems:      'center',
     justifyContent:  'center',
   },
@@ -331,7 +334,7 @@ const styles = StyleSheet.create({
     width:           30,
     height:          30,
     borderRadius:    RADIUS.sm,
-    backgroundColor: COLORS.successBg,
+    backgroundColor: colors.successBg,
     alignItems:      'center',
     justifyContent:  'center',
   },
@@ -339,7 +342,7 @@ const styles = StyleSheet.create({
     width:           30,
     height:          30,
     borderRadius:    RADIUS.sm,
-    backgroundColor: COLORS.dangerBg,
+    backgroundColor: colors.dangerBg,
     alignItems:      'center',
     justifyContent:  'center',
   },
@@ -347,14 +350,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical:    6,
     borderRadius:      RADIUS.pill,
-    backgroundColor:   COLORS.bgAlt,
+    backgroundColor:   colors.bgAlt,
     borderWidth:        1,
-    borderColor:        COLORS.border,
+    borderColor:        colors.border,
   },
   pendingBtnText: {
     fontFamily: FONT.medium,
     fontSize:   12,
-    color:      COLORS.textMuted,
+    color:      colors.textMuted,
   },
   unfriendBtn: {
     width:           30,
@@ -364,7 +367,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize:   13,
-    color:      COLORS.textMuted,
+    color:      colors.textMuted,
     textAlign:  'center',
     marginTop:  32,
     lineHeight: 19,

@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
   View, Text, FlatList, TextInput, TouchableOpacity,
   StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, Alert,
@@ -8,7 +8,8 @@ import { useFocusEffect } from '@react-navigation/native';
 import { RouteProp } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
 
-import { COLORS } from '../constants/colors';
+import { ColorTokens } from '../theme/colorways';
+import { useTheme } from '../theme/ThemeContext';
 import { FONT, RADIUS } from '../constants/theme';
 import { RootStackParamList, Post, PostComment } from '../types';
 import { postsApi } from '../services/social';
@@ -23,6 +24,8 @@ type Route = RouteProp<RootStackParamList, 'PostDetail'>;
 interface Props { route: Route }
 
 export function PostDetailScreen({ route }: Props) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { postId } = route.params;
   const [post,     setPost]     = useState<Post | null>(null);
   const [comments, setComments] = useState<PostComment[]>([]);
@@ -96,7 +99,7 @@ export function PostDetailScreen({ route }: Props) {
     return (
       <SafeAreaView style={styles.safe} edges={['bottom']}>
         <View style={styles.centred}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       </SafeAreaView>
     );
@@ -145,7 +148,7 @@ export function PostDetailScreen({ route }: Props) {
             value={draft}
             onChangeText={setDraft}
             placeholder="Add a comment…"
-            placeholderTextColor={COLORS.textMuted}
+            placeholderTextColor={colors.textMuted}
             maxLength={500}
             multiline
           />
@@ -166,10 +169,10 @@ export function PostDetailScreen({ route }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorTokens) => StyleSheet.create({
   safe: {
     flex:            1,
-    backgroundColor: COLORS.bg,
+    backgroundColor: colors.bg,
   },
   flexFill: { flex: 1 },
   centred: {
@@ -191,21 +194,21 @@ const styles = StyleSheet.create({
   },
   commentMeta: {
     fontSize: 11,
-    color:    COLORS.textMuted,
+    color:    colors.textMuted,
   },
   commentName: {
     fontFamily: FONT.semibold,
-    color:      COLORS.textSub,
+    color:      colors.textSub,
   },
   commentText: {
     fontSize:   14,
-    color:      COLORS.text,
+    color:      colors.text,
     marginTop:  3,
     lineHeight: 19,
   },
   noComments: {
     fontSize:  13,
-    color:     COLORS.textMuted,
+    color:     colors.textMuted,
     textAlign: 'center',
     marginTop: 20,
   },
@@ -216,18 +219,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical:   10,
     borderTopWidth:     1,
-    borderTopColor:     COLORS.divider,
-    backgroundColor:   COLORS.bg,
+    borderTopColor:     colors.divider,
+    backgroundColor:   colors.bg,
   },
   input: {
     flex:              1,
-    backgroundColor:   COLORS.card,
+    backgroundColor:   colors.card,
     borderRadius:      RADIUS.lg,
     borderWidth:        1,
-    borderColor:        COLORS.border,
+    borderColor:        colors.border,
     paddingHorizontal: 14,
     paddingVertical:   10,
-    color:             COLORS.text,
+    color:             colors.text,
     fontSize:          14,
     maxHeight:         100,
   },
@@ -235,7 +238,7 @@ const styles = StyleSheet.create({
     width:           38,
     height:          38,
     borderRadius:    RADIUS.pill,
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     alignItems:      'center',
     justifyContent:  'center',
   },

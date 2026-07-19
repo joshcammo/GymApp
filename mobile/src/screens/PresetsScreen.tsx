@@ -1,4 +1,4 @@
-import React, { useCallback, useLayoutEffect, useState } from 'react';
+import React, { useCallback, useLayoutEffect, useMemo, useState } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity,
   StyleSheet, Alert, ActivityIndicator,
@@ -8,7 +8,8 @@ import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Feather } from '@expo/vector-icons';
 
-import { COLORS } from '../constants/colors';
+import { ColorTokens } from '../theme/colorways';
+import { useTheme } from '../theme/ThemeContext';
 import { FONT, RADIUS } from '../constants/theme';
 import { RootStackParamList, Preset } from '../types';
 import { presetApi } from '../services/api';
@@ -20,6 +21,8 @@ type Nav = NativeStackNavigationProp<RootStackParamList, 'Presets'>;
 interface Props { navigation: Nav }
 
 export function PresetsScreen({ navigation }: Props) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [presets, setPresets] = useState<Preset[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -43,12 +46,12 @@ export function PresetsScreen({ navigation }: Props) {
           style={styles.headerAdd}
           onPress={() => navigation.navigate('EditPreset', {})}
         >
-          <Feather name="plus" size={15} color={COLORS.primary} />
+          <Feather name="plus" size={15} color={colors.primary} />
           <Text style={styles.headerAddText}>New</Text>
         </TouchableOpacity>
       ),
     });
-  }, [navigation]);
+  }, [navigation, styles, colors]);
 
   const handleDelete = (preset: Preset) => {
     haptics.warning();
@@ -78,7 +81,7 @@ export function PresetsScreen({ navigation }: Props) {
     <SafeAreaView style={styles.safe} edges={['bottom']}>
       {loading ? (
         <View style={styles.centred}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       ) : presets.length === 0 ? (
         <EmptyState
@@ -97,7 +100,7 @@ export function PresetsScreen({ navigation }: Props) {
               pressScale={0.98}
             >
               <View style={styles.iconTile}>
-                <Feather name="layers" size={18} color={COLORS.primary} />
+                <Feather name="layers" size={18} color={colors.primary} />
               </View>
               <View style={styles.rowText}>
                 <Text style={styles.rowTitle}>{item.name}</Text>
@@ -110,7 +113,7 @@ export function PresetsScreen({ navigation }: Props) {
                 onPress={() => handleDelete(item)}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
-                <Feather name="trash-2" size={15} color={COLORS.danger} />
+                <Feather name="trash-2" size={15} color={colors.danger} />
               </TouchableOpacity>
             </PressableScale>
           )}
@@ -120,10 +123,10 @@ export function PresetsScreen({ navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorTokens) => StyleSheet.create({
   safe: {
     flex:            1,
-    backgroundColor: COLORS.bg,
+    backgroundColor: colors.bg,
   },
   centred: {
     flex:           1,
@@ -137,19 +140,19 @@ const styles = StyleSheet.create({
     flexDirection:     'row',
     alignItems:        'center',
     gap:               14,
-    backgroundColor:   COLORS.card,
+    backgroundColor:   colors.card,
     borderRadius:      RADIUS.lg,
     padding:           10,
     paddingRight:      16,
     marginBottom:      10,
     borderWidth:        1,
-    borderColor:        COLORS.cardBorder,
+    borderColor:        colors.cardBorder,
   },
   iconTile: {
     width:           44,
     height:          44,
     borderRadius:    RADIUS.md,
-    backgroundColor: COLORS.primaryBg,
+    backgroundColor: colors.primaryBg,
     alignItems:      'center',
     justifyContent:  'center',
   },
@@ -159,18 +162,18 @@ const styles = StyleSheet.create({
   rowTitle: {
     fontFamily: FONT.medium,
     fontSize:   16,
-    color:      COLORS.text,
+    color:      colors.text,
   },
   rowSub: {
     fontSize:  12,
-    color:     COLORS.textMuted,
+    color:     colors.textMuted,
     marginTop:  2,
   },
   deleteBtn: {
     width:           30,
     height:          30,
     borderRadius:    RADIUS.sm,
-    backgroundColor: COLORS.dangerBg,
+    backgroundColor: colors.dangerBg,
     alignItems:      'center',
     justifyContent:  'center',
     marginLeft:      4,
@@ -182,11 +185,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical:    6,
     borderRadius:      RADIUS.pill,
-    backgroundColor:   COLORS.primaryBg,
+    backgroundColor:   colors.primaryBg,
   },
   headerAddText: {
     fontFamily: FONT.bold,
     fontSize:   14,
-    color:      COLORS.primary,
+    color:      colors.primary,
   },
 });

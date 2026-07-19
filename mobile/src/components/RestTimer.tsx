@@ -1,9 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Feather } from '@expo/vector-icons';
 
-import { COLORS } from '../constants/colors';
+import { ColorTokens } from '../theme/colorways';
+import { useTheme } from '../theme/ThemeContext';
 import { FONT, RADIUS } from '../constants/theme';
 import { haptics } from '../utils/haptics';
 
@@ -20,6 +21,8 @@ const formatTime = (s: number) =>
  * starts and stops it manually.
  */
 export function RestTimer() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [duration,  setDuration]  = useState(90);
   const [remaining, setRemaining] = useState(90);
   const [running,   setRunning]   = useState(false);
@@ -82,7 +85,7 @@ export function RestTimer() {
   return (
     <View style={styles.card}>
       <View style={styles.header}>
-        <Feather name="clock" size={14} color={COLORS.primary} />
+        <Feather name="clock" size={14} color={colors.primary} />
         <Text style={styles.headerText}>Rest Timer</Text>
       </View>
 
@@ -107,7 +110,7 @@ export function RestTimer() {
           onPress={reset}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Feather name="rotate-ccw" size={17} color={COLORS.textSub} />
+          <Feather name="rotate-ccw" size={17} color={colors.textSub} />
         </TouchableOpacity>
 
         <Text style={[styles.countdown, done && styles.countdownDone]}>
@@ -122,12 +125,12 @@ export function RestTimer() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorTokens) => StyleSheet.create({
   card: {
-    backgroundColor: COLORS.bgAlt,
+    backgroundColor: colors.bgAlt,
     borderRadius:    RADIUS.lg,
     borderWidth:      1,
-    borderColor:      COLORS.cardBorder,
+    borderColor:      colors.cardBorder,
     padding:         16,
     marginBottom:    14,
   },
@@ -140,7 +143,7 @@ const styles = StyleSheet.create({
   headerText: {
     fontFamily:    FONT.semibold,
     fontSize:      12,
-    color:         COLORS.textSub,
+    color:         colors.textSub,
     letterSpacing: 1,
     textTransform: 'uppercase',
   },
@@ -151,24 +154,24 @@ const styles = StyleSheet.create({
   },
   chip: {
     flex:              1,
-    backgroundColor:   COLORS.card,
+    backgroundColor:   colors.card,
     borderRadius:      RADIUS.pill,
     borderWidth:        1,
-    borderColor:        COLORS.border,
+    borderColor:        colors.border,
     paddingVertical:    8,
     alignItems:        'center',
   },
   chipActive: {
-    backgroundColor: COLORS.primaryBg,
-    borderColor:     COLORS.primary,
+    backgroundColor: colors.primaryBg,
+    borderColor:     colors.primary,
   },
   chipText: {
     fontFamily: FONT.medium,
     fontSize:   12,
-    color:      COLORS.textSub,
+    color:      colors.textSub,
   },
   chipTextActive: {
-    color:      COLORS.primary,
+    color:      colors.primary,
     fontFamily: FONT.bold,
   },
   controlRow: {
@@ -180,21 +183,21 @@ const styles = StyleSheet.create({
   countdown: {
     fontFamily: FONT.bold,
     fontSize:   36,
-    color:      COLORS.text,
+    color:      colors.text,
     minWidth:   110,
     textAlign:  'center',
     fontVariant: ['tabular-nums'],
   },
   countdownDone: {
-    color: COLORS.primary,
+    color: colors.primary,
   },
   resetBtn: {
     width:           40,
     height:          40,
     borderRadius:    RADIUS.pill,
-    backgroundColor: COLORS.card,
+    backgroundColor: colors.card,
     borderWidth:      1,
-    borderColor:      COLORS.border,
+    borderColor:      colors.border,
     alignItems:      'center',
     justifyContent:  'center',
   },
@@ -202,7 +205,7 @@ const styles = StyleSheet.create({
     width:           48,
     height:          48,
     borderRadius:    RADIUS.pill,
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     alignItems:      'center',
     justifyContent:  'center',
   },

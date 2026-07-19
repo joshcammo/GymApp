@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
-import { COLORS } from '../constants/colors';
+import { ColorTokens } from '../theme/colorways';
+import { useTheme } from '../theme/ThemeContext';
 import { FONT, RADIUS } from '../constants/theme';
 import { Exercise, ExerciseSet } from '../types';
 import { PressableScale } from './PressableScale';
@@ -32,6 +33,8 @@ function dropsSummary(drops: ExerciseSet['drops'], unit: string): string {
 }
 
 export function ExerciseItem({ exercise, onEdit, onDelete, onShare, supersetLabel }: Props) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const setsCount = exercise.sets.length;
 
   // If every set is identical (and none has drops — a drop set is never
@@ -59,11 +62,11 @@ export function ExerciseItem({ exercise, onEdit, onDelete, onShare, supersetLabe
               onPress={onShare}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
-              <Feather name="award" size={11} color={COLORS.success} />
+              <Feather name="award" size={11} color={colors.success} />
             </TouchableOpacity>
           ) : (
             <View style={styles.prBadge}>
-              <Feather name="award" size={11} color={COLORS.success} />
+              <Feather name="award" size={11} color={colors.success} />
             </View>
           )
         )}
@@ -72,7 +75,7 @@ export function ExerciseItem({ exercise, onEdit, onDelete, onShare, supersetLabe
           onPress={onDelete}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Feather name="trash-2" size={15} color={COLORS.danger} />
+          <Feather name="trash-2" size={15} color={colors.danger} />
         </TouchableOpacity>
       </View>
 
@@ -96,7 +99,7 @@ export function ExerciseItem({ exercise, onEdit, onDelete, onShare, supersetLabe
 
       {exercise.notes ? (
         <View style={styles.notesRow}>
-          <Feather name="edit-3" size={11} color={COLORS.textMuted} />
+          <Feather name="edit-3" size={11} color={colors.textMuted} />
           <Text style={styles.notes} numberOfLines={1}>{exercise.notes}</Text>
         </View>
       ) : null}
@@ -104,14 +107,14 @@ export function ExerciseItem({ exercise, onEdit, onDelete, onShare, supersetLabe
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorTokens) => StyleSheet.create({
   container: {
-    backgroundColor: COLORS.card,
+    backgroundColor: colors.card,
     borderRadius:    RADIUS.lg,
     padding:         16,
     marginBottom:    10,
     borderWidth:      1,
-    borderColor:      COLORS.cardBorder,
+    borderColor:      colors.cardBorder,
   },
   topRow: {
     flexDirection: 'row',
@@ -121,20 +124,20 @@ const styles = StyleSheet.create({
     width:           3,
     height:          18,
     borderRadius:    2,
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     marginRight:     10,
   },
   name: {
     flex:       1,
     fontFamily: FONT.semibold,
     fontSize:   17,
-    color:      COLORS.text,
+    color:      colors.text,
   },
   deleteBtn: {
     width:           30,
     height:          30,
     borderRadius:    RADIUS.sm,
-    backgroundColor: COLORS.dangerBg,
+    backgroundColor: colors.dangerBg,
     alignItems:      'center',
     justifyContent:  'center',
     marginLeft:      12,
@@ -143,18 +146,18 @@ const styles = StyleSheet.create({
     width:           22,
     height:          22,
     borderRadius:    RADIUS.pill,
-    backgroundColor: COLORS.successBg,
+    backgroundColor: colors.successBg,
     borderWidth:      1,
-    borderColor:      COLORS.success,
+    borderColor:      colors.success,
     alignItems:      'center',
     justifyContent:  'center',
     marginLeft:      8,
   },
   supersetBadge: {
-    backgroundColor:   COLORS.primaryBg,
+    backgroundColor:   colors.primaryBg,
     borderRadius:      RADIUS.sm,
     borderWidth:        1,
-    borderColor:        COLORS.primary,
+    borderColor:        colors.primary,
     paddingHorizontal: 6,
     paddingVertical:   2,
     marginRight:       8,
@@ -162,7 +165,7 @@ const styles = StyleSheet.create({
   supersetBadgeText: {
     fontFamily: FONT.bold,
     fontSize:   11,
-    color:      COLORS.primary,
+    color:      colors.primary,
   },
   chipsRow: {
     flexDirection: 'row',
@@ -173,22 +176,22 @@ const styles = StyleSheet.create({
   chip: {
     flexDirection:     'row',
     alignItems:        'center',
-    backgroundColor:   COLORS.bgAlt,
+    backgroundColor:   colors.bgAlt,
     borderRadius:      RADIUS.pill,
     borderWidth:        1,
-    borderColor:        COLORS.border,
+    borderColor:        colors.border,
     paddingHorizontal: 11,
     paddingVertical:    5,
   },
   chipCount: {
     fontFamily: FONT.bold,
     fontSize:   12,
-    color:      COLORS.primary,
+    color:      colors.primary,
   },
   chipText: {
     fontFamily: FONT.medium,
     fontSize:   12,
-    color:      COLORS.textSub,
+    color:      colors.textSub,
   },
   notesRow: {
     flexDirection: 'row',
@@ -199,7 +202,7 @@ const styles = StyleSheet.create({
   notes: {
     flex:      1,
     fontSize:  12,
-    color:     COLORS.textMuted,
+    color:     colors.textMuted,
     fontStyle: 'italic',
   },
 });

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View, Text, Modal, FlatList, TouchableOpacity,
   StyleSheet, ActivityIndicator,
@@ -6,7 +6,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 
-import { COLORS } from '../constants/colors';
+import { ColorTokens } from '../theme/colorways';
+import { useTheme } from '../theme/ThemeContext';
 import { FONT, RADIUS } from '../constants/theme';
 import { Preset } from '../types';
 import { presetApi } from '../services/api';
@@ -30,6 +31,8 @@ interface Props {
  * time) and closes. A footer link hands off to full preset management.
  */
 export function PresetPickerModal({ visible, date, onClose, onApplied, onManage }: Props) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [presets, setPresets] = useState<Preset[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState<string | null>(null);
@@ -87,13 +90,13 @@ export function PresetPickerModal({ visible, date, onClose, onApplied, onManage 
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             style={styles.headerBtn}
           >
-            <Feather name="x" size={22} color={COLORS.textSub} />
+            <Feather name="x" size={22} color={colors.textSub} />
           </TouchableOpacity>
         </View>
 
         {loading ? (
           <View style={styles.centred}>
-            <ActivityIndicator size="large" color={COLORS.primary} />
+            <ActivityIndicator size="large" color={colors.primary} />
           </View>
         ) : error ? (
           <View style={styles.centred}>
@@ -114,7 +117,7 @@ export function PresetPickerModal({ visible, date, onClose, onApplied, onManage 
                 pressScale={0.98}
               >
                 <View style={styles.iconTile}>
-                  <Feather name="layers" size={18} color={COLORS.primary} />
+                  <Feather name="layers" size={18} color={colors.primary} />
                 </View>
                 <View style={styles.rowText}>
                   <Text style={styles.rowTitle}>{item.name}</Text>
@@ -123,9 +126,9 @@ export function PresetPickerModal({ visible, date, onClose, onApplied, onManage 
                   </Text>
                 </View>
                 {applyingId === item.id ? (
-                  <ActivityIndicator size="small" color={COLORS.primary} />
+                  <ActivityIndicator size="small" color={colors.primary} />
                 ) : (
-                  <Feather name="chevron-right" size={18} color={COLORS.textMuted} />
+                  <Feather name="chevron-right" size={18} color={colors.textMuted} />
                 )}
               </PressableScale>
             )}
@@ -139,7 +142,7 @@ export function PresetPickerModal({ visible, date, onClose, onApplied, onManage 
             }
             ListFooterComponent={
               <TouchableOpacity style={styles.manageBtn} onPress={manage} activeOpacity={0.7}>
-                <Feather name="settings" size={15} color={COLORS.primary} />
+                <Feather name="settings" size={15} color={colors.primary} />
                 <Text style={styles.manageBtnText}>Manage Presets</Text>
               </TouchableOpacity>
             }
@@ -150,10 +153,10 @@ export function PresetPickerModal({ visible, date, onClose, onApplied, onManage 
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorTokens) => StyleSheet.create({
   safe: {
     flex:            1,
-    backgroundColor: COLORS.bg,
+    backgroundColor: colors.bg,
   },
   header: {
     flexDirection:     'row',
@@ -162,7 +165,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical:   14,
     borderBottomWidth:  1,
-    borderBottomColor:  COLORS.divider,
+    borderBottomColor:  colors.divider,
   },
   headerBtn: {
     width:      32,
@@ -171,7 +174,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontFamily: FONT.semibold,
     fontSize:   17,
-    color:      COLORS.text,
+    color:      colors.text,
   },
   centred: {
     flex:           1,
@@ -180,23 +183,23 @@ const styles = StyleSheet.create({
     gap:            14,
   },
   errorText: {
-    color:             COLORS.textSub,
+    color:             colors.textSub,
     fontSize:          14,
     textAlign:         'center',
     paddingHorizontal: 32,
   },
   retryBtn: {
-    backgroundColor:   COLORS.primaryBg,
+    backgroundColor:   colors.primaryBg,
     borderRadius:      RADIUS.pill,
     borderWidth:        1,
-    borderColor:        COLORS.primary,
+    borderColor:        colors.primary,
     paddingHorizontal: 18,
     paddingVertical:    8,
   },
   retryText: {
     fontFamily: FONT.bold,
     fontSize:   13,
-    color:      COLORS.primary,
+    color:      colors.primary,
   },
   listContent: {
     padding: 16,
@@ -205,19 +208,19 @@ const styles = StyleSheet.create({
     flexDirection:     'row',
     alignItems:        'center',
     gap:               14,
-    backgroundColor:   COLORS.card,
+    backgroundColor:   colors.card,
     borderRadius:      RADIUS.lg,
     padding:           10,
     paddingRight:      16,
     marginBottom:      10,
     borderWidth:        1,
-    borderColor:        COLORS.cardBorder,
+    borderColor:        colors.cardBorder,
   },
   iconTile: {
     width:           44,
     height:          44,
     borderRadius:    RADIUS.md,
-    backgroundColor: COLORS.primaryBg,
+    backgroundColor: colors.primaryBg,
     alignItems:      'center',
     justifyContent:  'center',
   },
@@ -227,11 +230,11 @@ const styles = StyleSheet.create({
   rowTitle: {
     fontFamily: FONT.medium,
     fontSize:   16,
-    color:      COLORS.text,
+    color:      colors.text,
   },
   rowSub: {
     fontSize:  12,
-    color:     COLORS.textMuted,
+    color:     colors.textMuted,
     marginTop:  2,
   },
   emptyWrap: {
@@ -241,12 +244,12 @@ const styles = StyleSheet.create({
   emptyText: {
     fontFamily: FONT.semibold,
     fontSize:   16,
-    color:      COLORS.textSub,
+    color:      colors.textSub,
     textAlign:  'center',
   },
   emptySub: {
     fontSize:   13,
-    color:      COLORS.textMuted,
+    color:      colors.textMuted,
     textAlign:  'center',
     marginTop:   8,
     lineHeight: 19,
@@ -259,14 +262,14 @@ const styles = StyleSheet.create({
     borderRadius:    RADIUS.md,
     borderWidth:      1,
     borderStyle:     'dashed',
-    borderColor:      COLORS.border,
+    borderColor:      colors.border,
     alignItems:      'center',
     justifyContent:  'center',
   },
   manageBtnText: {
     fontFamily:    FONT.bold,
     fontSize:      13,
-    color:         COLORS.primary,
+    color:         colors.primary,
     letterSpacing: 0.4,
   },
 });

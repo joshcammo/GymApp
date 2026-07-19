@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
-import { COLORS } from '../constants/colors';
+import { ColorTokens } from '../theme/colorways';
+import { useTheme } from '../theme/ThemeContext';
 import { FONT } from '../constants/theme';
 import { Logo } from './Logo';
 
@@ -14,6 +15,8 @@ interface Props {
 }
 
 export function EmptyState({ emoji, message, subMessage, action }: Props) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <View style={styles.container}>
       {emoji ? (
@@ -30,7 +33,7 @@ export function EmptyState({ emoji, message, subMessage, action }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorTokens) => StyleSheet.create({
   container: {
     flex:              1,
     justifyContent:    'center',
@@ -49,12 +52,12 @@ const styles = StyleSheet.create({
   message: {
     fontFamily: FONT.semibold,
     fontSize:   19,
-    color:      COLORS.textSub,
+    color:      colors.textSub,
     textAlign:  'center',
   },
   sub: {
     fontSize:   14,
-    color:      COLORS.textMuted,
+    color:      colors.textMuted,
     textAlign:  'center',
     marginTop:   8,
     lineHeight: 20,

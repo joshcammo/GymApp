@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, Modal, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 
-import { COLORS } from '../constants/colors';
+import { ColorTokens } from '../theme/colorways';
+import { useTheme } from '../theme/ThemeContext';
 import { FONT, RADIUS } from '../constants/theme';
 import { Exercise } from '../types';
 import { PressableScale } from './PressableScale';
@@ -25,6 +26,8 @@ interface Props {
  * picker this list is just that day's log — no search or categories.
  */
 export function SupersetPickerModal({ visible, exercises, onClose, onSelect }: Props) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const pick = (partner: { id: number; name: string } | null) => {
     haptics.tap();
     onSelect(partner);
@@ -47,7 +50,7 @@ export function SupersetPickerModal({ visible, exercises, onClose, onSelect }: P
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             style={styles.headerBtn}
           >
-            <Feather name="x" size={22} color={COLORS.textSub} />
+            <Feather name="x" size={22} color={colors.textSub} />
           </TouchableOpacity>
         </View>
 
@@ -58,7 +61,7 @@ export function SupersetPickerModal({ visible, exercises, onClose, onSelect }: P
           ListHeaderComponent={
             <PressableScale style={styles.row} onPress={() => pick(null)} pressScale={0.98}>
               <View style={[styles.iconTile, styles.iconTileMuted]}>
-                <Feather name="slash" size={18} color={COLORS.textMuted} />
+                <Feather name="slash" size={18} color={colors.textMuted} />
               </View>
               <View style={styles.rowText}>
                 <Text style={styles.rowTitle}>None</Text>
@@ -80,7 +83,7 @@ export function SupersetPickerModal({ visible, exercises, onClose, onSelect }: P
                 pressScale={0.98}
               >
                 <View style={styles.iconTile}>
-                  <Feather name="link" size={18} color={COLORS.primary} />
+                  <Feather name="link" size={18} color={colors.primary} />
                 </View>
                 <View style={styles.rowText}>
                   <Text style={styles.rowTitle}>{item.name}</Text>
@@ -88,7 +91,7 @@ export function SupersetPickerModal({ visible, exercises, onClose, onSelect }: P
                     <Text style={styles.rowSub}>Already superset with {partnerName}</Text>
                   ) : null}
                 </View>
-                <Feather name="chevron-right" size={18} color={COLORS.textMuted} />
+                <Feather name="chevron-right" size={18} color={colors.textMuted} />
               </PressableScale>
             );
           }}
@@ -101,10 +104,10 @@ export function SupersetPickerModal({ visible, exercises, onClose, onSelect }: P
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorTokens) => StyleSheet.create({
   safe: {
     flex:            1,
-    backgroundColor: COLORS.bg,
+    backgroundColor: colors.bg,
   },
   header: {
     flexDirection:     'row',
@@ -113,7 +116,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical:   14,
     borderBottomWidth:  1,
-    borderBottomColor:  COLORS.divider,
+    borderBottomColor:  colors.divider,
   },
   headerBtn: {
     width:      32,
@@ -122,7 +125,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontFamily: FONT.semibold,
     fontSize:   17,
-    color:      COLORS.text,
+    color:      colors.text,
   },
   listContent: {
     padding: 16,
@@ -131,24 +134,24 @@ const styles = StyleSheet.create({
     flexDirection:     'row',
     alignItems:        'center',
     gap:               14,
-    backgroundColor:   COLORS.card,
+    backgroundColor:   colors.card,
     borderRadius:      RADIUS.lg,
     padding:           10,
     paddingRight:      16,
     marginBottom:      10,
     borderWidth:        1,
-    borderColor:        COLORS.cardBorder,
+    borderColor:        colors.cardBorder,
   },
   iconTile: {
     width:           44,
     height:          44,
     borderRadius:    RADIUS.md,
-    backgroundColor: COLORS.primaryBg,
+    backgroundColor: colors.primaryBg,
     alignItems:      'center',
     justifyContent:  'center',
   },
   iconTileMuted: {
-    backgroundColor: COLORS.bgAlt,
+    backgroundColor: colors.bgAlt,
   },
   rowText: {
     flex: 1,
@@ -156,15 +159,15 @@ const styles = StyleSheet.create({
   rowTitle: {
     fontFamily: FONT.medium,
     fontSize:   16,
-    color:      COLORS.text,
+    color:      colors.text,
   },
   rowSub: {
     fontSize:  12,
-    color:     COLORS.textMuted,
+    color:     colors.textMuted,
     marginTop:  2,
   },
   emptyText: {
-    color:      COLORS.textMuted,
+    color:      colors.textMuted,
     fontSize:   14,
     textAlign:  'center',
     marginTop:  24,

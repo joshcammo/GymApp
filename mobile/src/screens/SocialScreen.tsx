@@ -1,4 +1,4 @@
-import React, { useCallback, useLayoutEffect, useRef, useState } from 'react';
+import React, { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   View, Text, FlatList, StyleSheet, ActivityIndicator, RefreshControl, TouchableOpacity, Alert,
 } from 'react-native';
@@ -9,7 +9,8 @@ import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Feather } from '@expo/vector-icons';
 
-import { COLORS } from '../constants/colors';
+import { ColorTokens } from '../theme/colorways';
+import { useTheme } from '../theme/ThemeContext';
 import { FONT, RADIUS } from '../constants/theme';
 import { RootStackParamList, MainTabParamList, Post, ShareTarget } from '../types';
 import { postsApi } from '../services/social';
@@ -27,6 +28,8 @@ type Nav = CompositeNavigationProp<
 interface Props { navigation: Nav }
 
 export function SocialScreen({ navigation }: Props) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [posts,      setPosts]      = useState<Post[]>([]);
   const [myId,       setMyId]       = useState<string | null>(null);
   const [loading,    setLoading]    = useState(true);
@@ -49,11 +52,11 @@ export function SocialScreen({ navigation }: Props) {
           onPress={() => { haptics.tap(); setPickerVisible(true); }}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Feather name="plus" size={19} color={COLORS.primary} />
+          <Feather name="plus" size={19} color={colors.primary} />
         </TouchableOpacity>
       ),
     });
-  }, [navigation]);
+  }, [navigation, colors]);
 
   const load = useCallback(async (showFullLoader = false) => {
     if (showFullLoader) setLoading(true);
@@ -131,7 +134,7 @@ export function SocialScreen({ navigation }: Props) {
     <SafeAreaView style={styles.safe} edges={['bottom']}>
       {loading ? (
         <View style={styles.centred}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       ) : error ? (
         <View style={styles.centred}>
@@ -146,8 +149,8 @@ export function SocialScreen({ navigation }: Props) {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              tintColor={COLORS.primary}
-              colors={[COLORS.primary]}
+              tintColor={colors.primary}
+              colors={[colors.primary]}
             />
           }
           renderItem={({ item }) => (
@@ -167,7 +170,7 @@ export function SocialScreen({ navigation }: Props) {
                   style={styles.emptyLink}
                   onPress={() => { haptics.tap(); setPickerVisible(true); }}
                 >
-                  <Feather name="plus" size={14} color={COLORS.primary} />
+                  <Feather name="plus" size={14} color={colors.primary} />
                   <Text style={styles.emptyLinkText}>Share a PR</Text>
                 </TouchableOpacity>
               }
@@ -190,10 +193,10 @@ export function SocialScreen({ navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorTokens) => StyleSheet.create({
   safe: {
     flex:            1,
-    backgroundColor: COLORS.bg,
+    backgroundColor: colors.bg,
   },
   centred: {
     flex:           1,
@@ -208,9 +211,9 @@ const styles = StyleSheet.create({
     width:           38,
     height:          38,
     borderRadius:    RADIUS.pill,
-    backgroundColor: COLORS.primaryBg,
+    backgroundColor: colors.primaryBg,
     borderWidth:      1,
-    borderColor:      COLORS.primary,
+    borderColor:      colors.primary,
     alignItems:      'center',
     justifyContent:  'center',
   },
@@ -222,6 +225,6 @@ const styles = StyleSheet.create({
   emptyLinkText: {
     fontFamily: FONT.bold,
     fontSize:   13,
-    color:      COLORS.primary,
+    color:      colors.primary,
   },
 });

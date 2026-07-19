@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View, Text, Modal, TextInput, TouchableOpacity,
   StyleSheet, Alert, KeyboardAvoidingView, Platform,
@@ -6,9 +6,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 
-import { COLORS } from '../constants/colors';
+import { ColorTokens } from '../theme/colorways';
+import { useTheme } from '../theme/ThemeContext';
 import { FONT, RADIUS } from '../constants/theme';
-import { formStyles } from '../constants/formStyles';
+import { useFormStyles } from '../constants/formStyles';
 import { ShareTarget } from '../types';
 import { postsApi } from '../services/social';
 import { GradientButton } from './GradientButton';
@@ -25,6 +26,9 @@ interface Props {
  *  display only; share_post() independently re-derives the caller's current
  *  best set server-side at submit time (see migration 013). */
 export function SharePostModal({ target, onClose, onShared }: Props) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const formStyles = useFormStyles();
   const [caption,    setCaption]    = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -69,7 +73,7 @@ export function SharePostModal({ target, onClose, onShared }: Props) {
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               style={styles.headerBtn}
             >
-              <Feather name="x" size={22} color={COLORS.textSub} />
+              <Feather name="x" size={22} color={colors.textSub} />
             </TouchableOpacity>
           </View>
 
@@ -77,7 +81,7 @@ export function SharePostModal({ target, onClose, onShared }: Props) {
             {target && (
               <View style={styles.previewCard}>
                 <View style={styles.previewTopRow}>
-                  <Feather name="award" size={14} color={COLORS.primary} />
+                  <Feather name="award" size={14} color={colors.primary} />
                   <Text style={styles.previewName}>{target.exerciseName}</Text>
                 </View>
                 <Text style={styles.previewSet}>
@@ -92,7 +96,7 @@ export function SharePostModal({ target, onClose, onShared }: Props) {
               value={caption}
               onChangeText={setCaption}
               placeholder="How'd it feel?"
-              placeholderTextColor={COLORS.textMuted}
+              placeholderTextColor={colors.textMuted}
               multiline
               maxLength={280}
               textAlignVertical="top"
@@ -112,10 +116,10 @@ export function SharePostModal({ target, onClose, onShared }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorTokens) => StyleSheet.create({
   safe: {
     flex:            1,
-    backgroundColor: COLORS.bg,
+    backgroundColor: colors.bg,
   },
   flexFill: { flex: 1 },
   header: {
@@ -125,7 +129,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical:   14,
     borderBottomWidth:  1,
-    borderBottomColor:  COLORS.divider,
+    borderBottomColor:  colors.divider,
   },
   headerBtn: {
     width:      32,
@@ -134,16 +138,16 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontFamily: FONT.semibold,
     fontSize:   17,
-    color:      COLORS.text,
+    color:      colors.text,
   },
   content: {
     padding: 16,
   },
   previewCard: {
-    backgroundColor:   COLORS.card,
+    backgroundColor:   colors.card,
     borderRadius:      RADIUS.lg,
     borderWidth:        1,
-    borderColor:        COLORS.cardBorder,
+    borderColor:        colors.cardBorder,
     padding:           16,
     marginBottom:      20,
   },
@@ -155,12 +159,12 @@ const styles = StyleSheet.create({
   previewName: {
     fontFamily: FONT.semibold,
     fontSize:   16,
-    color:      COLORS.text,
+    color:      colors.text,
   },
   previewSet: {
     fontFamily: FONT.bold,
     fontSize:   22,
-    color:      COLORS.primary,
+    color:      colors.primary,
     marginTop:  8,
   },
   captionInput: {

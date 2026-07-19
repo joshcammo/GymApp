@@ -1,4 +1,4 @@
-import { COLORS } from './colors';
+import { ColorTokens } from '../theme/colorways';
 
 /**
  * Display typeface — Space Grotesk, loaded in App.tsx.
@@ -21,14 +21,18 @@ export const RADIUS = {
   pill: 999,
 } as const;
 
-/** Primary CTA gradient — hot ember, light → deep */
-export const GRADIENT_PRIMARY = ['#FF8A3D', '#FF5A1F'] as const;
+/** Primary CTA gradient for the active colorway — light → deep. */
+export function gradientPrimary(colors: ColorTokens): readonly [string, string] {
+  return [colors.gradientStart, colors.gradientEnd];
+}
 
-/** Soft orange glow used behind primary buttons and the logo */
-export const GLOW = {
-  shadowColor:   COLORS.primary,
-  shadowOpacity: 0.35,
-  shadowRadius:  16,
-  shadowOffset:  { width: 0, height: 6 },
-  elevation:     8,
-} as const;
+/** Soft glow (in the colorway's primary hue) used behind primary buttons and the logo. */
+export function glow(colors: ColorTokens) {
+  return {
+    shadowColor:   colors.primary,
+    shadowOpacity: 0.35,
+    shadowRadius:  16,
+    shadowOffset:  { width: 0, height: 6 },
+    elevation:     8,
+  } as const;
+}

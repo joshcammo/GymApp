@@ -13,14 +13,15 @@ import {
   SpaceGrotesk_700Bold,
 } from '@expo-google-fonts/space-grotesk';
 
-import { COLORS } from './src/constants/colors';
 import { FONT } from './src/constants/theme';
 import { RootStackParamList, Profile } from './src/types';
 import { supabase } from './src/lib/supabase';
 import { profileApi } from './src/services/social';
+import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
 import { LoginScreen }           from './src/screens/LoginScreen';
 import { MainTabs }              from './src/navigation/MainTabs';
 import { SettingsScreen }        from './src/screens/SettingsScreen';
+import { AppearanceScreen }      from './src/screens/AppearanceScreen';
 import { ChangePasswordScreen }  from './src/screens/ChangePasswordScreen';
 import { DayDetailScreen }       from './src/screens/DayDetailScreen';
 import { AddExerciseScreen }     from './src/screens/AddExerciseScreen';
@@ -33,6 +34,15 @@ import { ChangeUsernameScreen }  from './src/screens/ChangeUsernameScreen';
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function App() {
+  return (
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
+  );
+}
+
+function AppContent() {
+  const { colors, effectiveMode } = useTheme();
   const [session, setSession]           = useState<Session | null>(null);
   const [initializing, setInitializing] = useState(true);
   // undefined = not yet fetched for the current session; null = fetch failed.
@@ -74,29 +84,29 @@ export default function App() {
 
   if (initializing || !fontsReady || (session && profile === undefined)) {
     return (
-      <View style={{ flex: 1, backgroundColor: COLORS.bg, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator color={COLORS.primary} size="large" />
+      <View style={{ flex: 1, backgroundColor: colors.bg, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator color={colors.primary} size="large" />
       </View>
     );
   }
 
   return (
     <SafeAreaProvider>
-      <StatusBar style="light" backgroundColor={COLORS.bg} />
+      <StatusBar style={effectiveMode === 'dark' ? 'light' : 'dark'} backgroundColor={colors.bg} />
       <NavigationContainer>
         <Stack.Navigator
           screenOptions={{
             headerStyle: {
-              backgroundColor: COLORS.bgAlt,
+              backgroundColor: colors.bgAlt,
             },
-            headerTintColor: COLORS.text,
+            headerTintColor: colors.text,
             headerTitleStyle: {
               fontFamily: FONT.semibold,
               fontSize:   17,
             },
             headerShadowVisible: false,
             contentStyle: {
-              backgroundColor: COLORS.bg,
+              backgroundColor: colors.bg,
             },
             animation: 'slide_from_right',
             // Otherwise the back button shows the previous screen's title —
@@ -129,6 +139,11 @@ export default function App() {
               <Stack.Screen
                 name="Settings"
                 component={SettingsScreen}
+              />
+              <Stack.Screen
+                name="Appearance"
+                component={AppearanceScreen}
+                options={{ title: 'Appearance' }}
               />
               <Stack.Screen
                 name="ChangePassword"

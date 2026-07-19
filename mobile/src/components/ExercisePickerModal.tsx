@@ -6,7 +6,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 
-import { COLORS } from '../constants/colors';
+import { ColorTokens } from '../theme/colorways';
+import { useTheme } from '../theme/ThemeContext';
 import { FONT, RADIUS } from '../constants/theme';
 import { EXERCISE_IMAGES } from '../constants/exerciseImages';
 import { MUSCLE_GROUPS, muscleGroupLabel } from '../constants/muscleGroups';
@@ -35,11 +36,13 @@ const EQUIPMENT: { key: string; label: string }[] = [
 
 /** Illustration if we have one, otherwise a placeholder icon tile. */
 function DefThumb({ def }: { def: ExerciseDef }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const source = def.image_key ? EXERCISE_IMAGES[def.image_key] : undefined;
   if (source) return <Image source={source} style={styles.thumb} />;
   return (
     <View style={[styles.thumb, styles.thumbFallback]}>
-      <Feather name="activity" size={22} color={COLORS.textMuted} />
+      <Feather name="activity" size={22} color={colors.textMuted} />
     </View>
   );
 }
@@ -54,6 +57,8 @@ let defsCache: ExerciseDef[] | null = null;
  * yields an ExerciseDef — free-text names are no longer possible.
  */
 export function ExercisePickerModal({ visible, onClose, onSelect }: Props) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [defs,    setDefs]    = useState<ExerciseDef[] | null>(defsCache);
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState<string | null>(null);
@@ -197,13 +202,13 @@ export function ExercisePickerModal({ visible, onClose, onSelect }: Props) {
           {item.is_custom ? '  ·  custom' : ''}
         </Text>
       </View>
-      <Feather name="plus" size={18} color={COLORS.primary} />
+      <Feather name="plus" size={18} color={colors.primary} />
     </PressableScale>
   );
 
   const customFooter = (
     <TouchableOpacity style={styles.customBtn} onPress={openCustomForm} activeOpacity={0.7}>
-      <Feather name="plus-circle" size={15} color={COLORS.primary} />
+      <Feather name="plus-circle" size={15} color={colors.primary} />
       <Text style={styles.customBtnText}>Can't find it? Add a custom exercise</Text>
     </TouchableOpacity>
   );
@@ -228,7 +233,7 @@ export function ExercisePickerModal({ visible, onClose, onSelect }: Props) {
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               style={styles.headerBtn}
             >
-              <Feather name="chevron-left" size={22} color={COLORS.text} />
+              <Feather name="chevron-left" size={22} color={colors.text} />
             </TouchableOpacity>
           ) : (
             <View style={styles.headerBtn} />
@@ -239,13 +244,13 @@ export function ExercisePickerModal({ visible, onClose, onSelect }: Props) {
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             style={styles.headerBtn}
           >
-            <Feather name="x" size={22} color={COLORS.textSub} />
+            <Feather name="x" size={22} color={colors.textSub} />
           </TouchableOpacity>
         </View>
 
         {loading ? (
           <View style={styles.centred}>
-            <ActivityIndicator size="large" color={COLORS.primary} />
+            <ActivityIndicator size="large" color={colors.primary} />
           </View>
         ) : error ? (
           <View style={styles.centred}>
@@ -269,7 +274,7 @@ export function ExercisePickerModal({ visible, onClose, onSelect }: Props) {
                   value={customName}
                   onChangeText={v => { setCustomName(v); setSuggestions(null); }}
                   placeholder="e.g. Landmine Press"
-                  placeholderTextColor={COLORS.textMuted}
+                  placeholderTextColor={colors.textMuted}
                   autoCapitalize="words"
                 />
                 <Text style={styles.formLabel}>Muscle Group</Text>
@@ -315,7 +320,7 @@ export function ExercisePickerModal({ visible, onClose, onSelect }: Props) {
                 pressScale={0.98}
               >
                 <View style={[styles.thumb, styles.thumbFallback]}>
-                  <Feather name="corner-up-left" size={20} color={COLORS.primary} />
+                  <Feather name="corner-up-left" size={20} color={colors.primary} />
                 </View>
                 <View style={styles.rowText}>
                   <Text style={styles.rowTitle}>{s.name}</Text>
@@ -323,7 +328,7 @@ export function ExercisePickerModal({ visible, onClose, onSelect }: Props) {
                     {muscleGroupLabel(s.muscle_group)}{s.is_custom ? '  ·  custom' : ''}
                   </Text>
                 </View>
-                <Feather name="plus" size={18} color={COLORS.primary} />
+                <Feather name="plus" size={18} color={colors.primary} />
               </PressableScale>
             )}
             ListFooterComponent={
@@ -348,19 +353,19 @@ export function ExercisePickerModal({ visible, onClose, onSelect }: Props) {
           /* ── Browse: search + groups / group contents ── */
           <View style={{ flex: 1 }}>
             <View style={styles.searchWrap}>
-              <Feather name="search" size={15} color={COLORS.textMuted} />
+              <Feather name="search" size={15} color={colors.textMuted} />
               <TextInput
                 style={styles.searchInput}
                 value={search}
                 onChangeText={setSearch}
                 placeholder="Search all exercises"
-                placeholderTextColor={COLORS.textMuted}
+                placeholderTextColor={colors.textMuted}
                 autoCapitalize="none"
                 autoCorrect={false}
               />
               {search ? (
                 <TouchableOpacity onPress={() => setSearch('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                  <Feather name="x-circle" size={15} color={COLORS.textMuted} />
+                  <Feather name="x-circle" size={15} color={colors.textMuted} />
                 </TouchableOpacity>
               ) : null}
             </View>
@@ -402,14 +407,14 @@ export function ExercisePickerModal({ visible, onClose, onSelect }: Props) {
                         <Image source={EXERCISE_IMAGES[thumbDef.image_key!]} style={styles.thumb} />
                       ) : (
                         <View style={[styles.thumb, styles.thumbFallback]}>
-                          <Feather name="activity" size={22} color={COLORS.textMuted} />
+                          <Feather name="activity" size={22} color={colors.textMuted} />
                         </View>
                       )}
                       <View style={styles.rowText}>
                         <Text style={styles.rowTitle}>{g.label}</Text>
                         <Text style={styles.rowSub}>{groupCounts.get(g.key) ?? 0} exercises</Text>
                       </View>
-                      <Feather name="chevron-right" size={18} color={COLORS.textMuted} />
+                      <Feather name="chevron-right" size={18} color={colors.textMuted} />
                     </PressableScale>
                   );
                 }}
@@ -423,10 +428,10 @@ export function ExercisePickerModal({ visible, onClose, onSelect }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorTokens) => StyleSheet.create({
   safe: {
     flex:            1,
-    backgroundColor: COLORS.bg,
+    backgroundColor: colors.bg,
   },
   header: {
     flexDirection:     'row',
@@ -435,7 +440,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical:   14,
     borderBottomWidth:  1,
-    borderBottomColor:  COLORS.divider,
+    borderBottomColor:  colors.divider,
   },
   headerBtn: {
     width:      32,
@@ -444,7 +449,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontFamily: FONT.semibold,
     fontSize:   17,
-    color:      COLORS.text,
+    color:      colors.text,
   },
   centred: {
     flex:           1,
@@ -453,23 +458,23 @@ const styles = StyleSheet.create({
     gap:            14,
   },
   errorText: {
-    color:             COLORS.textSub,
+    color:             colors.textSub,
     fontSize:          14,
     textAlign:         'center',
     paddingHorizontal: 32,
   },
   retryBtn: {
-    backgroundColor:   COLORS.primaryBg,
+    backgroundColor:   colors.primaryBg,
     borderRadius:      RADIUS.pill,
     borderWidth:        1,
-    borderColor:        COLORS.primary,
+    borderColor:        colors.primary,
     paddingHorizontal: 18,
     paddingVertical:    8,
   },
   retryText: {
     fontFamily: FONT.bold,
     fontSize:   13,
-    color:      COLORS.primary,
+    color:      colors.primary,
   },
   searchWrap: {
     flexDirection:     'row',
@@ -479,16 +484,16 @@ const styles = StyleSheet.create({
     marginTop:         12,
     paddingHorizontal: 12,
     paddingVertical:   Platform.OS === 'ios' ? 10 : 4,
-    backgroundColor:   COLORS.card,
+    backgroundColor:   colors.card,
     borderRadius:      RADIUS.md,
     borderWidth:        1,
-    borderColor:        COLORS.border,
+    borderColor:        colors.border,
   },
   searchInput: {
     flex:       1,
     fontFamily: FONT.medium,
     fontSize:   15,
-    color:      COLORS.text,
+    color:      colors.text,
     padding:    0,
   },
   listContent: {
@@ -498,19 +503,19 @@ const styles = StyleSheet.create({
     flexDirection:     'row',
     alignItems:        'center',
     gap:               14,
-    backgroundColor:   COLORS.card,
+    backgroundColor:   colors.card,
     borderRadius:      RADIUS.lg,
     padding:           10,
     paddingRight:      16,
     marginBottom:      10,
     borderWidth:        1,
-    borderColor:        COLORS.cardBorder,
+    borderColor:        colors.cardBorder,
   },
   thumb: {
     width:           56,
     height:          56,
     borderRadius:    RADIUS.md,
-    backgroundColor: COLORS.bgAlt,
+    backgroundColor: colors.bgAlt,
   },
   thumbFallback: {
     alignItems:     'center',
@@ -522,15 +527,15 @@ const styles = StyleSheet.create({
   rowTitle: {
     fontFamily: FONT.medium,
     fontSize:   16,
-    color:      COLORS.text,
+    color:      colors.text,
   },
   rowSub: {
     fontSize:  12,
-    color:     COLORS.textMuted,
+    color:     colors.textMuted,
     marginTop:  2,
   },
   emptyText: {
-    color:      COLORS.textMuted,
+    color:      colors.textMuted,
     fontSize:   14,
     textAlign:  'center',
     marginTop:  24,
@@ -545,33 +550,33 @@ const styles = StyleSheet.create({
     borderRadius:    RADIUS.md,
     borderWidth:      1,
     borderStyle:     'dashed',
-    borderColor:      COLORS.border,
+    borderColor:      colors.border,
   },
   customBtnText: {
     fontFamily: FONT.bold,
     fontSize:   13,
-    color:      COLORS.primary,
+    color:      colors.primary,
   },
   // ── Custom form ──
   formLabel: {
     fontFamily:    FONT.medium,
     fontSize:      11,
-    color:         COLORS.textMuted,
+    color:         colors.textMuted,
     letterSpacing: 0.8,
     textTransform: 'uppercase',
     marginBottom:  8,
     marginTop:     14,
   },
   input: {
-    backgroundColor:   COLORS.card,
+    backgroundColor:   colors.card,
     borderRadius:      RADIUS.md,
     borderWidth:        1,
-    borderColor:        COLORS.border,
+    borderColor:        colors.border,
     paddingHorizontal: 14,
     paddingVertical:   12,
     fontFamily:        FONT.medium,
     fontSize:          15,
-    color:             COLORS.text,
+    color:             colors.text,
   },
   chipWrap: {
     flexDirection: 'row',
@@ -579,35 +584,35 @@ const styles = StyleSheet.create({
     gap:           8,
   },
   chip: {
-    backgroundColor:   COLORS.card,
+    backgroundColor:   colors.card,
     borderRadius:      RADIUS.pill,
     borderWidth:        1,
-    borderColor:        COLORS.border,
+    borderColor:        colors.border,
     paddingHorizontal: 13,
     paddingVertical:    7,
   },
   chipActive: {
-    backgroundColor: COLORS.primaryBg,
-    borderColor:     COLORS.primary,
+    backgroundColor: colors.primaryBg,
+    borderColor:     colors.primary,
   },
   chipText: {
     fontFamily: FONT.medium,
     fontSize:   13,
-    color:      COLORS.textSub,
+    color:      colors.textSub,
   },
   chipTextActive: {
-    color:      COLORS.primary,
+    color:      colors.primary,
     fontFamily: FONT.bold,
   },
   didYouMean: {
     fontFamily: FONT.semibold,
     fontSize:   14,
-    color:      COLORS.text,
+    color:      colors.text,
     marginTop:  20,
     marginBottom: 10,
   },
   createBtn: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     borderRadius:    RADIUS.md,
     paddingVertical: 14,
     alignItems:      'center',

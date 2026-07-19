@@ -1,13 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View, Text, TextInput, StyleSheet, Alert,
   KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { COLORS } from '../constants/colors';
+import { ColorTokens } from '../theme/colorways';
+import { useTheme } from '../theme/ThemeContext';
 import { FONT, RADIUS } from '../constants/theme';
-import { formStyles } from '../constants/formStyles';
+import { useFormStyles } from '../constants/formStyles';
 import { profileApi } from '../services/social';
 import { Logo } from '../components/Logo';
 import { GradientButton } from '../components/GradientButton';
@@ -21,6 +22,9 @@ interface Props {
 }
 
 export function UsernameSetupScreen({ onComplete }: Props) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const formStyles = useFormStyles();
   const [username,   setUsername]   = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -68,7 +72,7 @@ export function UsernameSetupScreen({ onComplete }: Props) {
               value={username}
               onChangeText={setUsername}
               placeholder="e.g. josh_lifts"
-              placeholderTextColor={COLORS.textMuted}
+              placeholderTextColor={colors.textMuted}
               autoCapitalize="none"
               autoCorrect={false}
               maxLength={20}
@@ -93,10 +97,10 @@ export function UsernameSetupScreen({ onComplete }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorTokens) => StyleSheet.create({
   safe: {
     flex:            1,
-    backgroundColor: COLORS.bg,
+    backgroundColor: colors.bg,
   },
   flexFill: { flex: 1 },
   content: {
@@ -113,25 +117,25 @@ const styles = StyleSheet.create({
     marginTop:  16,
     fontFamily: FONT.bold,
     fontSize:   22,
-    color:      COLORS.text,
+    color:      colors.text,
   },
   subtitle: {
     marginTop:  8,
     fontSize:   14,
-    color:      COLORS.textSub,
+    color:      colors.textSub,
     textAlign:  'center',
     lineHeight: 20,
   },
   formCard: {
-    backgroundColor: COLORS.bgAlt,
+    backgroundColor: colors.bgAlt,
     borderRadius:    RADIUS.xl,
     borderWidth:      1,
-    borderColor:      COLORS.cardBorder,
+    borderColor:      colors.cardBorder,
     padding:         20,
   },
   hint: {
     fontSize:     12,
-    color:        COLORS.textMuted,
+    color:        colors.textMuted,
     marginTop:    -10,
     marginBottom: 20,
   },

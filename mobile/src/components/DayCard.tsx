@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
-import { COLORS } from '../constants/colors';
+import { ColorTokens } from '../theme/colorways';
+import { useTheme } from '../theme/ThemeContext';
 import { FONT, RADIUS } from '../constants/theme';
 import { DayInfo } from '../types';
 import { PressableScale } from './PressableScale';
@@ -13,6 +14,8 @@ interface Props {
 }
 
 export function DayCard({ day, onPress }: Props) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const hasExercises = day.exercises.length > 0;
   const previewNames = hasExercises
     ? day.exercises
@@ -58,27 +61,27 @@ export function DayCard({ day, onPress }: Props) {
       </View>
 
       {/* Right — chevron */}
-      <Feather name="chevron-right" size={20} color={COLORS.textMuted} />
+      <Feather name="chevron-right" size={20} color={colors.textMuted} />
     </PressableScale>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorTokens) => StyleSheet.create({
   card: {
     flexDirection:     'row',
     alignItems:        'center',
-    backgroundColor:   COLORS.card,
+    backgroundColor:   colors.card,
     borderRadius:      RADIUS.lg,
     paddingVertical:   12,
     paddingHorizontal: 14,
     marginBottom:      10,
     borderWidth:        1,
-    borderColor:        COLORS.cardBorder,
+    borderColor:        colors.cardBorder,
   },
   cardToday: {
-    borderColor:     COLORS.primary,
-    backgroundColor: COLORS.cardRaised,
-    shadowColor:     COLORS.primary,
+    borderColor:     colors.primary,
+    backgroundColor: colors.cardRaised,
+    shadowColor:     colors.primary,
     shadowOpacity:   0.25,
     shadowRadius:    12,
     shadowOffset:    { width: 0, height: 4 },
@@ -88,34 +91,34 @@ const styles = StyleSheet.create({
     width:           52,
     height:          52,
     borderRadius:    RADIUS.md,
-    backgroundColor: COLORS.bgAlt,
+    backgroundColor: colors.bgAlt,
     borderWidth:      1,
-    borderColor:      COLORS.border,
+    borderColor:      colors.border,
     alignItems:      'center',
     justifyContent:  'center',
     marginRight:     14,
   },
   dayColToday: {
-    backgroundColor: COLORS.primaryBg,
-    borderColor:     COLORS.primary,
+    backgroundColor: colors.primaryBg,
+    borderColor:     colors.primary,
   },
   dayShort: {
     fontFamily:    FONT.semibold,
     fontSize:      10,
-    color:         COLORS.textMuted,
+    color:         colors.textMuted,
     letterSpacing: 1.2,
   },
   dayShortToday: {
-    color: COLORS.primary,
+    color: colors.primary,
   },
   dateNum: {
     fontFamily: FONT.bold,
     fontSize:   18,
-    color:      COLORS.textSub,
+    color:      colors.textSub,
     marginTop:  1,
   },
   dateNumToday: {
-    color: COLORS.text,
+    color: colors.text,
   },
   summaryCol: {
     flex: 1,
@@ -126,7 +129,7 @@ const styles = StyleSheet.create({
     gap:           8,
   },
   countBubble: {
-    backgroundColor: COLORS.primaryBg,
+    backgroundColor: colors.primaryBg,
     borderRadius:    RADIUS.sm,
     minWidth:        26,
     height:          26,
@@ -137,20 +140,20 @@ const styles = StyleSheet.create({
   countText: {
     fontFamily: FONT.bold,
     fontSize:   13,
-    color:      COLORS.primary,
+    color:      colors.primary,
   },
   exerciseWord: {
     fontFamily: FONT.medium,
     fontSize:   15,
-    color:      COLORS.text,
+    color:      colors.text,
   },
   preview: {
     fontSize:  12,
-    color:     COLORS.textMuted,
+    color:     colors.textMuted,
     marginTop:  5,
   },
   emptyLabel: {
     fontSize: 14,
-    color:    COLORS.textMuted,
+    color:    colors.textMuted,
   },
 });
