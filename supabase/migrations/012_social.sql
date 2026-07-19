@@ -70,6 +70,15 @@ create trigger trg_create_profile
 after insert on auth.users
 for each row execute function public.handle_new_user();
 
+-- Backfill: the trigger above only covers signups from this point on.
+-- This app already has real users from migrations 001-011, so give every
+-- existing auth.users row a profile too — otherwise those accounts never
+-- get the username gate, can't be found by search, and posts_feed's join
+-- silently drops their own posts from their own feed.
+insert into public.profiles (id)
+select id from auth.users
+on conflict (id) do nothing;
+
 -- ── RPC: claim a username ────────────────────────────────────────
 create function public.set_username(p_username text)
 returns void
@@ -244,9 +253,13 @@ grant select on public.friendships_with_profiles to authenticated;
 
 -- ── posts ───────────────────────────────────────────────────────
 -- A snapshot, not a live join to exercises/exercise_sets — see
--- header note. weight/reps/unit/e1rm_kg are always derived
--- server-side from the caller's own logged set by share_post()
--- below, never taken as raw client input.
+-- header note. share_post() below derives weight/reps/unit/e1rm_kg
+-- server-side from the caller's own logged set — the app's client
+-- always goes through it rather than inserting into posts directly.
+-- Note this is a convenience/consistency guarantee, not a schema-
+-- enforced one: posts_insert_own only checks user_id = auth.uid(),
+-- same trust model as every other self-reported number in this app
+-- (nothing stops a user from lying about their own logged sets either).
 create table public.posts (
   id            bigint generated always as identity primary key,
   user_id       uuid not null references auth.users(id) on delete cascade,

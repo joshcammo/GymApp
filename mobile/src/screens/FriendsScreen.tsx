@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View, Text, TextInput, SectionList, TouchableOpacity,
   StyleSheet, ActivityIndicator, Alert,
@@ -38,16 +38,19 @@ export function FriendsScreen() {
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
-  // Debounced username search.
+  // Debounced username search. latestQueryRef guards against an older,
+  // slower response landing after a newer one and overwriting its results.
+  const latestQueryRef = useRef('');
   useEffect(() => {
     const q = query.trim();
+    latestQueryRef.current = q;
     if (!q) { setResults([]); setSearching(false); return; }
     setSearching(true);
     const timer = setTimeout(() => {
       profileApi.search(q)
-        .then(setResults)
-        .catch(() => setResults([]))
-        .finally(() => setSearching(false));
+        .then(r => { if (latestQueryRef.current === q) setResults(r); })
+        .catch(() => { if (latestQueryRef.current === q) setResults([]); })
+        .finally(() => { if (latestQueryRef.current === q) setSearching(false); });
     }, 350);
     return () => clearTimeout(timer);
   }, [query]);
@@ -62,9 +65,10 @@ export function FriendsScreen() {
   };
 
   const sendRequest = (profile: Profile) => withPending(profile.id, async () => {
+    if (!profile.username) return;
     haptics.tap();
     try {
-      const { status } = await friendsApi.sendRequest(profile.username!);
+      const { status } = await friendsApi.sendRequest(profile.username);
       haptics.success();
       if (status === 'accepted') Alert.alert('Friends!', `You and ${profile.username} are now friends.`);
       setQuery('');

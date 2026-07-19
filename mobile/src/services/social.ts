@@ -68,8 +68,11 @@ export const friendsApi = {
 
   /** Cancel a sent request or unfriend an accepted one. */
   remove: async (id: number): Promise<void> => {
-    const { error } = await supabase.from('friendships').delete().eq('id', id);
+    const { data, error } = await supabase.from('friendships').delete().eq('id', id).select('id');
     checkError(error);
+    if (!data || data.length === 0) {
+      throw new Error('Friendship not found — it may have already been removed.');
+    }
   },
 };
 
@@ -97,8 +100,11 @@ export const postsApi = {
 
   /** Delete one of the caller's own posts. */
   remove: async (postId: number): Promise<void> => {
-    const { error } = await supabase.from('posts').delete().eq('id', postId);
+    const { data, error } = await supabase.from('posts').delete().eq('id', postId).select('id');
     checkError(error);
+    if (!data || data.length === 0) {
+      throw new Error('Post not found — it may have already been deleted.');
+    }
   },
 
   like: async (postId: number): Promise<void> => {

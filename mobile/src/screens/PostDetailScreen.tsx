@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import {
   View, Text, FlatList, TextInput, TouchableOpacity,
   StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, Alert,
@@ -30,6 +30,12 @@ export function PostDetailScreen({ route }: Props) {
   const [error,    setError]    = useState<string | null>(null);
   const [draft,    setDraft]    = useState('');
   const [posting,  setPosting]  = useState(false);
+  const [liking,   setLiking]   = useState(false);
+  // Kept in sync with `post` so toggleLike always reads the current
+  // liked_by_me/like_count instead of the stale snapshot PostCard was
+  // rendered with when the tap fired.
+  const postRef = useRef<Post | null>(null);
+  postRef.current = post;
 
   const load = useCallback(async () => {
     setError(null);
@@ -50,15 +56,22 @@ export function PostDetailScreen({ route }: Props) {
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
-  const toggleLike = async (target: Post) => {
-    setPost(p => p && ({
-      ...p, liked_by_me: !p.liked_by_me, like_count: p.like_count + (p.liked_by_me ? -1 : 1),
-    }));
+  const toggleLike = async () => {
+    // Ignore a re-tap while the previous like/unlike is still in flight —
+    // see SocialScreen's toggleLike for why (stale-argument double-fire).
+    if (liking || !postRef.current) return;
+    const current = postRef.current;
+    const wasLiked = current.liked_by_me;
+
+    setLiking(true);
+    setPost(p => p && ({ ...p, liked_by_me: !wasLiked, like_count: p.like_count + (wasLiked ? -1 : 1) }));
     try {
-      if (target.liked_by_me) await postsApi.unlike(target.id);
-      else                    await postsApi.like(target.id);
+      if (wasLiked) await postsApi.unlike(current.id);
+      else          await postsApi.like(current.id);
     } catch {
-      setPost(target);
+      setPost(p => p && ({ ...p, liked_by_me: wasLiked, like_count: current.like_count }));
+    } finally {
+      setLiking(false);
     }
   };
 

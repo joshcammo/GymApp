@@ -1,4 +1,4 @@
-import React, { useCallback, useLayoutEffect, useState } from 'react';
+import React, { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import {
   View, Text, FlatList, StyleSheet, ActivityIndicator, RefreshControl, TouchableOpacity, Alert,
 } from 'react-native';
@@ -25,6 +25,12 @@ export function SocialScreen({ navigation }: Props) {
   const [loading,    setLoading]    = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error,      setError]      = useState<string | null>(null);
+  const [likingIds,  setLikingIds]  = useState<Set<number>>(new Set());
+  // Kept in sync with `posts` so toggleLike always reads the current
+  // liked_by_me/like_count instead of the (possibly stale) snapshot the
+  // FlatList row was rendered with when the tap fired.
+  const postsRef = useRef<Post[]>([]);
+  postsRef.current = posts;
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -44,9 +50,9 @@ export function SocialScreen({ navigation }: Props) {
     if (showFullLoader) setLoading(true);
     setError(null);
     try {
-      const [data, auth] = await Promise.all([postsApi.feed(), supabase.auth.getUser()]);
+      const [data, session] = await Promise.all([postsApi.feed(), supabase.auth.getSession()]);
       setPosts(data);
-      setMyId(auth.data.user?.id ?? null);
+      setMyId(session.data.session?.user.id ?? null);
     } catch (e) {
       setError((e as Error).message ?? 'Failed to load the feed');
     } finally {
@@ -62,17 +68,33 @@ export function SocialScreen({ navigation }: Props) {
     load(false);
   };
 
-  const toggleLike = async (post: Post) => {
-    // Optimistic — feels instant, and a failure just reloads on next focus.
-    setPosts(prev => prev.map(p => p.id === post.id
-      ? { ...p, liked_by_me: !p.liked_by_me, like_count: p.like_count + (p.liked_by_me ? -1 : 1) }
+  const toggleLike = async ({ id: postId }: Post) => {
+    // Ignore re-taps while a like/unlike for this post is already in
+    // flight — otherwise a rapid double-tap fires the request twice
+    // against the same stale liked_by_me value, and the second call
+    // errors (duplicate insert / already-removed) and reverts a like
+    // that had already succeeded.
+    if (likingIds.has(postId)) return;
+    const current = postsRef.current.find(p => p.id === postId);
+    if (!current) return;
+    const wasLiked = current.liked_by_me;
+
+    setLikingIds(prev => new Set(prev).add(postId));
+    // Optimistic — feels instant, and a failure just reverts below.
+    setPosts(prev => prev.map(p => p.id === postId
+      ? { ...p, liked_by_me: !wasLiked, like_count: p.like_count + (wasLiked ? -1 : 1) }
       : p
     ));
     try {
-      if (post.liked_by_me) await postsApi.unlike(post.id);
-      else                  await postsApi.like(post.id);
+      if (wasLiked) await postsApi.unlike(postId);
+      else          await postsApi.like(postId);
     } catch {
-      setPosts(prev => prev.map(p => p.id === post.id ? post : p));
+      setPosts(prev => prev.map(p => p.id === postId
+        ? { ...p, liked_by_me: wasLiked, like_count: current.like_count }
+        : p
+      ));
+    } finally {
+      setLikingIds(prev => { const next = new Set(prev); next.delete(postId); return next; });
     }
   };
 
