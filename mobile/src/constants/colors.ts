@@ -33,4 +33,16 @@ export const COLORS = {
   dangerBg:    'rgba(255, 92, 92, 0.12)',
   success:     '#3EDC97',
   successBg:   'rgba(62, 220, 151, 0.12)',
+
+  // A lighter wash of the ember accent, for a "mild" intensity tier
+  // alongside primaryBg's "strong" one (used by the muscle-group heatmap).
+  primaryBgMild: 'rgba(255, 107, 43, 0.06)',
+
+  // Diverging pair for the muscle-group heatmap — cool blue
+  // (under-trained) vs. the existing ember accent (over-trained),
+  // one of the more CVD-robust hue pairings. Contrast vs. both bg
+  // and card clears 5:1 in each case.
+  cold:         '#4C8DFF',
+  coldBg:       'rgba(76, 141, 255, 0.12)',
+  coldBgMild:   'rgba(76, 141, 255, 0.06)',
 } as const;

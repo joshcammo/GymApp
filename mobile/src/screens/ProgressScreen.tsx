@@ -9,7 +9,8 @@ import { FONT, RADIUS } from '../constants/theme';
 import { muscleGroupLabel, MUSCLE_GROUPS } from '../constants/muscleGroups';
 import { sinceDateForRange, parseDateStr } from '../utils/dateUtils';
 import {
-  ExerciseDef, MuscleGroup, MuscleGroupVolume, OneRmTrendPoint, TimeRange, WeeklyVolumePoint,
+  ExerciseDef, MuscleGroup, MuscleGroupBalance, MuscleGroupVolume, OneRmTrendPoint, TimeRange,
+  WeeklyVolumePoint,
 } from '../types';
 import { analyticsApi } from '../services/api';
 import { ExercisePickerModal } from '../components/ExercisePickerModal';
@@ -17,13 +18,17 @@ import { PressableScale } from '../components/PressableScale';
 import { EmptyState } from '../components/EmptyState';
 import { haptics } from '../utils/haptics';
 
-type Tab = '1RM' | 'VOLUME' | 'BREAKDOWN';
+type Tab = '1RM' | 'VOLUME' | 'BREAKDOWN' | 'HEATMAP';
 type VolumeMode = 'EXERCISE' | 'MUSCLE_GROUP';
 
-const TABS: { key: Tab; label: string }[] = [
+/** usesRange defaults to true — only a tab that ignores the shared
+ *  time-range selector (like the heatmap, which is always "last 7 days
+ *  vs. your own baseline") needs to opt out. */
+const TABS: { key: Tab; label: string; usesRange?: boolean }[] = [
   { key: '1RM',       label: '1RM' },
   { key: 'VOLUME',    label: 'Volume' },
-  { key: 'BREAKDOWN', label: 'Muscle Groups' },
+  { key: 'BREAKDOWN', label: 'Groups' },
+  { key: 'HEATMAP',   label: 'Heatmap', usesRange: false },
 ];
 
 const TIME_RANGES: { key: TimeRange; label: string }[] = [
@@ -43,6 +48,12 @@ const CHART_WIDTH = Dimensions.get('window').width - SCREEN_PADDING * 2 - CARD_P
 /** 1 decimal place, no trailing '.0' — e.g. 82.5, 100 */
 function fmtKg(kg: number): string {
   const rounded = Math.round(kg * 10) / 10;
+  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+}
+
+/** Same rounding as fmtKg, for non-kg magnitudes (the heatmap's sets/week average). */
+function fmtRate(n: number): string {
+  const rounded = Math.round(n * 10) / 10;
   return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
 }
 
@@ -68,7 +79,10 @@ function Segmented<T extends string>({
           onPress={() => { haptics.tap(); onChange(o.key); }}
           pressScale={0.96}
         >
-          <Text style={[styles.segBtnText, value === o.key && styles.segBtnTextActive]}>
+          <Text
+            style={[styles.segBtnText, value === o.key && styles.segBtnTextActive]}
+            numberOfLines={1}
+          >
             {o.label}
           </Text>
         </PressableScale>
@@ -131,6 +145,19 @@ function ExercisePickerField({ def, onPress }: { def: ExerciseDef | null; onPres
       </Text>
       <Feather name="chevron-right" size={18} color={COLORS.textMuted} />
     </PressableScale>
+  );
+}
+
+/** Small always-visible methodology note — so a color-coded tile never
+ *  has to be taken on faith. Sits inline rather than behind a tooltip
+ *  tap, since "how is this measured" is exactly the question a heatmap
+ *  like this invites. */
+function InfoNote({ children }: { children: string }) {
+  return (
+    <View style={styles.infoNote}>
+      <Feather name="info" size={13} color={COLORS.textMuted} />
+      <Text style={styles.infoNoteText}>{children}</Text>
+    </View>
   );
 }
 
@@ -410,21 +437,157 @@ function BreakdownTab({ range }: { range: TimeRange }) {
   );
 }
 
+// ── Muscle group heatmap tab: last 7 days vs. own 8-week baseline ────
+type BalanceBucket = 'NO_DATA' | 'NEW' | 'WELL_UNDER' | 'UNDER' | 'ON_TRACK' | 'OVER' | 'WELL_OVER';
+
+interface BalanceRead {
+  bucket:  BalanceBucket;
+  /** null when there's no baseline to compare against (NO_DATA / NEW) */
+  pctDelta: number | null;
+}
+
+/** Ratio thresholds are multiplicative around 1.0 (0.8 / 1.25 are reciprocals),
+ *  so "under" and "over" require the same proportional swing either way.
+ *  Measured in hard sets, not kg — a bodyweight pull-up counts the same
+ *  as a loaded row, since weight is optional for bodyweight exercises
+ *  and would otherwise be invisible to a kg-based comparison. */
+function classifyBalance(row: MuscleGroupBalance): BalanceRead {
+  if (row.baseline_weekly_avg_sets <= 0) {
+    return row.recent_sets > 0 ? { bucket: 'NEW', pctDelta: null } : { bucket: 'NO_DATA', pctDelta: null };
+  }
+  const ratio = row.recent_sets / row.baseline_weekly_avg_sets;
+  const pctDelta = Math.round((ratio - 1) * 100);
+  if (ratio < 0.5) return { bucket: 'WELL_UNDER', pctDelta };
+  if (ratio < 0.8) return { bucket: 'UNDER', pctDelta };
+  if (ratio <= 1.25) return { bucket: 'ON_TRACK', pctDelta };
+  if (ratio <= 2.0) return { bucket: 'OVER', pctDelta };
+  return { bucket: 'WELL_OVER', pctDelta };
+}
+
+const BUCKET_STYLE: Record<BalanceBucket, { icon: keyof typeof Feather.glyphMap; label: string; color: string; bg: string; dashed?: boolean }> = {
+  NO_DATA:    { icon: 'circle',        label: 'No data',    color: COLORS.textMuted, bg: COLORS.card, dashed: true },
+  NEW:        { icon: 'zap',           label: 'New',        color: COLORS.textMuted, bg: COLORS.card, dashed: true },
+  WELL_UNDER: { icon: 'trending-down', label: 'Well under', color: COLORS.cold,      bg: COLORS.coldBg },
+  UNDER:      { icon: 'trending-down', label: 'Under',      color: COLORS.cold,      bg: COLORS.coldBgMild },
+  ON_TRACK:   { icon: 'check',         label: 'On track',   color: COLORS.textSub,  bg: COLORS.card },
+  OVER:       { icon: 'trending-up',   label: 'Over',       color: COLORS.primary,  bg: COLORS.primaryBgMild },
+  WELL_OVER:  { icon: 'trending-up',   label: 'Well over',  color: COLORS.primary,  bg: COLORS.primaryBg },
+};
+
+function balanceSubtext(row: MuscleGroupBalance, read: BalanceRead): string {
+  if (read.bucket === 'NO_DATA') return 'Never logged';
+  if (read.bucket === 'NEW') return 'Started this week';
+  if (row.recent_sets === 0) return 'Not trained this week';
+  const sign = read.pctDelta! > 0 ? '+' : '';
+  return `${sign}${read.pctDelta}% vs. usual`;
+}
+
+function HeatTile({ row, read }: { row: MuscleGroupBalance; read: BalanceRead }) {
+  const style = BUCKET_STYLE[read.bucket];
+  return (
+    <View
+      style={[
+        styles.heatTile,
+        { backgroundColor: style.bg },
+        style.dashed
+          ? { borderStyle: 'dashed', borderColor: COLORS.border }
+          : { borderColor: style.color },
+      ]}
+    >
+      <Feather name={style.icon} size={15} color={style.color} />
+      <Text style={styles.heatTileLabel} numberOfLines={1}>{muscleGroupLabel(row.muscle_group)}</Text>
+      <Text style={[styles.heatTileSub, { color: style.color }]} numberOfLines={1}>
+        {balanceSubtext(row, read)}
+      </Text>
+    </View>
+  );
+}
+
+function HeatmapLegend() {
+  // Derived from BUCKET_STYLE rather than a hand-maintained list, so the
+  // legend can't drift from the tiles it's explaining.
+  const items: { color: string; label: string }[] = [
+    { color: BUCKET_STYLE.WELL_UNDER.color, label: 'Under-trained' },
+    { color: BUCKET_STYLE.ON_TRACK.color,   label: 'On track' },
+    { color: BUCKET_STYLE.WELL_OVER.color,  label: 'Over-trained' },
+  ];
+  return (
+    <View style={styles.legendRow}>
+      {items.map(it => (
+        <View key={it.label} style={styles.legendItem}>
+          <View style={[styles.legendSwatch, { backgroundColor: it.color }]} />
+          <Text style={styles.legendLabel}>{it.label}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+function HeatmapTab() {
+  const { data: rows, loading, error } = useAnalyticsFetch(
+    () => analyticsApi.getMuscleGroupBalance(),
+    [],
+  );
+
+  // Classified once per row per fetch, not once per row per render — reused
+  // below by the tiles, the empty-state check, and the table.
+  const reads = useMemo(
+    () => (rows ?? []).map(row => ({ row, read: classifyBalance(row) })),
+    [rows],
+  );
+
+  if (loading) return <ChartLoading />;
+  if (error) return <ErrorFill message="Could not load muscle group data" error={error} />;
+  if (reads.every(({ read }) => read.bucket === 'NO_DATA')) {
+    return (
+      <View style={styles.emptyFill}>
+        <EmptyState emoji="🌡️" message="No data yet" subMessage="Log some sets to see what's over- or under-trained." />
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.tabBody}>
+      <View style={styles.chartCard}>
+        <Text style={styles.chartTitle}>Last 7 days' sets vs. your usual (8-week average)</Text>
+        <InfoNote>
+          Counts hard sets, not kg — a bodyweight pull-up counts the same as a loaded
+          row. Each muscle group compares its own last 7 days of sets to its own
+          trailing 8-week average, never to other muscle groups. New accounts are
+          averaged over however many weeks they've actually trained.
+        </InfoNote>
+        <View style={styles.heatGrid}>
+          {reads.map(({ row, read }) => <HeatTile key={row.muscle_group} row={row} read={read} />)}
+        </View>
+        <HeatmapLegend />
+      </View>
+      <TableView
+        rows={reads.map(({ row, read }) => ({
+          label: muscleGroupLabel(row.muscle_group),
+          value: `${row.recent_sets} / ${fmtRate(row.baseline_weekly_avg_sets)} sets/wk — ${BUCKET_STYLE[read.bucket].label}`,
+        }))}
+      />
+    </View>
+  );
+}
+
 export function ProgressScreen() {
   const [tab, setTab] = useState<Tab>('1RM');
   const [range, setRange] = useState<TimeRange>('3M');
+  const showRange = TABS.find(t => t.key === tab)?.usesRange !== false;
 
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.selectorGroup}>
           <Segmented options={TABS} value={tab} onChange={setTab} />
-          <Segmented options={TIME_RANGES} value={range} onChange={setRange} />
+          {showRange && <Segmented options={TIME_RANGES} value={range} onChange={setRange} />}
         </View>
 
         {tab === '1RM' && <OneRmTab range={range} />}
         {tab === 'VOLUME' && <VolumeTab range={range} />}
         {tab === 'BREAKDOWN' && <BreakdownTab range={range} />}
+        {tab === 'HEATMAP' && <HeatmapTab />}
       </ScrollView>
     </SafeAreaView>
   );
@@ -533,6 +696,18 @@ const styles = StyleSheet.create({
     color:        COLORS.textSub,
     marginBottom: 12,
   },
+  infoNote: {
+    flexDirection: 'row',
+    alignItems:    'flex-start',
+    gap:           8,
+    marginBottom:  16,
+  },
+  infoNoteText: {
+    flex:       1,
+    fontSize:   12,
+    lineHeight: 17,
+    color:      COLORS.textMuted,
+  },
   loadingBox: {
     paddingVertical: 60,
     alignItems:      'center',
@@ -584,6 +759,52 @@ const styles = StyleSheet.create({
     fontSize:   12,
     fontFamily: FONT.medium,
     color:      COLORS.text,
+  },
+  heatGrid: {
+    flexDirection: 'row',
+    flexWrap:      'wrap',
+    gap:           10,
+  },
+  heatTile: {
+    width:             '30%',
+    minHeight:         76,
+    borderRadius:      RADIUS.md,
+    borderWidth:        1,
+    paddingHorizontal: 8,
+    paddingVertical:   10,
+    alignItems:        'center',
+    justifyContent:    'center',
+    gap:               4,
+  },
+  heatTileLabel: {
+    fontFamily: FONT.semibold,
+    fontSize:   11,
+    color:      COLORS.text,
+    textAlign:  'center',
+  },
+  heatTileSub: {
+    fontSize:  10,
+    textAlign: 'center',
+  },
+  legendRow: {
+    flexDirection: 'row',
+    flexWrap:      'wrap',
+    gap:           16,
+    marginTop:     14,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems:    'center',
+    gap:           6,
+  },
+  legendSwatch: {
+    width:        10,
+    height:       10,
+    borderRadius: 3,
+  },
+  legendLabel: {
+    fontSize: 11,
+    color:    COLORS.textMuted,
   },
   table: {
     backgroundColor: COLORS.card,
