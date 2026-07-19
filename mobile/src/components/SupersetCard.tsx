@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
-import { COLORS } from '../constants/colors';
+import { ColorTokens } from '../theme/colorways';
+import { useTheme } from '../theme/ThemeContext';
 import { FONT, RADIUS } from '../constants/theme';
 import { Exercise } from '../types';
 import { ExerciseItem } from './ExerciseItem';
@@ -17,10 +18,12 @@ interface Props {
 
 /** Brackets two paired exercises under a shared "Superset" header, with A1/A2 labels. */
 export function SupersetCard({ a, b, onEdit, onDelete, onShare }: Props) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Feather name="zap" size={12} color={COLORS.primary} />
+        <Feather name="zap" size={12} color={colors.primary} />
         <Text style={styles.headerText}>SUPERSET</Text>
       </View>
       <ExerciseItem
@@ -41,16 +44,16 @@ export function SupersetCard({ a, b, onEdit, onDelete, onShare }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorTokens) => StyleSheet.create({
   container: {
     borderRadius:    RADIUS.lg,
     borderWidth:      1.5,
-    borderColor:      COLORS.primary,
+    borderColor:      colors.primary,
     borderStyle:     'dashed',
     padding:         10,
     paddingBottom:    0,
     marginBottom:    10,
-    backgroundColor: COLORS.primaryBg,
+    backgroundColor: colors.primaryBg,
   },
   header: {
     flexDirection: 'row',
@@ -63,6 +66,6 @@ const styles = StyleSheet.create({
     fontFamily:    FONT.bold,
     fontSize:      11,
     letterSpacing: 0.8,
-    color:         COLORS.primary,
+    color:         colors.primary,
   },
 });

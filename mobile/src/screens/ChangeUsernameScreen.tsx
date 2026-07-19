@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   View, Text, TextInput, StyleSheet, Alert, ActivityIndicator,
   KeyboardAvoidingView, Platform, ScrollView,
@@ -6,9 +6,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
-import { COLORS } from '../constants/colors';
+import { ColorTokens } from '../theme/colorways';
+import { useTheme } from '../theme/ThemeContext';
 import { RADIUS } from '../constants/theme';
-import { formStyles } from '../constants/formStyles';
+import { useFormStyles } from '../constants/formStyles';
 import { RootStackParamList } from '../types';
 import { profileApi } from '../services/social';
 import { GradientButton } from '../components/GradientButton';
@@ -20,6 +21,9 @@ type Nav = NativeStackNavigationProp<RootStackParamList, 'ChangeUsername'>;
 interface Props { navigation: Nav }
 
 export function ChangeUsernameScreen({ navigation }: Props) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const formStyles = useFormStyles();
   const [current,    setCurrent]    = useState<string | null>(null);
   const [username,   setUsername]  = useState('');
   const [loading,    setLoading]   = useState(true);
@@ -59,7 +63,7 @@ export function ChangeUsernameScreen({ navigation }: Props) {
     return (
       <SafeAreaView style={styles.safe} edges={['bottom']}>
         <View style={styles.centred}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       </SafeAreaView>
     );
@@ -82,7 +86,7 @@ export function ChangeUsernameScreen({ navigation }: Props) {
               value={username}
               onChangeText={setUsername}
               placeholder="e.g. josh_lifts"
-              placeholderTextColor={COLORS.textMuted}
+              placeholderTextColor={colors.textMuted}
               autoCapitalize="none"
               autoCorrect={false}
               maxLength={20}
@@ -109,10 +113,10 @@ export function ChangeUsernameScreen({ navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorTokens) => StyleSheet.create({
   safe: {
     flex:            1,
-    backgroundColor: COLORS.bg,
+    backgroundColor: colors.bg,
   },
   flexFill: { flex: 1 },
   centred: {
@@ -126,15 +130,15 @@ const styles = StyleSheet.create({
     paddingTop: 20,
   },
   formCard: {
-    backgroundColor: COLORS.bgAlt,
+    backgroundColor: colors.bgAlt,
     borderRadius:    RADIUS.xl,
     borderWidth:      1,
-    borderColor:      COLORS.cardBorder,
+    borderColor:      colors.cardBorder,
     padding:         20,
   },
   hint: {
     fontSize:     12,
-    color:        COLORS.textMuted,
+    color:        colors.textMuted,
     marginTop:    -10,
     marginBottom: 20,
     lineHeight:   17,

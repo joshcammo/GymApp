@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View, ScrollView, StyleSheet,
   ActivityIndicator, RefreshControl, StatusBar,
@@ -10,7 +10,8 @@ import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Feather } from '@expo/vector-icons';
 
-import { COLORS } from '../constants/colors';
+import { ColorTokens } from '../theme/colorways';
+import { useTheme } from '../theme/ThemeContext';
 import { RADIUS } from '../constants/theme';
 import { RootStackParamList, MainTabParamList, DayInfo, Exercise } from '../types';
 import { workoutApi } from '../services/api';
@@ -32,6 +33,8 @@ type Nav = CompositeNavigationProp<
 interface Props { navigation: Nav }
 
 export function HomeScreen({ navigation }: Props) {
+  const { colors, effectiveMode } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [weekOffset, setWeekOffset] = useState(0);
   const [exercises,  setExercises]  = useState<Exercise[]>([]);
   const [loading,    setLoading]    = useState(true);
@@ -90,7 +93,10 @@ export function HomeScreen({ navigation }: Props) {
   // ── Render ────────────────────────────────────────────────────
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <StatusBar barStyle="light-content" backgroundColor={COLORS.bg} />
+      <StatusBar
+        barStyle={effectiveMode === 'dark' ? 'light-content' : 'dark-content'}
+        backgroundColor={colors.bg}
+      />
 
       {/* ── Header ── */}
       <View style={styles.header}>
@@ -105,7 +111,7 @@ export function HomeScreen({ navigation }: Props) {
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             pressScale={0.9}
           >
-            <Feather name="settings" size={17} color={COLORS.textSub} />
+            <Feather name="settings" size={17} color={colors.textSub} />
           </PressableScale>
         </View>
       </View>
@@ -122,7 +128,7 @@ export function HomeScreen({ navigation }: Props) {
       {/* ── Body ── */}
       {loading ? (
         <View style={styles.centred}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       ) : error ? (
         <ScrollView
@@ -131,8 +137,8 @@ export function HomeScreen({ navigation }: Props) {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              tintColor={COLORS.primary}
-              colors={[COLORS.primary]}
+              tintColor={colors.primary}
+              colors={[colors.primary]}
             />
           }
         >
@@ -150,8 +156,8 @@ export function HomeScreen({ navigation }: Props) {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              tintColor={COLORS.primary}
-              colors={[COLORS.primary]}
+              tintColor={colors.primary}
+              colors={[colors.primary]}
             />
           }
         >
@@ -175,10 +181,10 @@ export function HomeScreen({ navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorTokens) => StyleSheet.create({
   safe: {
     flex:            1,
-    backgroundColor: COLORS.bg,
+    backgroundColor: colors.bg,
   },
   header: {
     flexDirection:     'row',
@@ -201,9 +207,9 @@ const styles = StyleSheet.create({
     width:           38,
     height:          38,
     borderRadius:    RADIUS.pill,
-    backgroundColor: COLORS.card,
+    backgroundColor: colors.card,
     borderWidth:      1,
-    borderColor:      COLORS.border,
+    borderColor:      colors.border,
     alignItems:      'center',
     justifyContent:  'center',
   },

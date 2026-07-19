@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View, Text, TextInput, StyleSheet, Alert,
   KeyboardAvoidingView, Platform, ScrollView,
@@ -6,9 +6,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
-import { COLORS } from '../constants/colors';
+import { ColorTokens } from '../theme/colorways';
+import { useTheme } from '../theme/ThemeContext';
 import { RADIUS } from '../constants/theme';
-import { formStyles } from '../constants/formStyles';
+import { useFormStyles } from '../constants/formStyles';
 import { RootStackParamList } from '../types';
 import { supabase } from '../lib/supabase';
 import { GradientButton } from '../components/GradientButton';
@@ -18,6 +19,9 @@ type Nav = NativeStackNavigationProp<RootStackParamList, 'ChangePassword'>;
 interface Props { navigation: Nav }
 
 export function ChangePasswordScreen({ navigation }: Props) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const formStyles = useFormStyles();
   const [password,        setPassword]        = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [saving,          setSaving]          = useState(false);
@@ -71,7 +75,7 @@ export function ChangePasswordScreen({ navigation }: Props) {
               value={password}
               onChangeText={setPassword}
               placeholder="••••••••"
-              placeholderTextColor={COLORS.textMuted}
+              placeholderTextColor={colors.textMuted}
               secureTextEntry
               autoCapitalize="none"
               autoComplete="password-new"
@@ -85,7 +89,7 @@ export function ChangePasswordScreen({ navigation }: Props) {
               value={confirmPassword}
               onChangeText={setConfirmPassword}
               placeholder="••••••••"
-              placeholderTextColor={COLORS.textMuted}
+              placeholderTextColor={colors.textMuted}
               secureTextEntry
               autoCapitalize="none"
               autoComplete="password-new"
@@ -106,10 +110,10 @@ export function ChangePasswordScreen({ navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorTokens) => StyleSheet.create({
   safe: {
     flex:            1,
-    backgroundColor: COLORS.bg,
+    backgroundColor: colors.bg,
   },
   flexFill: { flex: 1 },
   content: {
@@ -118,10 +122,10 @@ const styles = StyleSheet.create({
     paddingTop:        20,
   },
   formCard: {
-    backgroundColor: COLORS.bgAlt,
+    backgroundColor: colors.bgAlt,
     borderRadius:    RADIUS.xl,
     borderWidth:      1,
-    borderColor:      COLORS.cardBorder,
+    borderColor:      colors.cardBorder,
     padding:         20,
   },
   saveBtn: {

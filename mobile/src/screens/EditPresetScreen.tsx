@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useState } from 'react';
+import React, { useLayoutEffect, useState, useMemo } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
   ScrollView, StyleSheet, Alert, Image,
@@ -9,9 +9,10 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
 
-import { COLORS } from '../constants/colors';
+import { ColorTokens } from '../theme/colorways';
+import { useTheme } from '../theme/ThemeContext';
 import { FONT, RADIUS } from '../constants/theme';
-import { formStyles } from '../constants/formStyles';
+import { useFormStyles } from '../constants/formStyles';
 import { EXERCISE_IMAGES } from '../constants/exerciseImages';
 import { RootStackParamList, ExerciseDef } from '../types';
 import { presetApi } from '../services/api';
@@ -32,6 +33,9 @@ interface Chosen {
 }
 
 export function EditPresetScreen({ navigation, route }: Props) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const formStyles = useFormStyles();
   const { preset } = route.params;
   const isEditing = !!preset;
 
@@ -144,7 +148,7 @@ export function EditPresetScreen({ navigation, route }: Props) {
               value={name}
               onChangeText={setName}
               placeholder="e.g. Monday - Chest and Triceps"
-              placeholderTextColor={COLORS.textMuted}
+              placeholderTextColor={colors.textMuted}
               autoCapitalize="words"
               maxLength={255}
             />
@@ -166,7 +170,7 @@ export function EditPresetScreen({ navigation, route }: Props) {
                     <Image source={source} style={styles.thumb} />
                   ) : (
                     <View style={[styles.thumb, styles.thumbFallback]}>
-                      <Feather name="activity" size={18} color={COLORS.textMuted} />
+                      <Feather name="activity" size={18} color={colors.textMuted} />
                     </View>
                   )}
                   <Text style={styles.exerciseName} numberOfLines={1}>{c.name}</Text>
@@ -178,7 +182,7 @@ export function EditPresetScreen({ navigation, route }: Props) {
                       disabled={i === 0}
                       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     >
-                      <Feather name="chevron-up" size={16} color={COLORS.textSub} />
+                      <Feather name="chevron-up" size={16} color={colors.textSub} />
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={[styles.reorderBtn, i === chosen.length - 1 && styles.reorderBtnDisabled]}
@@ -186,7 +190,7 @@ export function EditPresetScreen({ navigation, route }: Props) {
                       disabled={i === chosen.length - 1}
                       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     >
-                      <Feather name="chevron-down" size={16} color={COLORS.textSub} />
+                      <Feather name="chevron-down" size={16} color={colors.textSub} />
                     </TouchableOpacity>
                   </View>
 
@@ -195,7 +199,7 @@ export function EditPresetScreen({ navigation, route }: Props) {
                     onPress={() => removeExercise(c.id)}
                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   >
-                    <Feather name="minus" size={17} color={COLORS.danger} />
+                    <Feather name="minus" size={17} color={colors.danger} />
                   </TouchableOpacity>
                 </View>
               );
@@ -206,7 +210,7 @@ export function EditPresetScreen({ navigation, route }: Props) {
               onPress={() => { haptics.tap(); Keyboard.dismiss(); setPickerVisible(true); }}
               activeOpacity={0.7}
             >
-              <Feather name="plus" size={15} color={COLORS.primary} />
+              <Feather name="plus" size={15} color={colors.primary} />
               <Text style={styles.addBtnText}>Add Exercise</Text>
             </TouchableOpacity>
           </View>
@@ -220,7 +224,7 @@ export function EditPresetScreen({ navigation, route }: Props) {
 
           {isEditing && (
             <TouchableOpacity style={styles.deleteRow} onPress={handleDelete}>
-              <Feather name="trash-2" size={15} color={COLORS.danger} />
+              <Feather name="trash-2" size={15} color={colors.danger} />
               <Text style={styles.deleteRowText}>Delete Preset</Text>
             </TouchableOpacity>
           )}
@@ -236,10 +240,10 @@ export function EditPresetScreen({ navigation, route }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorTokens) => StyleSheet.create({
   safe: {
     flex:            1,
-    backgroundColor: COLORS.bg,
+    backgroundColor: colors.bg,
   },
   scroll: { flex: 1 },
   content: {
@@ -247,10 +251,10 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   sectionCard: {
-    backgroundColor: COLORS.bgAlt,
+    backgroundColor: colors.bgAlt,
     borderRadius:    RADIUS.lg,
     borderWidth:      1,
-    borderColor:      COLORS.cardBorder,
+    borderColor:      colors.cardBorder,
     padding:         16,
     marginBottom:    14,
   },
@@ -260,7 +264,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   countBubble: {
-    backgroundColor:   COLORS.primaryBg,
+    backgroundColor:   colors.primaryBg,
     borderRadius:      RADIUS.pill,
     minWidth:          24,
     height:            24,
@@ -272,7 +276,7 @@ const styles = StyleSheet.create({
   countText: {
     fontFamily: FONT.bold,
     fontSize:   12,
-    color:      COLORS.primary,
+    color:      colors.primary,
   },
   exerciseRow: {
     flexDirection: 'row',
@@ -284,19 +288,19 @@ const styles = StyleSheet.create({
     width:           40,
     height:          40,
     borderRadius:    RADIUS.sm,
-    backgroundColor: COLORS.card,
+    backgroundColor: colors.card,
   },
   thumbFallback: {
     alignItems:     'center',
     justifyContent: 'center',
     borderWidth:     1,
-    borderColor:     COLORS.border,
+    borderColor:     colors.border,
   },
   exerciseName: {
     flex:       1,
     fontFamily: FONT.medium,
     fontSize:   14,
-    color:      COLORS.text,
+    color:      colors.text,
   },
   reorderBtns: {
     gap: 2,
@@ -314,7 +318,7 @@ const styles = StyleSheet.create({
     width:           36,
     height:          36,
     borderRadius:    RADIUS.sm,
-    backgroundColor: COLORS.dangerBg,
+    backgroundColor: colors.dangerBg,
     alignItems:      'center',
     justifyContent:  'center',
   },
@@ -326,14 +330,14 @@ const styles = StyleSheet.create({
     borderRadius:    RADIUS.md,
     borderWidth:      1,
     borderStyle:     'dashed',
-    borderColor:      COLORS.border,
+    borderColor:      colors.border,
     alignItems:      'center',
     justifyContent:  'center',
   },
   addBtnText: {
     fontFamily:    FONT.bold,
     fontSize:      14,
-    color:         COLORS.primary,
+    color:         colors.primary,
     letterSpacing: 0.4,
   },
   saveBtn: {
@@ -350,6 +354,6 @@ const styles = StyleSheet.create({
   deleteRowText: {
     fontFamily: FONT.bold,
     fontSize:   14,
-    color:      COLORS.danger,
+    color:      colors.danger,
   },
 });

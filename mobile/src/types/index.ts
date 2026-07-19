@@ -196,6 +196,7 @@ export type RootStackParamList = {
   Login:          undefined;
   MainTabs:       undefined;
   Settings:       undefined;
+  Appearance:     undefined;
   ChangePassword: undefined;
   ChangeUsername: undefined;
   DayDetail:      { date: string; dayFull: string };

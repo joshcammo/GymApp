@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
   StyleSheet, Alert,
@@ -6,15 +6,19 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { COLORS } from '../constants/colors';
+import { ColorTokens } from '../theme/colorways';
+import { useTheme } from '../theme/ThemeContext';
 import { FONT, RADIUS } from '../constants/theme';
-import { formStyles } from '../constants/formStyles';
+import { useFormStyles } from '../constants/formStyles';
 import { supabase } from '../lib/supabase';
 import { Logo } from '../components/Logo';
 import { GradientButton } from '../components/GradientButton';
 import { haptics } from '../utils/haptics';
 
 export function LoginScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const formStyles = useFormStyles();
   const [mode,            setMode]            = useState<'signIn' | 'signUp'>('signIn');
   const [email,           setEmail]           = useState('');
   const [password,        setPassword]        = useState('');
@@ -123,7 +127,7 @@ export function LoginScreen() {
               value={email}
               onChangeText={setEmail}
               placeholder="you@example.com"
-              placeholderTextColor={COLORS.textMuted}
+              placeholderTextColor={colors.textMuted}
               autoCapitalize="none"
               autoComplete="email"
               keyboardType="email-address"
@@ -136,7 +140,7 @@ export function LoginScreen() {
               value={password}
               onChangeText={setPassword}
               placeholder="••••••••"
-              placeholderTextColor={COLORS.textMuted}
+              placeholderTextColor={colors.textMuted}
               secureTextEntry
               autoCapitalize="none"
               autoComplete={isSignUp ? 'password-new' : 'password'}
@@ -152,7 +156,7 @@ export function LoginScreen() {
                   value={confirmPassword}
                   onChangeText={setConfirmPassword}
                   placeholder="••••••••"
-                  placeholderTextColor={COLORS.textMuted}
+                  placeholderTextColor={colors.textMuted}
                   secureTextEntry
                   autoCapitalize="none"
                   autoComplete="password-new"
@@ -188,10 +192,10 @@ export function LoginScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorTokens) => StyleSheet.create({
   safe: {
     flex:            1,
-    backgroundColor: COLORS.bg,
+    backgroundColor: colors.bg,
   },
   flexFill: { flex: 1 },
   content: {
@@ -207,14 +211,14 @@ const styles = StyleSheet.create({
   subtitle: {
     marginTop:  12,
     fontSize:   14,
-    color:      COLORS.textSub,
+    color:      colors.textSub,
     textAlign:  'center',
   },
   formCard: {
-    backgroundColor: COLORS.bgAlt,
+    backgroundColor: colors.bgAlt,
     borderRadius:    RADIUS.xl,
     borderWidth:      1,
-    borderColor:      COLORS.cardBorder,
+    borderColor:      colors.cardBorder,
     padding:         20,
   },
   submitBtn: {
@@ -226,10 +230,10 @@ const styles = StyleSheet.create({
   },
   toggleModeText: {
     fontSize: 14,
-    color:    COLORS.textSub,
+    color:    colors.textSub,
   },
   toggleModeTextAccent: {
     fontFamily: FONT.bold,
-    color:      COLORS.primary,
+    color:      colors.primary,
   },
 });

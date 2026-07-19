@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
-import { COLORS } from '../constants/colors';
+import { ColorTokens } from '../theme/colorways';
+import { useTheme } from '../theme/ThemeContext';
 import { FONT, RADIUS } from '../constants/theme';
 import { PressableScale } from './PressableScale';
 import { haptics } from '../utils/haptics';
@@ -16,6 +17,8 @@ interface Props {
 }
 
 export function WeekNavigator({ weekNumber, weekRange, weekOffset, onPrev, onNext }: Props) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const isCurrentWeek = weekOffset === 0;
 
   const prev = () => { haptics.tap(); onPrev(); };
@@ -29,7 +32,7 @@ export function WeekNavigator({ weekNumber, weekRange, weekOffset, onPrev, onNex
         hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
         pressScale={0.9}
       >
-        <Feather name="chevron-left" size={22} color={COLORS.textSub} />
+        <Feather name="chevron-left" size={22} color={colors.textSub} />
       </PressableScale>
 
       <View style={styles.middle}>
@@ -51,13 +54,13 @@ export function WeekNavigator({ weekNumber, weekRange, weekOffset, onPrev, onNex
         hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
         pressScale={0.9}
       >
-        <Feather name="chevron-right" size={22} color={COLORS.textSub} />
+        <Feather name="chevron-right" size={22} color={colors.textSub} />
       </PressableScale>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorTokens) => StyleSheet.create({
   container: {
     flexDirection:    'row',
     alignItems:       'center',
@@ -65,18 +68,18 @@ const styles = StyleSheet.create({
     marginBottom:     14,
     paddingHorizontal: 14,
     paddingVertical:   12,
-    backgroundColor:  COLORS.bgAlt,
+    backgroundColor:  colors.bgAlt,
     borderRadius:     RADIUS.lg,
     borderWidth:       1,
-    borderColor:       COLORS.cardBorder,
+    borderColor:       colors.cardBorder,
   },
   arrowBtn: {
     width:           40,
     height:          40,
     borderRadius:    RADIUS.pill,
-    backgroundColor: COLORS.card,
+    backgroundColor: colors.card,
     borderWidth:      1,
-    borderColor:      COLORS.border,
+    borderColor:      colors.border,
     alignItems:      'center',
     justifyContent:  'center',
   },
@@ -92,31 +95,31 @@ const styles = StyleSheet.create({
   weekLabel: {
     fontFamily:    FONT.semibold,
     fontSize:      11,
-    color:         COLORS.textMuted,
+    color:         colors.textMuted,
     letterSpacing: 1.5,
   },
   weekNumber: {
     fontFamily: FONT.bold,
     fontSize:   24,
-    color:      COLORS.text,
+    color:      colors.text,
   },
   nowBadge: {
-    backgroundColor:   COLORS.primaryBg,
+    backgroundColor:   colors.primaryBg,
     borderRadius:      RADIUS.pill,
     paddingHorizontal: 8,
     paddingVertical:   2,
     borderWidth:       1,
-    borderColor:       COLORS.primary,
+    borderColor:       colors.primary,
   },
   nowText: {
     fontFamily:    FONT.bold,
     fontSize:      10,
-    color:         COLORS.primary,
+    color:         colors.primary,
     letterSpacing: 1,
   },
   range: {
     fontSize:  12,
-    color:     COLORS.textMuted,
+    color:     colors.textMuted,
     marginTop: 2,
   },
 });

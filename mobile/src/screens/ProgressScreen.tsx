@@ -4,7 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { LineChart, BarChart } from 'react-native-gifted-charts';
 
-import { COLORS } from '../constants/colors';
+import { ColorTokens } from '../theme/colorways';
+import { useTheme } from '../theme/ThemeContext';
 import { FONT, RADIUS } from '../constants/theme';
 import { muscleGroupLabel, MUSCLE_GROUPS } from '../constants/muscleGroups';
 import { sinceDateForRange, parseDateStr } from '../utils/dateUtils';
@@ -70,6 +71,8 @@ function Segmented<T extends string>({
   value: T;
   onChange: (key: T) => void;
 }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <View style={styles.segmented}>
       {options.map(o => (
@@ -94,6 +97,8 @@ function Segmented<T extends string>({
 /** Raw-value list under every chart — the "can't read the chart" fallback,
  *  and the only place tied values or a to-be-added dark/light legend live. */
 function TableView({ rows }: { rows: { label: string; value: string }[] }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <View style={styles.table}>
       {rows.map((r, i) => (
@@ -112,6 +117,8 @@ function TableView({ rows }: { rows: { label: string; value: string }[] }) {
  *  overflowing the card). Three aligned columns (label / bar / value) keep
  *  every row centered in the space it's given regardless of label length. */
 function BreakdownBars({ rows }: { rows: MuscleGroupVolume[] }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const maxKg = Math.max(...rows.map(r => r.volume_kg), 1);
   return (
     <View style={styles.breakdownRows}>
@@ -129,21 +136,25 @@ function BreakdownBars({ rows }: { rows: MuscleGroupVolume[] }) {
 }
 
 function ChartLoading() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <View style={styles.loadingBox}>
-      <ActivityIndicator color={COLORS.primary} />
+      <ActivityIndicator color={colors.primary} />
     </View>
   );
 }
 
 function ExercisePickerField({ def, onPress }: { def: ExerciseDef | null; onPress: () => void }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <PressableScale style={styles.pickerField} onPress={onPress} pressScale={0.98}>
-      <Feather name="activity" size={16} color={COLORS.textSub} />
+      <Feather name="activity" size={16} color={colors.textSub} />
       <Text style={styles.pickerFieldText} numberOfLines={1}>
         {def ? def.name : 'Select an exercise'}
       </Text>
-      <Feather name="chevron-right" size={18} color={COLORS.textMuted} />
+      <Feather name="chevron-right" size={18} color={colors.textMuted} />
     </PressableScale>
   );
 }
@@ -153,15 +164,19 @@ function ExercisePickerField({ def, onPress }: { def: ExerciseDef | null; onPres
  *  tap, since "how is this measured" is exactly the question a heatmap
  *  like this invites. */
 function InfoNote({ children }: { children: string }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <View style={styles.infoNote}>
-      <Feather name="info" size={13} color={COLORS.textMuted} />
+      <Feather name="info" size={13} color={colors.textMuted} />
       <Text style={styles.infoNoteText}>{children}</Text>
     </View>
   );
 }
 
 function ErrorFill({ message, error }: { message: string; error: string }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <View style={styles.emptyFill}>
       <EmptyState emoji="⚠️" message={message} subMessage={`${error}\n\nCheck your connection and try again.`} />
@@ -202,6 +217,8 @@ function useAnalyticsFetch<T>(
 
 // ── 1RM trend tab ──────────────────────────────────────────────────
 function OneRmTab({ range }: { range: TimeRange }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [exercise, setExercise] = useState<ExerciseDef | null>(null);
   const [pickerVisible, setPickerVisible] = useState(false);
 
@@ -245,32 +262,32 @@ function OneRmTab({ range }: { range: TimeRange }) {
               data={chartData}
               width={CHART_WIDTH - 20}
               height={180}
-              color={COLORS.primary}
+              color={colors.primary}
               thickness={2}
               curved
-              dataPointsColor={COLORS.primary}
+              dataPointsColor={colors.primary}
               dataPointsRadius={4}
-              startFillColor={COLORS.primary}
+              startFillColor={colors.primary}
               startOpacity={0.12}
               endOpacity={0.02}
               areaChart
               hideRules={false}
-              rulesColor={COLORS.divider}
+              rulesColor={colors.divider}
               rulesType="solid"
-              yAxisTextStyle={{ color: COLORS.textMuted, fontSize: 11 }}
-              xAxisLabelTextStyle={{ color: COLORS.textMuted, fontSize: 10 }}
-              yAxisColor={COLORS.divider}
-              xAxisColor={COLORS.divider}
+              yAxisTextStyle={{ color: colors.textMuted, fontSize: 11 }}
+              xAxisLabelTextStyle={{ color: colors.textMuted, fontSize: 10 }}
+              yAxisColor={colors.divider}
+              xAxisColor={colors.divider}
               initialSpacing={12}
               endSpacing={12}
               noOfSections={4}
-              textColor1={COLORS.text}
+              textColor1={colors.text}
               textFontSize={11}
               pointerConfig={{
-                pointerColor: COLORS.primary,
+                pointerColor: colors.primary,
                 radius: 5,
                 showPointerStrip: true,
-                pointerStripColor: COLORS.divider,
+                pointerStripColor: colors.divider,
                 pointerStripWidth: 1,
                 activatePointersOnLongPress: false,
                 activatePointersInstantlyOnTouch: true,
@@ -294,6 +311,8 @@ function OneRmTab({ range }: { range: TimeRange }) {
 
 // ── Weekly volume trend tab ──────────────────────────────────────────
 function VolumeTab({ range }: { range: TimeRange }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [mode, setMode] = useState<VolumeMode>('EXERCISE');
   const [exercise, setExercise] = useState<ExerciseDef | null>(null);
   const [muscleGroup, setMuscleGroup] = useState<MuscleGroup | null>(null);
@@ -314,8 +333,8 @@ function VolumeTab({ range }: { range: TimeRange }) {
   const chartData = useMemo(() => (points ?? []).map(p => ({
     value: Math.round(p.volume_kg),
     label: fmtShortDate(p.week_start),
-    frontColor: COLORS.primary,
-  })), [points]);
+    frontColor: colors.primary,
+  })), [points, colors]);
 
   return (
     <View style={styles.tabBody}>
@@ -385,12 +404,12 @@ function VolumeTab({ range }: { range: TimeRange }) {
               barWidth={Math.min(28, Math.max(14, (CHART_WIDTH - 40) / (chartData.length * 1.6)))}
               spacing={Math.min(28, Math.max(12, (CHART_WIDTH - 40) / (chartData.length * 2.2)))}
               barBorderRadius={4}
-              frontColor={COLORS.primary}
-              yAxisTextStyle={{ color: COLORS.textMuted, fontSize: 11 }}
-              xAxisLabelTextStyle={{ color: COLORS.textMuted, fontSize: 10 }}
-              yAxisColor={COLORS.divider}
-              xAxisColor={COLORS.divider}
-              rulesColor={COLORS.divider}
+              frontColor={colors.primary}
+              yAxisTextStyle={{ color: colors.textMuted, fontSize: 11 }}
+              xAxisLabelTextStyle={{ color: colors.textMuted, fontSize: 10 }}
+              yAxisColor={colors.divider}
+              xAxisColor={colors.divider}
+              rulesColor={colors.divider}
               rulesType="solid"
               noOfSections={4}
               isAnimated
@@ -405,6 +424,8 @@ function VolumeTab({ range }: { range: TimeRange }) {
 
 // ── Muscle group breakdown tab ────────────────────────────────────────
 function BreakdownTab({ range }: { range: TimeRange }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { data: rows, loading, error } = useAnalyticsFetch(
     () => analyticsApi.getMuscleGroupBreakdown(sinceDateForRange(range)),
     [range],
@@ -464,15 +485,24 @@ function classifyBalance(row: MuscleGroupBalance): BalanceRead {
   return { bucket: 'WELL_OVER', pctDelta };
 }
 
-const BUCKET_STYLE: Record<BalanceBucket, { icon: keyof typeof Feather.glyphMap; label: string; color: string; bg: string; dashed?: boolean }> = {
-  NO_DATA:    { icon: 'circle',        label: 'No data',    color: COLORS.textMuted, bg: COLORS.card, dashed: true },
-  NEW:        { icon: 'zap',           label: 'New',        color: COLORS.textMuted, bg: COLORS.card, dashed: true },
-  WELL_UNDER: { icon: 'trending-down', label: 'Well under', color: COLORS.cold,      bg: COLORS.coldBg },
-  UNDER:      { icon: 'trending-down', label: 'Under',      color: COLORS.cold,      bg: COLORS.coldBgMild },
-  ON_TRACK:   { icon: 'check',         label: 'On track',   color: COLORS.textSub,  bg: COLORS.card },
-  OVER:       { icon: 'trending-up',   label: 'Over',       color: COLORS.primary,  bg: COLORS.primaryBgMild },
-  WELL_OVER:  { icon: 'trending-up',   label: 'Well over',  color: COLORS.primary,  bg: COLORS.primaryBg },
-};
+type BucketStyle = { icon: keyof typeof Feather.glyphMap; label: string; color: string; bg: string; dashed?: boolean };
+
+// A function of the active colorway, not a static export — `cold` and
+// `primary` (the diverging over/under-trained pair) vary per colorway, and
+// for colorways whose own primary is blue (Navy Electric, Cobalt Cyan) the
+// colorway data picks a `cold` hue well clear of `primary` specifically so
+// this pair never collides. See theme/colorways.ts.
+function createBucketStyle(colors: ColorTokens): Record<BalanceBucket, BucketStyle> {
+  return {
+    NO_DATA:    { icon: 'circle',        label: 'No data',    color: colors.textMuted, bg: colors.card, dashed: true },
+    NEW:        { icon: 'zap',           label: 'New',        color: colors.textMuted, bg: colors.card, dashed: true },
+    WELL_UNDER: { icon: 'trending-down', label: 'Well under', color: colors.cold,      bg: colors.coldBg },
+    UNDER:      { icon: 'trending-down', label: 'Under',      color: colors.cold,      bg: colors.coldBgMild },
+    ON_TRACK:   { icon: 'check',         label: 'On track',   color: colors.textSub,  bg: colors.card },
+    OVER:       { icon: 'trending-up',   label: 'Over',       color: colors.primary,  bg: colors.primaryBgMild },
+    WELL_OVER:  { icon: 'trending-up',   label: 'Well over',  color: colors.primary,  bg: colors.primaryBg },
+  };
+}
 
 function balanceSubtext(row: MuscleGroupBalance, read: BalanceRead): string {
   if (read.bucket === 'NO_DATA') return 'Never logged';
@@ -483,14 +513,17 @@ function balanceSubtext(row: MuscleGroupBalance, read: BalanceRead): string {
 }
 
 function HeatTile({ row, read }: { row: MuscleGroupBalance; read: BalanceRead }) {
-  const style = BUCKET_STYLE[read.bucket];
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const bucketStyle = useMemo(() => createBucketStyle(colors), [colors]);
+  const style = bucketStyle[read.bucket];
   return (
     <View
       style={[
         styles.heatTile,
         { backgroundColor: style.bg },
         style.dashed
-          ? { borderStyle: 'dashed', borderColor: COLORS.border }
+          ? { borderStyle: 'dashed', borderColor: colors.border }
           : { borderColor: style.color },
       ]}
     >
@@ -504,12 +537,15 @@ function HeatTile({ row, read }: { row: MuscleGroupBalance; read: BalanceRead })
 }
 
 function HeatmapLegend() {
-  // Derived from BUCKET_STYLE rather than a hand-maintained list, so the
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const bucketStyle = useMemo(() => createBucketStyle(colors), [colors]);
+  // Derived from bucketStyle rather than a hand-maintained list, so the
   // legend can't drift from the tiles it's explaining.
   const items: { color: string; label: string }[] = [
-    { color: BUCKET_STYLE.WELL_UNDER.color, label: 'Under-trained' },
-    { color: BUCKET_STYLE.ON_TRACK.color,   label: 'On track' },
-    { color: BUCKET_STYLE.WELL_OVER.color,  label: 'Over-trained' },
+    { color: bucketStyle.WELL_UNDER.color, label: 'Under-trained' },
+    { color: bucketStyle.ON_TRACK.color,   label: 'On track' },
+    { color: bucketStyle.WELL_OVER.color,  label: 'Over-trained' },
   ];
   return (
     <View style={styles.legendRow}>
@@ -524,6 +560,9 @@ function HeatmapLegend() {
 }
 
 function HeatmapTab() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const bucketStyle = useMemo(() => createBucketStyle(colors), [colors]);
   const { data: rows, loading, error } = useAnalyticsFetch(
     () => analyticsApi.getMuscleGroupBalance(),
     [],
@@ -564,7 +603,7 @@ function HeatmapTab() {
       <TableView
         rows={reads.map(({ row, read }) => ({
           label: muscleGroupLabel(row.muscle_group),
-          value: `${row.recent_sets} / ${fmtRate(row.baseline_weekly_avg_sets)} sets/wk — ${BUCKET_STYLE[read.bucket].label}`,
+          value: `${row.recent_sets} / ${fmtRate(row.baseline_weekly_avg_sets)} sets/wk — ${bucketStyle[read.bucket].label}`,
         }))}
       />
     </View>
@@ -572,6 +611,8 @@ function HeatmapTab() {
 }
 
 export function ProgressScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [tab, setTab] = useState<Tab>('1RM');
   const [range, setRange] = useState<TimeRange>('3M');
   const showRange = TABS.find(t => t.key === tab)?.usesRange !== false;
@@ -593,10 +634,10 @@ export function ProgressScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorTokens) => StyleSheet.create({
   safe: {
     flex:            1,
-    backgroundColor: COLORS.bg,
+    backgroundColor: colors.bg,
   },
   content: {
     flexGrow: 1,
@@ -617,10 +658,10 @@ const styles = StyleSheet.create({
   },
   segmented: {
     flexDirection:   'row',
-    backgroundColor: COLORS.card,
+    backgroundColor: colors.card,
     borderRadius:    RADIUS.md,
     borderWidth:      1,
-    borderColor:      COLORS.border,
+    borderColor:      colors.border,
     padding:          4,
   },
   segBtn: {
@@ -630,12 +671,12 @@ const styles = StyleSheet.create({
     borderRadius:      RADIUS.sm,
   },
   segBtnActive: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
   },
   segBtnText: {
     fontFamily: FONT.semibold,
     fontSize:   13,
-    color:      COLORS.textMuted,
+    color:      colors.textMuted,
   },
   segBtnTextActive: {
     color: '#FFFFFF',
@@ -644,17 +685,17 @@ const styles = StyleSheet.create({
     flexDirection:     'row',
     alignItems:        'center',
     gap:               10,
-    backgroundColor:   COLORS.card,
+    backgroundColor:   colors.card,
     borderRadius:      RADIUS.lg,
     paddingHorizontal: 16,
     paddingVertical:   14,
     borderWidth:        1,
-    borderColor:        COLORS.cardBorder,
+    borderColor:        colors.cardBorder,
   },
   pickerFieldText: {
     flex:     1,
     fontSize: 15,
-    color:    COLORS.text,
+    color:    colors.text,
   },
   chipRow: {
     flexGrow: 0,
@@ -667,33 +708,33 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical:   9,
     borderRadius:      RADIUS.pill,
-    backgroundColor:   COLORS.card,
+    backgroundColor:   colors.card,
     borderWidth:        1,
-    borderColor:        COLORS.cardBorder,
+    borderColor:        colors.cardBorder,
   },
   chipActive: {
-    backgroundColor: COLORS.primaryBg,
-    borderColor:      COLORS.primary,
+    backgroundColor: colors.primaryBg,
+    borderColor:      colors.primary,
   },
   chipText: {
     fontSize: 13,
-    color:    COLORS.textSub,
+    color:    colors.textSub,
   },
   chipTextActive: {
-    color:      COLORS.primary,
+    color:      colors.primary,
     fontFamily: FONT.semibold,
   },
   chartCard: {
-    backgroundColor:   COLORS.card,
+    backgroundColor:   colors.card,
     borderRadius:      RADIUS.lg,
     borderWidth:        1,
-    borderColor:        COLORS.cardBorder,
+    borderColor:        colors.cardBorder,
     padding:            CARD_PADDING,
   },
   chartTitle: {
     fontFamily:   FONT.semibold,
     fontSize:     13,
-    color:        COLORS.textSub,
+    color:        colors.textSub,
     marginBottom: 12,
   },
   infoNote: {
@@ -706,28 +747,28 @@ const styles = StyleSheet.create({
     flex:       1,
     fontSize:   12,
     lineHeight: 17,
-    color:      COLORS.textMuted,
+    color:      colors.textMuted,
   },
   loadingBox: {
     paddingVertical: 60,
     alignItems:      'center',
   },
   tooltip: {
-    backgroundColor: COLORS.bgAlt,
+    backgroundColor: colors.bgAlt,
     borderRadius:    RADIUS.sm,
     borderWidth:      1,
-    borderColor:      COLORS.cardBorder,
+    borderColor:      colors.cardBorder,
     paddingHorizontal: 10,
     paddingVertical:   6,
   },
   tooltipValue: {
     fontFamily: FONT.semibold,
     fontSize:   13,
-    color:      COLORS.text,
+    color:      colors.text,
   },
   tooltipLabel: {
     fontSize: 10,
-    color:    COLORS.textMuted,
+    color:    colors.textMuted,
     marginTop: 1,
   },
   breakdownRows: {
@@ -741,7 +782,7 @@ const styles = StyleSheet.create({
   breakdownLabel: {
     width:    76,
     fontSize: 12,
-    color:    COLORS.textSub,
+    color:    colors.textSub,
   },
   breakdownTrack: {
     flex:   1,
@@ -751,14 +792,14 @@ const styles = StyleSheet.create({
     height:          20,
     minWidth:        4,
     borderRadius:    4,
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
   },
   breakdownValue: {
     width:      66,
     textAlign:  'right',
     fontSize:   12,
     fontFamily: FONT.medium,
-    color:      COLORS.text,
+    color:      colors.text,
   },
   heatGrid: {
     flexDirection: 'row',
@@ -779,7 +820,7 @@ const styles = StyleSheet.create({
   heatTileLabel: {
     fontFamily: FONT.semibold,
     fontSize:   11,
-    color:      COLORS.text,
+    color:      colors.text,
     textAlign:  'center',
   },
   heatTileSub: {
@@ -804,13 +845,13 @@ const styles = StyleSheet.create({
   },
   legendLabel: {
     fontSize: 11,
-    color:    COLORS.textMuted,
+    color:    colors.textMuted,
   },
   table: {
-    backgroundColor: COLORS.card,
+    backgroundColor: colors.card,
     borderRadius:    RADIUS.lg,
     borderWidth:      1,
-    borderColor:      COLORS.cardBorder,
+    borderColor:      colors.cardBorder,
     overflow:        'hidden',
   },
   tableRow: {
@@ -819,18 +860,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical:   10,
     borderBottomWidth:  1,
-    borderBottomColor:  COLORS.divider,
+    borderBottomColor:  colors.divider,
   },
   tableRowLast: {
     borderBottomWidth: 0,
   },
   tableLabel: {
     fontSize: 13,
-    color:    COLORS.textSub,
+    color:    colors.textSub,
   },
   tableValue: {
     fontSize:   13,
     fontFamily: FONT.medium,
-    color:      COLORS.text,
+    color:      colors.text,
   },
 });

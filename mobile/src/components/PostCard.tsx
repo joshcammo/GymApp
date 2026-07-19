@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
-import { COLORS } from '../constants/colors';
+import { ColorTokens } from '../theme/colorways';
+import { useTheme } from '../theme/ThemeContext';
 import { FONT, RADIUS } from '../constants/theme';
 import { Post } from '../types';
 import { timeAgo } from '../utils/dateUtils';
@@ -25,6 +26,8 @@ function setSummary(post: Post): string {
 }
 
 export function PostCard({ post, onToggleLike, onPressComments, onDelete }: Props) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const name = post.display_name || post.username || 'Someone';
 
   return (
@@ -41,13 +44,13 @@ export function PostCard({ post, onToggleLike, onPressComments, onDelete }: Prop
             onPress={onDelete}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <Feather name="trash-2" size={14} color={COLORS.danger} />
+            <Feather name="trash-2" size={14} color={colors.danger} />
           </TouchableOpacity>
         )}
       </View>
 
       <View style={styles.liftRow}>
-        <Feather name="award" size={14} color={COLORS.primary} />
+        <Feather name="award" size={14} color={colors.primary} />
         <Text style={styles.exerciseName}>{post.exercise_name}</Text>
       </View>
 
@@ -70,7 +73,7 @@ export function PostCard({ post, onToggleLike, onPressComments, onDelete }: Prop
           onPress={() => { haptics.tap(); onToggleLike(post); }}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Feather name="heart" size={16} color={post.liked_by_me ? COLORS.danger : COLORS.textSub} />
+          <Feather name="heart" size={16} color={post.liked_by_me ? colors.danger : colors.textSub} />
           <Text style={[styles.actionText, post.liked_by_me && styles.actionTextActive]}>
             {post.like_count}
           </Text>
@@ -80,7 +83,7 @@ export function PostCard({ post, onToggleLike, onPressComments, onDelete }: Prop
           onPress={onPressComments}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Feather name="message-circle" size={16} color={COLORS.textSub} />
+          <Feather name="message-circle" size={16} color={colors.textSub} />
           <Text style={styles.actionText}>{post.comment_count}</Text>
         </TouchableOpacity>
       </View>
@@ -88,14 +91,14 @@ export function PostCard({ post, onToggleLike, onPressComments, onDelete }: Prop
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorTokens) => StyleSheet.create({
   container: {
-    backgroundColor: COLORS.card,
+    backgroundColor: colors.card,
     borderRadius:    RADIUS.lg,
     padding:         16,
     marginBottom:    10,
     borderWidth:      1,
-    borderColor:      COLORS.cardBorder,
+    borderColor:      colors.cardBorder,
   },
   topRow: {
     flexDirection: 'row',
@@ -108,18 +111,18 @@ const styles = StyleSheet.create({
   name: {
     fontFamily: FONT.semibold,
     fontSize:   15,
-    color:      COLORS.text,
+    color:      colors.text,
   },
   meta: {
     fontSize:  12,
-    color:     COLORS.textMuted,
+    color:     colors.textMuted,
     marginTop:  1,
   },
   deleteBtn: {
     width:           28,
     height:          28,
     borderRadius:    RADIUS.sm,
-    backgroundColor: COLORS.dangerBg,
+    backgroundColor: colors.dangerBg,
     alignItems:      'center',
     justifyContent:  'center',
   },
@@ -132,7 +135,7 @@ const styles = StyleSheet.create({
   exerciseName: {
     fontFamily: FONT.semibold,
     fontSize:   16,
-    color:      COLORS.text,
+    color:      colors.text,
   },
   chipsRow: {
     flexDirection: 'row',
@@ -141,21 +144,21 @@ const styles = StyleSheet.create({
     marginTop:     10,
   },
   chip: {
-    backgroundColor:   COLORS.bgAlt,
+    backgroundColor:   colors.bgAlt,
     borderRadius:      RADIUS.pill,
     borderWidth:        1,
-    borderColor:        COLORS.border,
+    borderColor:        colors.border,
     paddingHorizontal: 11,
     paddingVertical:    5,
   },
   chipText: {
     fontFamily: FONT.medium,
     fontSize:   12,
-    color:      COLORS.textSub,
+    color:      colors.textSub,
   },
   caption: {
     fontSize:   14,
-    color:      COLORS.textSub,
+    color:      colors.textSub,
     marginTop:  10,
     lineHeight: 19,
   },
@@ -165,7 +168,7 @@ const styles = StyleSheet.create({
     marginTop:     14,
     paddingTop:    12,
     borderTopWidth: 1,
-    borderTopColor: COLORS.divider,
+    borderTopColor: colors.divider,
   },
   actionBtn: {
     flexDirection: 'row',
@@ -175,9 +178,9 @@ const styles = StyleSheet.create({
   actionText: {
     fontFamily: FONT.medium,
     fontSize:   13,
-    color:      COLORS.textSub,
+    color:      colors.textSub,
   },
   actionTextActive: {
-    color: COLORS.danger,
+    color: colors.danger,
   },
 });

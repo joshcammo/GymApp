@@ -1,12 +1,13 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   Text, StyleSheet, ActivityIndicator, StyleProp, ViewStyle,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
 
-import { COLORS } from '../constants/colors';
-import { FONT, RADIUS, GRADIENT_PRIMARY, GLOW } from '../constants/theme';
+import { FONT, RADIUS, gradientPrimary, glow } from '../constants/theme';
+import { ColorTokens } from '../theme/colorways';
+import { useTheme } from '../theme/ThemeContext';
 import { PressableScale } from './PressableScale';
 import { haptics } from '../utils/haptics';
 
@@ -20,8 +21,10 @@ interface Props {
   style?:    StyleProp<ViewStyle>;
 }
 
-/** Primary ember-gradient CTA with glow, press-sink and loading state. */
+/** Primary gradient CTA (in the active colorway) with glow, press-sink and loading state. */
 export function GradientButton({ title, onPress, loading, disabled, icon, style }: Props) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const blocked = disabled || loading;
 
   return (
@@ -34,7 +37,7 @@ export function GradientButton({ title, onPress, loading, disabled, icon, style 
       disabled={blocked}
     >
       <LinearGradient
-        colors={GRADIENT_PRIMARY}
+        colors={gradientPrimary(colors)}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.gradient}
@@ -52,13 +55,13 @@ export function GradientButton({ title, onPress, loading, disabled, icon, style 
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorTokens) => StyleSheet.create({
   btn: {
-    ...GLOW,
+    ...glow(colors),
     borderRadius: RADIUS.md,
     // Opaque fill under the gradient — Android elevation and iOS shadows
     // need a background on the elevated view itself to render the glow.
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
   },
   btnDisabled: {
     opacity: 0.6,

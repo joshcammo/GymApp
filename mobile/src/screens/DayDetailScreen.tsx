@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useLayoutEffect } from 'react';
+import React, { useState, useCallback, useLayoutEffect, useMemo } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity,
   StyleSheet, Alert, ActivityIndicator,
@@ -9,7 +9,8 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
 
-import { COLORS } from '../constants/colors';
+import { ColorTokens } from '../theme/colorways';
+import { useTheme } from '../theme/ThemeContext';
 import { FONT, RADIUS } from '../constants/theme';
 import { RootStackParamList, Exercise, ExerciseSet, ShareTarget } from '../types';
 import { workoutApi } from '../services/api';
@@ -62,6 +63,8 @@ function bestSetOf(exercise: Exercise): ExerciseSet | null {
 }
 
 export function DayDetailScreen({ navigation, route }: Props) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { date, dayFull } = route.params;
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [loading,   setLoading]   = useState(true);
@@ -85,20 +88,20 @@ export function DayDetailScreen({ navigation, route }: Props) {
             style={styles.headerAdd}
             onPress={() => { haptics.tap(); setPresetPickerVisible(true); }}
           >
-            <Feather name="layers" size={15} color={COLORS.primary} />
+            <Feather name="layers" size={15} color={colors.primary} />
             <Text style={styles.headerAddText}>Preset</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.headerAdd}
             onPress={() => navigation.navigate('AddExercise', { date, dayFull })}
           >
-            <Feather name="plus" size={15} color={COLORS.primary} />
+            <Feather name="plus" size={15} color={colors.primary} />
             <Text style={styles.headerAddText}>Add</Text>
           </TouchableOpacity>
         </View>
       ),
     });
-  }, [navigation, date, dayFull]);
+  }, [navigation, date, dayFull, styles, colors]);
 
   // ── Load exercises ────────────────────────────────────────────
   const loadExercises = useCallback(async () => {
@@ -168,7 +171,7 @@ export function DayDetailScreen({ navigation, route }: Props) {
 
       {loading ? (
         <View style={styles.centred}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       ) : exercises.length === 0 ? (
         <EmptyState
@@ -179,7 +182,7 @@ export function DayDetailScreen({ navigation, route }: Props) {
               style={styles.loadPresetLink}
               onPress={() => { haptics.tap(); setPresetPickerVisible(true); }}
             >
-              <Feather name="layers" size={14} color={COLORS.primary} />
+              <Feather name="layers" size={14} color={colors.primary} />
               <Text style={styles.loadPresetLinkText}>Load a preset instead</Text>
             </TouchableOpacity>
           }
@@ -233,18 +236,18 @@ export function DayDetailScreen({ navigation, route }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorTokens) => StyleSheet.create({
   safe: {
     flex:            1,
-    backgroundColor: COLORS.bg,
+    backgroundColor: colors.bg,
   },
   dateLabel: {
     fontSize:          14,
-    color:             COLORS.textMuted,
+    color:             colors.textMuted,
     paddingHorizontal: 20,
     paddingVertical:   10,
     borderBottomWidth:  1,
-    borderBottomColor:  COLORS.divider,
+    borderBottomColor:  colors.divider,
   },
   centred: {
     flex:           1,
@@ -267,12 +270,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical:    6,
     borderRadius:      RADIUS.pill,
-    backgroundColor:   COLORS.primaryBg,
+    backgroundColor:   colors.primaryBg,
   },
   headerAddText: {
     fontFamily: FONT.bold,
     fontSize:   14,
-    color:      COLORS.primary,
+    color:      colors.primary,
   },
   loadPresetLink: {
     flexDirection: 'row',
@@ -282,7 +285,7 @@ const styles = StyleSheet.create({
   loadPresetLinkText: {
     fontFamily: FONT.bold,
     fontSize:   13,
-    color:      COLORS.primary,
+    color:      colors.primary,
   },
   fab: {
     position: 'absolute',

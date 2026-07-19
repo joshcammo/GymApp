@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useLayoutEffect } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useMemo } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
   ScrollView, StyleSheet, Alert,
@@ -10,9 +10,10 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
 
-import { COLORS } from '../constants/colors';
+import { ColorTokens } from '../theme/colorways';
+import { useTheme } from '../theme/ThemeContext';
 import { FONT, RADIUS } from '../constants/theme';
-import { formStyles } from '../constants/formStyles';
+import { useFormStyles } from '../constants/formStyles';
 import { RootStackParamList, WeightUnit, ExerciseDef, Exercise } from '../types';
 import { workoutApi, catalogApi, SetInput, SetPrResult, ExercisePr } from '../services/api';
 import { GradientButton } from '../components/GradientButton';
@@ -50,6 +51,9 @@ interface SetRow {
 const emptyRow = (): SetRow => ({ reps: '', weight: '', drops: [] });
 
 export function AddExerciseScreen({ navigation, route }: Props) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const formStyles = useFormStyles();
   const { date, dayFull, editExercise } = route.params;
   const isEditing = !!editExercise;
 
@@ -308,7 +312,7 @@ export function AddExerciseScreen({ navigation, route }: Props) {
         >
           {/* Date chip */}
           <View style={styles.datePill}>
-            <Feather name="calendar" size={13} color={COLORS.primary} />
+            <Feather name="calendar" size={13} color={colors.primary} />
             <Text style={styles.datePillText}>
               {dayFull} — {parseDateStr(date).toLocaleDateString('en-GB', {
                 day: 'numeric', month: 'long', year: 'numeric',
@@ -328,7 +332,7 @@ export function AddExerciseScreen({ navigation, route }: Props) {
               }}
               activeOpacity={0.7}
             >
-              <Feather name="grid" size={15} color={COLORS.primary} />
+              <Feather name="grid" size={15} color={colors.primary} />
               <Text style={selectedDef ? styles.pickerFieldText : styles.pickerFieldPlaceholder}>
                 {selectedDef
                   ? selectedDef.name
@@ -336,12 +340,12 @@ export function AddExerciseScreen({ navigation, route }: Props) {
                     ? `"${editExercise.name}" — pick its catalog exercise`
                     : 'Choose an exercise'}
               </Text>
-              <Feather name="chevron-down" size={16} color={COLORS.textMuted} />
+              <Feather name="chevron-down" size={16} color={colors.textMuted} />
             </TouchableOpacity>
 
             {currentPr?.best_weight ? (
               <View style={styles.prChip}>
-                <Feather name="award" size={12} color={COLORS.success} />
+                <Feather name="award" size={12} color={colors.success} />
                 <Text style={styles.prChipText}>
                   Current PR: {currentPr.best_weight.weight} {currentPr.best_weight.unit}
                   {currentPr.best_weight.reps != null ? ` × ${currentPr.best_weight.reps}` : ''}
@@ -379,11 +383,11 @@ export function AddExerciseScreen({ navigation, route }: Props) {
               }}
               activeOpacity={0.7}
             >
-              <Feather name="link" size={15} color={COLORS.primary} />
+              <Feather name="link" size={15} color={colors.primary} />
               <Text style={supersetPartner ? styles.pickerFieldText : styles.pickerFieldPlaceholder}>
                 {supersetPartner ? supersetPartner.name : 'None'}
               </Text>
-              <Feather name="chevron-down" size={16} color={COLORS.textMuted} />
+              <Feather name="chevron-down" size={16} color={colors.textMuted} />
             </TouchableOpacity>
           </View>
 
@@ -426,7 +430,7 @@ export function AddExerciseScreen({ navigation, route }: Props) {
                     value={row.reps}
                     onChangeText={v => updateRow(i, 'reps', v)}
                     placeholder="—"
-                    placeholderTextColor={COLORS.textMuted}
+                    placeholderTextColor={colors.textMuted}
                     keyboardType="number-pad"
                     returnKeyType="next"
                   />
@@ -436,7 +440,7 @@ export function AddExerciseScreen({ navigation, route }: Props) {
                     value={row.weight}
                     onChangeText={v => updateRow(i, 'weight', v)}
                     placeholder="0"
-                    placeholderTextColor={COLORS.textMuted}
+                    placeholderTextColor={colors.textMuted}
                     keyboardType="decimal-pad"
                     returnKeyType="next"
                   />
@@ -447,14 +451,14 @@ export function AddExerciseScreen({ navigation, route }: Props) {
                     disabled={setRows.length <= 1}
                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   >
-                    <Feather name="minus" size={17} color={COLORS.danger} />
+                    <Feather name="minus" size={17} color={colors.danger} />
                   </TouchableOpacity>
                 </View>
 
                 {row.drops.map((drop, di) => (
                   <View key={di} style={styles.dropRow}>
                     <View style={styles.dropConnector}>
-                      <Feather name="corner-down-right" size={14} color={COLORS.textMuted} />
+                      <Feather name="corner-down-right" size={14} color={colors.textMuted} />
                     </View>
 
                     <TextInput
@@ -462,7 +466,7 @@ export function AddExerciseScreen({ navigation, route }: Props) {
                       value={drop.reps}
                       onChangeText={v => updateDrop(i, di, 'reps', v)}
                       placeholder="—"
-                      placeholderTextColor={COLORS.textMuted}
+                      placeholderTextColor={colors.textMuted}
                       keyboardType="number-pad"
                       returnKeyType="next"
                     />
@@ -472,7 +476,7 @@ export function AddExerciseScreen({ navigation, route }: Props) {
                       value={drop.weight}
                       onChangeText={v => updateDrop(i, di, 'weight', v)}
                       placeholder="0"
-                      placeholderTextColor={COLORS.textMuted}
+                      placeholderTextColor={colors.textMuted}
                       keyboardType="decimal-pad"
                       returnKeyType="next"
                     />
@@ -482,7 +486,7 @@ export function AddExerciseScreen({ navigation, route }: Props) {
                       onPress={() => removeDrop(i, di)}
                       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     >
-                      <Feather name="x" size={14} color={COLORS.danger} />
+                      <Feather name="x" size={14} color={colors.danger} />
                     </TouchableOpacity>
                   </View>
                 ))}
@@ -492,7 +496,7 @@ export function AddExerciseScreen({ navigation, route }: Props) {
                   onPress={() => addDrop(i)}
                   activeOpacity={0.7}
                 >
-                  <Feather name="corner-down-right" size={12} color={COLORS.primary} />
+                  <Feather name="corner-down-right" size={12} color={colors.primary} />
                   <Text style={styles.addDropBtnText}>Add Drop</Text>
                 </TouchableOpacity>
               </View>
@@ -506,7 +510,7 @@ export function AddExerciseScreen({ navigation, route }: Props) {
               activeOpacity={0.7}
               disabled={setRows.length >= 100}
             >
-              <Feather name="plus" size={15} color={COLORS.primary} />
+              <Feather name="plus" size={15} color={colors.primary} />
               <Text style={styles.addSetBtnText}>Add Set</Text>
             </TouchableOpacity>
           </View>
@@ -523,7 +527,7 @@ export function AddExerciseScreen({ navigation, route }: Props) {
               value={notes}
               onChangeText={setNotes}
               placeholder="e.g. Felt strong today, paused reps"
-              placeholderTextColor={COLORS.textMuted}
+              placeholderTextColor={colors.textMuted}
               multiline
               returnKeyType="default"
               maxLength={500}
@@ -559,10 +563,10 @@ export function AddExerciseScreen({ navigation, route }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorTokens) => StyleSheet.create({
   safe: {
     flex:            1,
-    backgroundColor: COLORS.bg,
+    backgroundColor: colors.bg,
   },
   scroll: { flex: 1 },
   content: {
@@ -574,24 +578,24 @@ const styles = StyleSheet.create({
     alignItems:        'center',
     gap:               7,
     alignSelf:         'flex-start',
-    backgroundColor:   COLORS.primaryBg,
+    backgroundColor:   colors.primaryBg,
     borderRadius:      RADIUS.pill,
     paddingHorizontal: 14,
     paddingVertical:    7,
     marginBottom:      16,
     borderWidth:        1,
-    borderColor:        COLORS.primary,
+    borderColor:        colors.primary,
   },
   datePillText: {
     fontFamily: FONT.semibold,
-    color:      COLORS.primary,
+    color:      colors.primary,
     fontSize:   13,
   },
   sectionCard: {
-    backgroundColor: COLORS.bgAlt,
+    backgroundColor: colors.bgAlt,
     borderRadius:    RADIUS.lg,
     borderWidth:      1,
-    borderColor:      COLORS.cardBorder,
+    borderColor:      colors.cardBorder,
     padding:         16,
     marginBottom:    14,
   },
@@ -599,10 +603,10 @@ const styles = StyleSheet.create({
     flexDirection:     'row',
     alignItems:        'center',
     gap:               10,
-    backgroundColor:   COLORS.card,
+    backgroundColor:   colors.card,
     borderRadius:      RADIUS.md,
     borderWidth:        1,
-    borderColor:        COLORS.border,
+    borderColor:        colors.border,
     paddingHorizontal: 14,
     paddingVertical:   14,
     marginBottom:      12,
@@ -611,23 +615,23 @@ const styles = StyleSheet.create({
     flex:       1,
     fontFamily: FONT.semibold,
     fontSize:   15,
-    color:      COLORS.text,
+    color:      colors.text,
   },
   pickerFieldPlaceholder: {
     flex:       1,
     fontFamily: FONT.medium,
     fontSize:   14,
-    color:      COLORS.textMuted,
+    color:      colors.textMuted,
   },
   prChip: {
     flexDirection:     'row',
     alignItems:        'center',
     gap:               6,
     alignSelf:         'flex-start',
-    backgroundColor:   COLORS.successBg,
+    backgroundColor:   colors.successBg,
     borderRadius:      RADIUS.pill,
     borderWidth:        1,
-    borderColor:        COLORS.success,
+    borderColor:        colors.success,
     paddingHorizontal: 10,
     paddingVertical:    4,
     marginBottom:      12,
@@ -635,18 +639,18 @@ const styles = StyleSheet.create({
   prChipText: {
     fontFamily: FONT.bold,
     fontSize:   12,
-    color:      COLORS.success,
+    color:      colors.success,
   },
   optional: {
-    color:         COLORS.textMuted,
+    color:         colors.textMuted,
     textTransform: 'none',
   },
   unitToggle: {
     flexDirection:   'row',
-    backgroundColor: COLORS.card,
+    backgroundColor: colors.card,
     borderRadius:    RADIUS.md,
     borderWidth:      1,
-    borderColor:      COLORS.border,
+    borderColor:      colors.border,
     padding:          4,
     alignSelf:       'flex-start',
     marginBottom:    12,
@@ -659,12 +663,12 @@ const styles = StyleSheet.create({
     borderRadius:      RADIUS.sm,
   },
   unitBtnActive: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
   },
   unitBtnText: {
     fontFamily: FONT.bold,
     fontSize:   14,
-    color:      COLORS.textMuted,
+    color:      colors.textMuted,
   },
   unitBtnTextActive: {
     color: '#FFFFFF',
@@ -676,7 +680,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   setsCountBubble: {
-    backgroundColor:   COLORS.primaryBg,
+    backgroundColor:   colors.primaryBg,
     borderRadius:      RADIUS.pill,
     minWidth:          24,
     height:            24,
@@ -688,7 +692,7 @@ const styles = StyleSheet.create({
   setsCount: {
     fontFamily: FONT.bold,
     fontSize:   12,
-    color:      COLORS.primary,
+    color:      colors.primary,
   },
   setRowHeader: {
     flexDirection: 'row',
@@ -699,7 +703,7 @@ const styles = StyleSheet.create({
   setRowHeaderText: {
     fontFamily:    FONT.medium,
     fontSize:      10,
-    color:         COLORS.textMuted,
+    color:         colors.textMuted,
     letterSpacing: 0.8,
     textTransform: 'uppercase',
     textAlign:     'center',
@@ -717,9 +721,9 @@ const styles = StyleSheet.create({
     width:           36,
     height:          36,
     borderRadius:    RADIUS.sm,
-    backgroundColor: COLORS.card,
+    backgroundColor: colors.card,
     borderWidth:      1,
-    borderColor:      COLORS.border,
+    borderColor:      colors.border,
     alignItems:      'center',
     justifyContent:  'center',
   },
@@ -730,16 +734,16 @@ const styles = StyleSheet.create({
     width:            18,
     height:           18,
     borderRadius:     9,
-    backgroundColor:  COLORS.success,
+    backgroundColor:  colors.success,
     borderWidth:       2,
-    borderColor:       COLORS.bgAlt,
+    borderColor:       colors.bgAlt,
     alignItems:       'center',
     justifyContent:   'center',
   },
   setNumber: {
     fontFamily: FONT.bold,
     fontSize:   14,
-    color:      COLORS.textSub,
+    color:      colors.textSub,
   },
   setInput: {
     flex:            1,
@@ -766,7 +770,7 @@ const styles = StyleSheet.create({
     width:           28,
     height:          28,
     borderRadius:    RADIUS.sm,
-    backgroundColor: COLORS.dangerBg,
+    backgroundColor: colors.dangerBg,
     alignItems:      'center',
     justifyContent:  'center',
   },
@@ -779,13 +783,13 @@ const styles = StyleSheet.create({
   addDropBtnText: {
     fontFamily: FONT.semibold,
     fontSize:   12,
-    color:      COLORS.primary,
+    color:      colors.primary,
   },
   removeBtn: {
     width:           36,
     height:          36,
     borderRadius:    RADIUS.sm,
-    backgroundColor: COLORS.dangerBg,
+    backgroundColor: colors.dangerBg,
     alignItems:      'center',
     justifyContent:  'center',
   },
@@ -800,14 +804,14 @@ const styles = StyleSheet.create({
     borderRadius:    RADIUS.md,
     borderWidth:      1,
     borderStyle:     'dashed',
-    borderColor:      COLORS.border,
+    borderColor:      colors.border,
     alignItems:      'center',
     justifyContent:  'center',
   },
   addSetBtnText: {
     fontFamily:    FONT.bold,
     fontSize:      14,
-    color:         COLORS.primary,
+    color:         colors.primary,
     letterSpacing: 0.4,
   },
   notesInput: {
