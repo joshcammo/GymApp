@@ -15,13 +15,15 @@
 -- today's entry and picking the same exercise from the new "share a
 -- PR" picker now produce an identical post.
 --
--- The parameter TYPE signature (bigint, text) is unchanged even
--- though its meaning changed, so `create or replace` below updates
--- the function in place — no drop, and the migration 012 grant still
--- applies.
+-- The parameter TYPE signature (bigint, text) is unchanged, but
+-- Postgres still refuses to rename a parameter via `create or
+-- replace` (42P13) — the old p_exercise_id name has to be dropped
+-- first, same as the signature changes in migration 006.
 -- ================================================================
 
-create or replace function public.share_post(p_exercise_def_id bigint, p_caption text default null)
+drop function if exists public.share_post(bigint, text);
+
+create function public.share_post(p_exercise_def_id bigint, p_caption text default null)
 returns bigint
 language plpgsql
 security invoker
@@ -71,6 +73,8 @@ begin
   return v_post_id;
 end;
 $$;
+
+grant execute on function public.share_post(bigint, text) to authenticated;
 
 -- ── View: exercises the caller has logged, with their current best set ─
 -- Backs the "share a PR" picker on the Feed tab. Same tie-break as
