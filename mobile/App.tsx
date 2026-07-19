@@ -99,6 +99,13 @@ export default function App() {
               backgroundColor: COLORS.bg,
             },
             animation: 'slide_from_right',
+            // Otherwise the back button shows the previous screen's title —
+            // "MainTabs" for every screen pushed straight from a tab, since
+            // that Stack.Screen has no title of its own. iOS only hides an
+            // overlong label automatically, so short titles (e.g. "Friday")
+            // were leaking it while longer ones (e.g. "Thursday") happened
+            // to collapse to just the chevron.
+            headerBackTitleVisible: false,
           }}
         >
           {session && profile && !profile.username ? (
