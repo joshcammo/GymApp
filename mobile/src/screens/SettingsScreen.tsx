@@ -59,6 +59,15 @@ export function SettingsScreen({ navigation }: Props) {
         </PressableScale>
         <PressableScale
           style={[styles.row, styles.rowSpaced]}
+          onPress={() => navigation.navigate('ChangeUsername')}
+          pressScale={0.98}
+        >
+          <Feather name="at-sign" size={18} color={COLORS.textSub} />
+          <Text style={styles.rowText}>Change Username</Text>
+          <Feather name="chevron-right" size={18} color={COLORS.textMuted} />
+        </PressableScale>
+        <PressableScale
+          style={[styles.row, styles.rowSpaced]}
           onPress={() => navigation.navigate('ChangePassword')}
           pressScale={0.98}
         >

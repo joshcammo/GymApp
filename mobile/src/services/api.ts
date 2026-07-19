@@ -51,7 +51,7 @@ function mapRow(row: ExerciseRow): Exercise {
   };
 }
 
-function checkError(error: { message: string } | null): void {
+export function checkError(error: { message: string } | null): void {
   if (error) throw new Error(error.message);
 }
 

@@ -98,6 +98,57 @@ export interface MuscleGroupVolume {
   volume_kg:    number;
 }
 
+/** The caller's own profile, or another user's as surfaced by search/friend views. */
+export interface Profile {
+  id:           string;
+  username:     string | null;
+  display_name: string | null;
+}
+
+export type FriendshipStatus = 'pending' | 'accepted';
+
+/** One row from `friendships_with_profiles` — a friendship from the caller's point of view. */
+export interface Friendship {
+  id:                  number;
+  status:              FriendshipStatus;
+  created_at:          string;
+  responded_at:        string | null;
+  /** True if the caller sent this request (vs. received it). */
+  is_requester:        boolean;
+  other_user_id:       string;
+  other_username:      string | null;
+  other_display_name:  string | null;
+}
+
+/** One row from `posts_feed` — a shared lift, with author + engagement counts baked in. */
+export interface Post {
+  id:            number;
+  user_id:       string;
+  exercise_name: string;
+  weight:        number;
+  reps:          number | null;
+  unit:          WeightUnit;
+  e1rm_kg:       number | null;
+  caption:       string | null;
+  created_at:    string;
+  username:      string | null;
+  display_name:  string | null;
+  like_count:    number;
+  liked_by_me:   boolean;
+  comment_count: number;
+}
+
+/** One row from `post_comments_with_profiles`. */
+export interface PostComment {
+  id:           number;
+  post_id:      number;
+  user_id:      string;
+  body:         string;
+  created_at:   string;
+  username:     string | null;
+  display_name: string | null;
+}
+
 /** Navigation param types */
 export type RootStackParamList = {
   Login:          undefined;
@@ -109,4 +160,9 @@ export type RootStackParamList = {
   Presets:        undefined;
   EditPreset:     { preset?: Preset };
   Progress:       undefined;
+  Social:          undefined;
+  Friends:         undefined;
+  PostDetail:      { postId: number };
+  UsernameSetup:   undefined;
+  ChangeUsername:  undefined;
 };
