@@ -8,7 +8,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Feather } from '@expo/vector-icons';
 
 import { COLORS } from '../constants/colors';
-import { FONT } from '../constants/theme';
+import { FONT, RADIUS } from '../constants/theme';
 import { RootStackParamList, Post } from '../types';
 import { postsApi } from '../services/social';
 import { supabase } from '../lib/supabase';
@@ -40,7 +40,7 @@ export function SocialScreen({ navigation }: Props) {
           onPress={() => { haptics.tap(); navigation.navigate('Friends'); }}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Feather name="user-plus" size={19} color={COLORS.primary} />
+          <Feather name="user-plus" size={17} color={COLORS.primary} />
         </TouchableOpacity>
       ),
     });
@@ -185,7 +185,14 @@ const styles = StyleSheet.create({
     flexGrow:      1,
   },
   headerBtn: {
-    paddingHorizontal: 4,
+    width:           38,
+    height:          38,
+    borderRadius:    RADIUS.pill,
+    backgroundColor: COLORS.primaryBg,
+    borderWidth:      1,
+    borderColor:      COLORS.primary,
+    alignItems:      'center',
+    justifyContent:  'center',
   },
   emptyLink: {
     flexDirection: 'row',

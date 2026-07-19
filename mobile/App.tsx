@@ -31,6 +31,7 @@ import { SocialScreen }          from './src/screens/SocialScreen';
 import { FriendsScreen }         from './src/screens/FriendsScreen';
 import { PostDetailScreen }      from './src/screens/PostDetailScreen';
 import { UsernameSetupScreen }   from './src/screens/UsernameSetupScreen';
+import { ChangeUsernameScreen }  from './src/screens/ChangeUsernameScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -166,6 +167,11 @@ export default function App() {
                 name="PostDetail"
                 component={PostDetailScreen}
                 options={{ title: 'Post' }}
+              />
+              <Stack.Screen
+                name="ChangeUsername"
+                component={ChangeUsernameScreen}
+                options={{ title: 'Change Username' }}
               />
             </>
           ) : (

@@ -160,8 +160,9 @@ export type RootStackParamList = {
   Presets:        undefined;
   EditPreset:     { preset?: Preset };
   Progress:       undefined;
-  Social:         undefined;
-  Friends:        undefined;
-  PostDetail:     { postId: number };
-  UsernameSetup:  undefined;
+  Social:          undefined;
+  Friends:         undefined;
+  PostDetail:      { postId: number };
+  UsernameSetup:   undefined;
+  ChangeUsername:  undefined;
 };
