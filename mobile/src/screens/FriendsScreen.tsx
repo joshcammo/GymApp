@@ -18,7 +18,12 @@ import { haptics } from '../utils/haptics';
 type SearchSection = { key: 'search'; title: string; data: Profile[] };
 type FriendSection = { key: 'requests' | 'friends' | 'sent'; title: string; data: Friendship[] };
 
-export function FriendsScreen() {
+interface Props {
+  /** Notifies the tab navigator to refresh the pending-request badge count. */
+  onRequestsChanged?: () => void;
+}
+
+export function FriendsScreen({ onRequestsChanged }: Props) {
   const [query,       setQuery]       = useState('');
   const [results,     setResults]     = useState<Profile[]>([]);
   const [searching,   setSearching]   = useState(false);
@@ -74,6 +79,7 @@ export function FriendsScreen() {
       setQuery('');
       setResults([]);
       load();
+      onRequestsChanged?.();
     } catch (e) {
       haptics.warning();
       Alert.alert('Could not send request', (e as Error).message ?? 'Please try again.');
@@ -86,6 +92,7 @@ export function FriendsScreen() {
       await friendsApi.respond(f.id, accept);
       haptics.success();
       load();
+      onRequestsChanged?.();
     } catch (e) {
       Alert.alert('Error', (e as Error).message ?? 'Please try again.');
     }

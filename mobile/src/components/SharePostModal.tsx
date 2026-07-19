@@ -9,32 +9,24 @@ import { Feather } from '@expo/vector-icons';
 import { COLORS } from '../constants/colors';
 import { FONT, RADIUS } from '../constants/theme';
 import { formStyles } from '../constants/formStyles';
-import { Exercise } from '../types';
+import { ShareTarget } from '../types';
 import { postsApi } from '../services/social';
 import { GradientButton } from './GradientButton';
 import { haptics } from '../utils/haptics';
 
 interface Props {
-  /** The exercise being shared; null while the modal is closed/animating out. */
-  exercise: Exercise | null;
+  /** What's being shared; null while the modal is closed/animating out. */
+  target:   ShareTarget | null;
   onClose:  () => void;
   onShared: () => void;
 }
 
-/** The set that share_post() will pick server-side: heaviest weight, most reps as tie-break. */
-function bestSet(exercise: Exercise) {
-  const weighted = exercise.sets.filter(s => s.weight != null && s.weight > 0);
-  if (weighted.length === 0) return null;
-  return weighted.reduce((best, s) =>
-    (s.weight! > best.weight! || (s.weight === best.weight && (s.reps ?? 0) > (best.reps ?? 0))) ? s : best
-  );
-}
-
-export function SharePostModal({ exercise, onClose, onShared }: Props) {
+/** Caption step for sharing a lift — the preview shown here is a snapshot for
+ *  display only; share_post() independently re-derives the caller's current
+ *  best set server-side at submit time (see migration 013). */
+export function SharePostModal({ target, onClose, onShared }: Props) {
   const [caption,    setCaption]    = useState('');
   const [submitting, setSubmitting] = useState(false);
-
-  const preview = exercise ? bestSet(exercise) : null;
 
   const handleClose = () => {
     if (submitting) return;
@@ -43,10 +35,10 @@ export function SharePostModal({ exercise, onClose, onShared }: Props) {
   };
 
   const handleShare = async () => {
-    if (!exercise || submitting) return;
+    if (!target || submitting) return;
     setSubmitting(true);
     try {
-      await postsApi.share(exercise.id, caption);
+      await postsApi.share(target.exerciseDefId, caption);
       haptics.success();
       setCaption('');
       onShared();
@@ -59,7 +51,7 @@ export function SharePostModal({ exercise, onClose, onShared }: Props) {
 
   return (
     <Modal
-      visible={!!exercise}
+      visible={!!target}
       animationType="slide"
       onRequestClose={handleClose}
       presentationStyle="pageSheet"
@@ -82,14 +74,14 @@ export function SharePostModal({ exercise, onClose, onShared }: Props) {
           </View>
 
           <View style={styles.content}>
-            {exercise && preview && (
+            {target && (
               <View style={styles.previewCard}>
                 <View style={styles.previewTopRow}>
                   <Feather name="award" size={14} color={COLORS.primary} />
-                  <Text style={styles.previewName}>{exercise.name}</Text>
+                  <Text style={styles.previewName}>{target.exerciseName}</Text>
                 </View>
                 <Text style={styles.previewSet}>
-                  {preview.reps ? `${preview.reps} × ${preview.weight} ${exercise.unit}` : `${preview.weight} ${exercise.unit}`}
+                  {target.reps ? `${target.reps} × ${target.weight} ${target.unit}` : `${target.weight} ${target.unit}`}
                 </Text>
               </View>
             )}
@@ -111,7 +103,7 @@ export function SharePostModal({ exercise, onClose, onShared }: Props) {
               icon="share-2"
               onPress={handleShare}
               loading={submitting}
-              disabled={!preview}
+              disabled={!target}
             />
           </View>
         </KeyboardAvoidingView>
