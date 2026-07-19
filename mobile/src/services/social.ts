@@ -1,6 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { checkError } from './api';
-import { Friendship, FriendshipStatus, Post, PostComment, Profile } from '../types';
+import { Friendship, FriendshipStatus, MyExercisePr, Post, PostComment, Profile } from '../types';
 
 export const profileApi = {
   /** The signed-in user's own profile row (always exists — created on signup). */
@@ -88,14 +88,24 @@ export const postsApi = {
     return data as Post[];
   },
 
-  /** Share the caller's current heaviest set for one of their own exercises. */
-  share: async (exerciseId: number, caption?: string): Promise<number> => {
+  /** Share the caller's current all-time-best set for an exercise (by def id). */
+  share: async (exerciseDefId: number, caption?: string): Promise<number> => {
     const { data, error } = await supabase.rpc('share_post', {
-      p_exercise_id: exerciseId,
-      p_caption:     caption ?? null,
+      p_exercise_def_id: exerciseDefId,
+      p_caption:         caption ?? null,
     });
     checkError(error);
     return data as number;
+  },
+
+  /** Every exercise the caller has a logged weighted set for, with their current best — backs the "share a PR" picker. */
+  myPrs: async (): Promise<MyExercisePr[]> => {
+    const { data, error } = await supabase
+      .from('my_exercise_prs')
+      .select('*')
+      .order('name', { ascending: true });
+    checkError(error);
+    return data as MyExercisePr[];
   },
 
   /** Delete one of the caller's own posts. */

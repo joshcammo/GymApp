@@ -19,16 +19,13 @@ import { RootStackParamList, Profile } from './src/types';
 import { supabase } from './src/lib/supabase';
 import { profileApi } from './src/services/social';
 import { LoginScreen }           from './src/screens/LoginScreen';
-import { HomeScreen }            from './src/screens/HomeScreen';
+import { MainTabs }              from './src/navigation/MainTabs';
 import { SettingsScreen }        from './src/screens/SettingsScreen';
 import { ChangePasswordScreen }  from './src/screens/ChangePasswordScreen';
 import { DayDetailScreen }       from './src/screens/DayDetailScreen';
 import { AddExerciseScreen }     from './src/screens/AddExerciseScreen';
 import { PresetsScreen }         from './src/screens/PresetsScreen';
 import { EditPresetScreen }      from './src/screens/EditPresetScreen';
-import { ProgressScreen }        from './src/screens/ProgressScreen';
-import { SocialScreen }          from './src/screens/SocialScreen';
-import { FriendsScreen }         from './src/screens/FriendsScreen';
 import { PostDetailScreen }      from './src/screens/PostDetailScreen';
 import { UsernameSetupScreen }   from './src/screens/UsernameSetupScreen';
 import { ChangeUsernameScreen }  from './src/screens/ChangeUsernameScreen';
@@ -102,6 +99,13 @@ export default function App() {
               backgroundColor: COLORS.bg,
             },
             animation: 'slide_from_right',
+            // Otherwise the back button shows the previous screen's title —
+            // "MainTabs" for every screen pushed straight from a tab, since
+            // that Stack.Screen has no title of its own. iOS only hides an
+            // overlong label automatically, so short titles (e.g. "Friday")
+            // were leaking it while longer ones (e.g. "Thursday") happened
+            // to collapse to just the chevron.
+            headerBackTitleVisible: false,
           }}
         >
           {session && profile && !profile.username ? (
@@ -118,8 +122,8 @@ export default function App() {
           ) : session ? (
             <>
               <Stack.Screen
-                name="Home"
-                component={HomeScreen}
+                name="MainTabs"
+                component={MainTabs}
                 options={{ headerShown: false }}
               />
               <Stack.Screen
@@ -130,6 +134,11 @@ export default function App() {
                 name="ChangePassword"
                 component={ChangePasswordScreen}
                 options={{ title: 'Change Password' }}
+              />
+              <Stack.Screen
+                name="ChangeUsername"
+                component={ChangeUsernameScreen}
+                options={{ title: 'Change Username' }}
               />
               <Stack.Screen
                 name="DayDetail"
@@ -149,29 +158,9 @@ export default function App() {
                 component={EditPresetScreen}
               />
               <Stack.Screen
-                name="Progress"
-                component={ProgressScreen}
-                options={{ title: 'Progress' }}
-              />
-              <Stack.Screen
-                name="Social"
-                component={SocialScreen}
-                options={{ title: 'Social' }}
-              />
-              <Stack.Screen
-                name="Friends"
-                component={FriendsScreen}
-                options={{ title: 'Friends' }}
-              />
-              <Stack.Screen
                 name="PostDetail"
                 component={PostDetailScreen}
                 options={{ title: 'Post' }}
-              />
-              <Stack.Screen
-                name="ChangeUsername"
-                component={ChangeUsernameScreen}
-                options={{ title: 'Change Username' }}
               />
             </>
           ) : (

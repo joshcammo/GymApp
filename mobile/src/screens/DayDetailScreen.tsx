@@ -11,7 +11,7 @@ import { Feather } from '@expo/vector-icons';
 
 import { COLORS } from '../constants/colors';
 import { FONT, RADIUS } from '../constants/theme';
-import { RootStackParamList, Exercise } from '../types';
+import { RootStackParamList, Exercise, ExerciseSet, ShareTarget } from '../types';
 import { workoutApi } from '../services/api';
 import { ExerciseItem } from '../components/ExerciseItem';
 import { SupersetCard } from '../components/SupersetCard';
@@ -51,12 +51,22 @@ function groupExercises(exercises: Exercise[]): GroupedItem[] {
   return result;
 }
 
+/** Heaviest set (most reps as tie-break) — same rule share_post() applies
+ *  server-side, used here only to build an immediate share preview. */
+function bestSetOf(exercise: Exercise): ExerciseSet | null {
+  const weighted = exercise.sets.filter(s => s.weight != null && s.weight > 0);
+  if (weighted.length === 0) return null;
+  return weighted.reduce((best, s) =>
+    (s.weight! > best.weight! || (s.weight === best.weight && (s.reps ?? 0) > (best.reps ?? 0))) ? s : best
+  );
+}
+
 export function DayDetailScreen({ navigation, route }: Props) {
   const { date, dayFull } = route.params;
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [loading,   setLoading]   = useState(true);
   const [presetPickerVisible, setPresetPickerVisible] = useState(false);
-  const [sharingExercise, setSharingExercise] = useState<Exercise | null>(null);
+  const [shareTarget, setShareTarget] = useState<ShareTarget | null>(null);
 
   // Pretty header date: 'Thursday, 22 May'
   const displayDate = parseDateStr(date).toLocaleDateString('en-GB', {
@@ -111,8 +121,19 @@ export function DayDetailScreen({ navigation, route }: Props) {
   };
 
   const handleShare = (exercise: Exercise) => {
+    // has_pr is only ever true for def-linked exercises (migration 006), so
+    // exercise_def_id and a weighted best set are both guaranteed here.
+    if (!exercise.exercise_def_id) return;
+    const best = bestSetOf(exercise);
+    if (!best) return;
     haptics.tap();
-    setSharingExercise(exercise);
+    setShareTarget({
+      exerciseDefId: exercise.exercise_def_id,
+      exerciseName:  exercise.name,
+      weight:        best.weight!,
+      reps:          best.reps ?? null,
+      unit:          exercise.unit,
+    });
   };
 
   const handleDelete = (id: number, name: string) => {
@@ -204,9 +225,9 @@ export function DayDetailScreen({ navigation, route }: Props) {
       />
 
       <SharePostModal
-        exercise={sharingExercise}
-        onClose={() => setSharingExercise(null)}
-        onShared={() => setSharingExercise(null)}
+        target={shareTarget}
+        onClose={() => setShareTarget(null)}
+        onShared={() => setShareTarget(null)}
       />
     </SafeAreaView>
   );

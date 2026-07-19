@@ -149,20 +149,48 @@ export interface PostComment {
   display_name: string | null;
 }
 
-/** Navigation param types */
+/** One row from `my_exercise_prs` — an exercise the caller has logged a
+ *  weighted set for, with their current best (same as what share_post()
+ *  would share for it right now). Backs the "share a PR" picker. */
+export interface MyExercisePr {
+  exercise_def_id: number;
+  name:            string;
+  unit:            WeightUnit;
+  weight:          number;
+  reps:            number | null;
+  e1rm_kg:         number | null;
+}
+
+/** Everything SharePostModal needs to preview + create a post — built either
+ *  from a specific day's PR'd exercise entry, or from a MyExercisePr row. */
+export interface ShareTarget {
+  exerciseDefId: number;
+  exerciseName:  string;
+  weight:        number;
+  reps:          number | null;
+  unit:          WeightUnit;
+}
+
+/** Bottom tab routes shown once signed in and past the username gate. */
+export type MainTabParamList = {
+  HomeTab:    undefined;
+  FeedTab:    undefined;
+  FriendsTab: undefined;
+  StatsTab:   undefined;
+};
+
+/** Root stack: auth/onboarding gates, the tab navigator, and every screen
+ *  that pushes full-screen over the tab bar (detail/edit/settings views). */
 export type RootStackParamList = {
   Login:          undefined;
-  Home:           undefined;
+  MainTabs:       undefined;
   Settings:       undefined;
   ChangePassword: undefined;
+  ChangeUsername: undefined;
   DayDetail:      { date: string; dayFull: string };
   AddExercise:    { date: string; dayFull: string; editExercise?: Exercise };
   Presets:        undefined;
   EditPreset:     { preset?: Preset };
-  Progress:       undefined;
-  Social:          undefined;
-  Friends:         undefined;
-  PostDetail:      { postId: number };
-  UsernameSetup:   undefined;
-  ChangeUsername:  undefined;
+  PostDetail:     { postId: number };
+  UsernameSetup:  undefined;
 };

@@ -4,19 +4,26 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { CompositeNavigationProp } from '@react-navigation/native';
+import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Feather } from '@expo/vector-icons';
 
 import { COLORS } from '../constants/colors';
 import { FONT, RADIUS } from '../constants/theme';
-import { RootStackParamList, Post } from '../types';
+import { RootStackParamList, MainTabParamList, Post, ShareTarget } from '../types';
 import { postsApi } from '../services/social';
 import { supabase } from '../lib/supabase';
 import { PostCard } from '../components/PostCard';
 import { EmptyState } from '../components/EmptyState';
+import { SharePickerModal } from '../components/SharePickerModal';
+import { SharePostModal } from '../components/SharePostModal';
 import { haptics } from '../utils/haptics';
 
-type Nav = NativeStackNavigationProp<RootStackParamList, 'Social'>;
+type Nav = CompositeNavigationProp<
+  BottomTabNavigationProp<MainTabParamList, 'FeedTab'>,
+  NativeStackNavigationProp<RootStackParamList>
+>;
 interface Props { navigation: Nav }
 
 export function SocialScreen({ navigation }: Props) {
@@ -26,6 +33,8 @@ export function SocialScreen({ navigation }: Props) {
   const [refreshing, setRefreshing] = useState(false);
   const [error,      setError]      = useState<string | null>(null);
   const [likingIds,  setLikingIds]  = useState<Set<number>>(new Set());
+  const [pickerVisible, setPickerVisible] = useState(false);
+  const [shareTarget,   setShareTarget]   = useState<ShareTarget | null>(null);
   // Kept in sync with `posts` so toggleLike always reads the current
   // liked_by_me/like_count instead of the (possibly stale) snapshot the
   // FlatList row was rendered with when the tap fired.
@@ -37,10 +46,10 @@ export function SocialScreen({ navigation }: Props) {
       headerRight: () => (
         <TouchableOpacity
           style={styles.headerBtn}
-          onPress={() => { haptics.tap(); navigation.navigate('Friends'); }}
+          onPress={() => { haptics.tap(); setPickerVisible(true); }}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Feather name="user-plus" size={17} color={COLORS.primary} />
+          <Feather name="plus" size={19} color={COLORS.primary} />
         </TouchableOpacity>
       ),
     });
@@ -152,20 +161,31 @@ export function SocialScreen({ navigation }: Props) {
           ListEmptyComponent={
             <EmptyState
               message="No posts yet"
-              subMessage="Add friends and share a PR from any exercise's award badge to get the feed going."
+              subMessage="Tap + above to share a PR, or add friends from the Friends tab to see theirs."
               action={
                 <TouchableOpacity
                   style={styles.emptyLink}
-                  onPress={() => { haptics.tap(); navigation.navigate('Friends'); }}
+                  onPress={() => { haptics.tap(); setPickerVisible(true); }}
                 >
-                  <Feather name="user-plus" size={14} color={COLORS.primary} />
-                  <Text style={styles.emptyLinkText}>Find friends</Text>
+                  <Feather name="plus" size={14} color={COLORS.primary} />
+                  <Text style={styles.emptyLinkText}>Share a PR</Text>
                 </TouchableOpacity>
               }
             />
           }
         />
       )}
+
+      <SharePickerModal
+        visible={pickerVisible}
+        onClose={() => setPickerVisible(false)}
+        onPick={target => { setPickerVisible(false); setShareTarget(target); }}
+      />
+      <SharePostModal
+        target={shareTarget}
+        onClose={() => setShareTarget(null)}
+        onShared={() => { setShareTarget(null); load(); }}
+      />
     </SafeAreaView>
   );
 }

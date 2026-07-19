@@ -5,12 +5,14 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { CompositeNavigationProp } from '@react-navigation/native';
+import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Feather } from '@expo/vector-icons';
 
 import { COLORS } from '../constants/colors';
 import { RADIUS } from '../constants/theme';
-import { RootStackParamList, DayInfo, Exercise } from '../types';
+import { RootStackParamList, MainTabParamList, DayInfo, Exercise } from '../types';
 import { workoutApi } from '../services/api';
 import { Logo, Wordmark } from '../components/Logo';
 import { PressableScale } from '../components/PressableScale';
@@ -23,7 +25,10 @@ import {
   getDayShort, getDayFull, isToday, isPastDay,
 } from '../utils/dateUtils';
 
-type Nav = NativeStackNavigationProp<RootStackParamList, 'Home'>;
+type Nav = CompositeNavigationProp<
+  BottomTabNavigationProp<MainTabParamList, 'HomeTab'>,
+  NativeStackNavigationProp<RootStackParamList>
+>;
 interface Props { navigation: Nav }
 
 export function HomeScreen({ navigation }: Props) {
@@ -94,22 +99,6 @@ export function HomeScreen({ navigation }: Props) {
           <Wordmark fontSize={19} letterSpacing={2} />
         </View>
         <View style={styles.headerActions}>
-          <PressableScale
-            onPress={() => navigation.navigate('Social')}
-            style={styles.settingsBtn}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            pressScale={0.9}
-          >
-            <Feather name="users" size={17} color={COLORS.textSub} />
-          </PressableScale>
-          <PressableScale
-            onPress={() => navigation.navigate('Progress')}
-            style={styles.settingsBtn}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            pressScale={0.9}
-          >
-            <Feather name="bar-chart-2" size={17} color={COLORS.textSub} />
-          </PressableScale>
           <PressableScale
             onPress={() => navigation.navigate('Settings')}
             style={styles.settingsBtn}
