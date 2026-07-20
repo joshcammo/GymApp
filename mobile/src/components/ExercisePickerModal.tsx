@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   View, Text, Modal, FlatList, Image, TextInput,
-  TouchableOpacity, StyleSheet, Platform, ActivityIndicator,
+  TouchableOpacity, StyleSheet, Platform, ActivityIndicator, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
@@ -73,6 +73,7 @@ export function ExercisePickerModal({ visible, onClose, onSelect }: Props) {
   const [customEquipment, setCustomEquipment] = useState<string | null>(null);
   const [creating,        setCreating]        = useState(false);
   const [suggestions,     setSuggestions]     = useState<CustomSuggestion[] | null>(null);
+  const [deletingId,      setDeletingId]      = useState<number | null>(null);
 
   const loadDefs = () => {
     setLoading(true);
@@ -98,6 +99,35 @@ export function ExercisePickerModal({ visible, onClose, onSelect }: Props) {
   const pick = (def: ExerciseDef) => {
     haptics.tap();
     onSelect(def);
+  };
+
+  const confirmDeleteCustom = (def: ExerciseDef) => {
+    haptics.tap();
+    Alert.alert(
+      'Delete Exercise',
+      `Delete "${def.name}"? Past workouts that used it keep their logged data but stop tracking PRs for it, and it's removed from any presets it's in.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text:  'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            setDeletingId(def.id);
+            try {
+              await catalogApi.deleteCustom(def.id);
+              defsCache = (defsCache ?? []).filter(d => d.id !== def.id);
+              setDefs(defsCache);
+              haptics.success();
+            } catch (e) {
+              haptics.warning();
+              Alert.alert('Error', (e as Error).message ?? 'Could not delete exercise');
+            } finally {
+              setDeletingId(null);
+            }
+          },
+        },
+      ],
+    );
   };
 
   const openCustomForm = () => {
@@ -202,6 +232,19 @@ export function ExercisePickerModal({ visible, onClose, onSelect }: Props) {
           {item.is_custom ? '  ·  custom' : ''}
         </Text>
       </View>
+      {item.is_custom ? (
+        deletingId === item.id ? (
+          <ActivityIndicator size="small" color={colors.textMuted} />
+        ) : (
+          <TouchableOpacity
+            onPress={() => confirmDeleteCustom(item)}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            style={styles.rowDeleteBtn}
+          >
+            <Feather name="trash-2" size={17} color={colors.textMuted} />
+          </TouchableOpacity>
+        )
+      ) : null}
       <Feather name="plus" size={18} color={colors.primary} />
     </PressableScale>
   );
@@ -533,6 +576,9 @@ const createStyles = (colors: ColorTokens) => StyleSheet.create({
     fontSize:  12,
     color:     colors.textMuted,
     marginTop:  2,
+  },
+  rowDeleteBtn: {
+    marginRight: 6,
   },
   emptyText: {
     color:      colors.textMuted,
