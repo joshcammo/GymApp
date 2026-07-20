@@ -5,7 +5,6 @@ import {
   KeyboardAvoidingView, Keyboard, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
@@ -26,8 +25,6 @@ import { parseDateStr } from '../utils/dateUtils';
 type Nav   = NativeStackNavigationProp<RootStackParamList, 'AddExercise'>;
 type Route = RouteProp<RootStackParamList, 'AddExercise'>;
 interface Props { navigation: Nav; route: Route }
-
-const UNIT_KEY = '@gym_tracker_last_unit';
 
 /** A drop performed immediately after a set, no rest between — same
  *  string-controlled shape as a set row, minus id (drops are never
@@ -99,14 +96,6 @@ export function AddExerciseScreen({ navigation, route }: Props) {
   // set ids that are *currently* record holders (live, from exercise_set_pr_flags) —
   // separate from prSets above, which only reflects the moment a save just happened.
   const [recordSetIds, setRecordSetIds] = useState<Set<number>>(new Set());
-
-  // Restore last-used unit on first open (skip if editing)
-  useEffect(() => {
-    if (isEditing) return;
-    AsyncStorage.getItem(UNIT_KEY).then(saved => {
-      if (saved === 'KG' || saved === 'LBS') setUnit(saved);
-    });
-  }, []);
 
   // Fetch the current PR for whatever exercise is selected — the small
   // "Current PR" chip under the picker field. Best-effort: a failure just
@@ -244,8 +233,6 @@ export function AddExerciseScreen({ navigation, route }: Props) {
 
     setSaving(true);
     try {
-      await AsyncStorage.setItem(UNIT_KEY, unit);
-
       const sets: SetInput[] = setRows.map(r => ({
         reps:   r.reps   ? Number(r.reps)   : null,
         weight: r.weight ? Number(r.weight) : null,
