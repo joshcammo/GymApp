@@ -308,7 +308,7 @@ export function ExercisePickerModal({ visible, onClose, onSelect }: Props) {
 
                 {suggestions ? (
                   <Text style={styles.didYouMean}>
-                    Similar exercises already exist — did you mean one of these?
+                    Similar exercises already exist. Did you mean one of these?
                   </Text>
                 ) : null}
               </View>
@@ -343,7 +343,7 @@ export function ExercisePickerModal({ visible, onClose, onSelect }: Props) {
                   <ActivityIndicator size="small" color="#FFFFFF" />
                 ) : (
                   <Text style={styles.createBtnText}>
-                    {suggestions ? `None of these — create "${customName.trim()}"` : 'Create Exercise'}
+                    {suggestions ? `Create "${customName.trim()}" anyway` : 'Create Exercise'}
                   </Text>
                 )}
               </TouchableOpacity>

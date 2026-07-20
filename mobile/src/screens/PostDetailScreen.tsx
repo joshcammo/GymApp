@@ -138,7 +138,7 @@ export function PostDetailScreen({ route }: Props) {
             </View>
           )}
           ListEmptyComponent={
-            <Text style={styles.noComments}>No comments yet — be the first.</Text>
+            <Text style={styles.noComments}>No comments yet. Be the first.</Text>
           }
         />
 

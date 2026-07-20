@@ -96,7 +96,7 @@ export function ChangeUsernameScreen({ navigation }: Props) {
             />
             <Text style={styles.hint}>
               3-20 characters: lowercase letters, numbers, underscore only. Friends
-              find you by this — changing it means old links to your profile stop working.
+              find you by this. Changing it means old links to your profile stop working.
             </Text>
 
             <GradientButton

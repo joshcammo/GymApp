@@ -314,7 +314,7 @@ export function AddExerciseScreen({ navigation, route }: Props) {
           <View style={styles.datePill}>
             <Feather name="calendar" size={13} color={colors.primary} />
             <Text style={styles.datePillText}>
-              {dayFull} — {parseDateStr(date).toLocaleDateString('en-GB', {
+              {dayFull}, {parseDateStr(date).toLocaleDateString('en-GB', {
                 day: 'numeric', month: 'long', year: 'numeric',
               })}
             </Text>
@@ -337,7 +337,7 @@ export function AddExerciseScreen({ navigation, route }: Props) {
                 {selectedDef
                   ? selectedDef.name
                   : editExercise
-                    ? `"${editExercise.name}" — pick its catalog exercise`
+                    ? `Pick the catalog exercise for "${editExercise.name}"`
                     : 'Choose an exercise'}
               </Text>
               <Feather name="chevron-down" size={16} color={colors.textMuted} />

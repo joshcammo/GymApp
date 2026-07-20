@@ -181,7 +181,7 @@ export const workoutApi = {
     const { data, error } = await supabase.from('exercises').delete().eq('id', id).select('id');
     checkError(error);
     if (!data || data.length === 0) {
-      throw new Error('Exercise not found — it may have already been deleted.');
+      throw new Error('Exercise not found. It may have already been deleted.');
     }
   },
 
@@ -315,7 +315,7 @@ export const presetApi = {
     const { data, error } = await supabase.from('presets').delete().eq('id', id).select('id');
     checkError(error);
     if (!data || data.length === 0) {
-      throw new Error('Preset not found — it may have already been deleted.');
+      throw new Error('Preset not found. It may have already been deleted.');
     }
   },
 
