@@ -257,7 +257,7 @@ function OneRmTab({ range }: { range: TimeRange }) {
       ) : (
         <>
           <View style={styles.chartCard}>
-            <Text style={styles.chartTitle}>Estimated 1RM — {exercise.name} (kg)</Text>
+            <Text style={styles.chartTitle}>Estimated 1RM: {exercise.name} (kg)</Text>
             <LineChart
               data={chartData}
               width={CHART_WIDTH - 20}
@@ -390,7 +390,7 @@ function VolumeTab({ range }: { range: TimeRange }) {
         <>
           <View style={styles.chartCard}>
             <Text style={styles.chartTitle}>
-              Weekly volume — {mode === 'EXERCISE' ? exercise!.name : muscleGroupLabel(muscleGroup!)} (kg)
+              Weekly volume: {mode === 'EXERCISE' ? exercise!.name : muscleGroupLabel(muscleGroup!)} (kg)
             </Text>
             {/* barWidth/spacing: fit exactly `chartData.length` bars across the
                 available width, clamped to a 12-28px range so a handful of
@@ -590,7 +590,7 @@ function HeatmapTab() {
       <View style={styles.chartCard}>
         <Text style={styles.chartTitle}>Last 7 days' sets vs. your usual (8-week average)</Text>
         <InfoNote>
-          Counts hard sets, not kg — a bodyweight pull-up counts the same as a loaded
+          Counts hard sets, not kg. A bodyweight pull-up counts the same as a loaded
           row. Each muscle group compares its own last 7 days of sets to its own
           trailing 8-week average, never to other muscle groups. New accounts are
           averaged over however many weeks they've actually trained.
@@ -603,7 +603,7 @@ function HeatmapTab() {
       <TableView
         rows={reads.map(({ row, read }) => ({
           label: muscleGroupLabel(row.muscle_group),
-          value: `${row.recent_sets} / ${fmtRate(row.baseline_weekly_avg_sets)} sets/wk — ${bucketStyle[read.bucket].label}`,
+          value: `${row.recent_sets} / ${fmtRate(row.baseline_weekly_avg_sets)} sets/wk (${bucketStyle[read.bucket].label})`,
         }))}
       />
     </View>

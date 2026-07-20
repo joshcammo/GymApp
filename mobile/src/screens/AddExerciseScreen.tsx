@@ -5,7 +5,6 @@ import {
   KeyboardAvoidingView, Keyboard, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
@@ -15,19 +14,18 @@ import { useTheme } from '../theme/ThemeContext';
 import { FONT, RADIUS } from '../constants/theme';
 import { useFormStyles } from '../constants/formStyles';
 import { RootStackParamList, WeightUnit, ExerciseDef, Exercise } from '../types';
-import { workoutApi, catalogApi, SetInput, SetPrResult, ExercisePr } from '../services/api';
+import { workoutApi, catalogApi, SetInput, SetPrResult, ExercisePr, LastWorkingSet } from '../services/api';
 import { GradientButton } from '../components/GradientButton';
 import { ExercisePickerModal } from '../components/ExercisePickerModal';
 import { SupersetPickerModal } from '../components/SupersetPickerModal';
 import { RestTimer } from '../components/RestTimer';
+import { WarmupSuggestion } from '../components/WarmupSuggestion';
 import { haptics } from '../utils/haptics';
 import { parseDateStr } from '../utils/dateUtils';
 
 type Nav   = NativeStackNavigationProp<RootStackParamList, 'AddExercise'>;
 type Route = RouteProp<RootStackParamList, 'AddExercise'>;
 interface Props { navigation: Nav; route: Route }
-
-const UNIT_KEY = '@gym_tracker_last_unit';
 
 /** A drop performed immediately after a set, no rest between — same
  *  string-controlled shape as a set row, minus id (drops are never
@@ -69,6 +67,9 @@ export function AddExerciseScreen({ navigation, route }: Props) {
   const [notes, setNotes] = useState(editExercise?.notes ?? '');
   // Current best for the selected exercise ("Current PR: 60 KG × 5").
   const [currentPr, setCurrentPr] = useState<ExercisePr | null>(null);
+  // Heaviest set from the last time this exercise was logged — backs the
+  // "Suggested Warm-up" ramp shown above the set editor.
+  const [lastWorkingSet, setLastWorkingSet] = useState<LastWorkingSet | null>(null);
 
   // Superset partner — another exercise logged the same day. `name` is
   // carried alongside the id purely for display in the picker field.
@@ -100,14 +101,6 @@ export function AddExerciseScreen({ navigation, route }: Props) {
   // separate from prSets above, which only reflects the moment a save just happened.
   const [recordSetIds, setRecordSetIds] = useState<Set<number>>(new Set());
 
-  // Restore last-used unit on first open (skip if editing)
-  useEffect(() => {
-    if (isEditing) return;
-    AsyncStorage.getItem(UNIT_KEY).then(saved => {
-      if (saved === 'KG' || saved === 'LBS') setUnit(saved);
-    });
-  }, []);
-
   // Fetch the current PR for whatever exercise is selected — the small
   // "Current PR" chip under the picker field. Best-effort: a failure just
   // means no chip.
@@ -117,6 +110,17 @@ export function AddExerciseScreen({ navigation, route }: Props) {
     catalogApi.getPr(selectedDef.id)
       .then(pr => { if (!stale) setCurrentPr(pr); })
       .catch(() => { if (!stale) setCurrentPr(null); });
+    return () => { stale = true; };
+  }, [selectedDef?.id]);
+
+  // Fetch the reference weight for the "Suggested Warm-up" ramp — best-effort,
+  // same as the PR chip above.
+  useEffect(() => {
+    if (!selectedDef) { setLastWorkingSet(null); return; }
+    let stale = false;
+    catalogApi.getLastWorkingSet(selectedDef.id)
+      .then(s => { if (!stale) setLastWorkingSet(s); })
+      .catch(() => { if (!stale) setLastWorkingSet(null); });
     return () => { stale = true; };
   }, [selectedDef?.id]);
 
@@ -244,8 +248,6 @@ export function AddExerciseScreen({ navigation, route }: Props) {
 
     setSaving(true);
     try {
-      await AsyncStorage.setItem(UNIT_KEY, unit);
-
       const sets: SetInput[] = setRows.map(r => ({
         reps:   r.reps   ? Number(r.reps)   : null,
         weight: r.weight ? Number(r.weight) : null,
@@ -314,7 +316,7 @@ export function AddExerciseScreen({ navigation, route }: Props) {
           <View style={styles.datePill}>
             <Feather name="calendar" size={13} color={colors.primary} />
             <Text style={styles.datePillText}>
-              {dayFull} — {parseDateStr(date).toLocaleDateString('en-GB', {
+              {dayFull}, {parseDateStr(date).toLocaleDateString('en-GB', {
                 day: 'numeric', month: 'long', year: 'numeric',
               })}
             </Text>
@@ -337,7 +339,7 @@ export function AddExerciseScreen({ navigation, route }: Props) {
                 {selectedDef
                   ? selectedDef.name
                   : editExercise
-                    ? `"${editExercise.name}" — pick its catalog exercise`
+                    ? `Pick the catalog exercise for "${editExercise.name}"`
                     : 'Choose an exercise'}
               </Text>
               <Feather name="chevron-down" size={16} color={colors.textMuted} />
@@ -390,6 +392,14 @@ export function AddExerciseScreen({ navigation, route }: Props) {
               <Feather name="chevron-down" size={16} color={colors.textMuted} />
             </TouchableOpacity>
           </View>
+
+          {lastWorkingSet && (
+            <WarmupSuggestion
+              workingWeight={lastWorkingSet.weight}
+              workingUnit={lastWorkingSet.unit}
+              targetUnit={unit}
+            />
+          )}
 
           {/* ── Sets card ── */}
           <View style={styles.sectionCard}>

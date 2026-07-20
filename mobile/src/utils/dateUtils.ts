@@ -70,13 +70,13 @@ export function parseDateStr(dateStr: string): Date {
   return new Date(`${dateStr}T12:00:00`);
 }
 
-/** 'May 19 – May 25, 2024' */
+/** 'May 19 - May 25, 2024' */
 export function fmtWeekRange(weekStart: Date): string {
   const end = new Date(weekStart);
   end.setDate(weekStart.getDate() + 6);
   const s = weekStart.toLocaleDateString('en-GB', { month: 'short', day: 'numeric' });
   const e = end.toLocaleDateString('en-GB', { month: 'short', day: 'numeric', year: 'numeric' });
-  return `${s} – ${e}`;
+  return `${s} - ${e}`;
 }
 
 const SHORT_DAYS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'] as const;

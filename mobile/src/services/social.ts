@@ -71,7 +71,7 @@ export const friendsApi = {
     const { data, error } = await supabase.from('friendships').delete().eq('id', id).select('id');
     checkError(error);
     if (!data || data.length === 0) {
-      throw new Error('Friendship not found — it may have already been removed.');
+      throw new Error('Friendship not found. It may have already been removed.');
     }
   },
 };
@@ -113,7 +113,7 @@ export const postsApi = {
     const { data, error } = await supabase.from('posts').delete().eq('id', postId).select('id');
     checkError(error);
     if (!data || data.length === 0) {
-      throw new Error('Post not found — it may have already been deleted.');
+      throw new Error('Post not found. It may have already been deleted.');
     }
   },
 
