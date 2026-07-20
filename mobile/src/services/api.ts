@@ -226,6 +226,15 @@ export interface ExercisePr {
   best_e1rm:   { weight: number; unit: WeightUnit; reps: number; e1rm_kg: number } | null;
 }
 
+/** Heaviest weighted set from the most recent session logged against an
+ *  exercise def — the reference weight warm-up suggestions ramp into. */
+export interface LastWorkingSet {
+  weight: number;
+  unit:   WeightUnit;
+  reps:   number | null;
+  date:   string; // 'YYYY-MM-DD'
+}
+
 export const catalogApi = {
   /** Global catalog + the caller's customs (RLS scopes the rest out). */
   list: async (): Promise<ExerciseDef[]> => {
@@ -266,6 +275,16 @@ export const catalogApi = {
     });
     checkError(error);
     return data as ExercisePr;
+  },
+
+  /** Heaviest set from the most recent session for a def, or null if never
+   *  logged — the reference weight warm-up suggestions ramp into. */
+  getLastWorkingSet: async (exerciseDefId: number): Promise<LastWorkingSet | null> => {
+    const { data, error } = await supabase.rpc('get_last_working_set', {
+      p_exercise_def_id: exerciseDefId,
+    });
+    checkError(error);
+    return data as LastWorkingSet | null;
   },
 };
 

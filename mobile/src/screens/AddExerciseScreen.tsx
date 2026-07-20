@@ -14,11 +14,12 @@ import { useTheme } from '../theme/ThemeContext';
 import { FONT, RADIUS } from '../constants/theme';
 import { useFormStyles } from '../constants/formStyles';
 import { RootStackParamList, WeightUnit, ExerciseDef, Exercise } from '../types';
-import { workoutApi, catalogApi, SetInput, SetPrResult, ExercisePr } from '../services/api';
+import { workoutApi, catalogApi, SetInput, SetPrResult, ExercisePr, LastWorkingSet } from '../services/api';
 import { GradientButton } from '../components/GradientButton';
 import { ExercisePickerModal } from '../components/ExercisePickerModal';
 import { SupersetPickerModal } from '../components/SupersetPickerModal';
 import { RestTimer } from '../components/RestTimer';
+import { WarmupSuggestion } from '../components/WarmupSuggestion';
 import { haptics } from '../utils/haptics';
 import { parseDateStr } from '../utils/dateUtils';
 
@@ -66,6 +67,9 @@ export function AddExerciseScreen({ navigation, route }: Props) {
   const [notes, setNotes] = useState(editExercise?.notes ?? '');
   // Current best for the selected exercise ("Current PR: 60 KG × 5").
   const [currentPr, setCurrentPr] = useState<ExercisePr | null>(null);
+  // Heaviest set from the last time this exercise was logged — backs the
+  // "Suggested Warm-up" ramp shown above the set editor.
+  const [lastWorkingSet, setLastWorkingSet] = useState<LastWorkingSet | null>(null);
 
   // Superset partner — another exercise logged the same day. `name` is
   // carried alongside the id purely for display in the picker field.
@@ -106,6 +110,17 @@ export function AddExerciseScreen({ navigation, route }: Props) {
     catalogApi.getPr(selectedDef.id)
       .then(pr => { if (!stale) setCurrentPr(pr); })
       .catch(() => { if (!stale) setCurrentPr(null); });
+    return () => { stale = true; };
+  }, [selectedDef?.id]);
+
+  // Fetch the reference weight for the "Suggested Warm-up" ramp — best-effort,
+  // same as the PR chip above.
+  useEffect(() => {
+    if (!selectedDef) { setLastWorkingSet(null); return; }
+    let stale = false;
+    catalogApi.getLastWorkingSet(selectedDef.id)
+      .then(s => { if (!stale) setLastWorkingSet(s); })
+      .catch(() => { if (!stale) setLastWorkingSet(null); });
     return () => { stale = true; };
   }, [selectedDef?.id]);
 
@@ -377,6 +392,14 @@ export function AddExerciseScreen({ navigation, route }: Props) {
               <Feather name="chevron-down" size={16} color={colors.textMuted} />
             </TouchableOpacity>
           </View>
+
+          {lastWorkingSet && (
+            <WarmupSuggestion
+              workingWeight={lastWorkingSet.weight}
+              workingUnit={lastWorkingSet.unit}
+              targetUnit={unit}
+            />
+          )}
 
           {/* ── Sets card ── */}
           <View style={styles.sectionCard}>
