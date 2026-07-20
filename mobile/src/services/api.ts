@@ -236,11 +236,15 @@ export interface LastWorkingSet {
 }
 
 export const catalogApi = {
-  /** Global catalog + the caller's customs (RLS scopes the rest out). */
+  /** Global catalog + the caller's customs (RLS scopes the rest out).
+   *  Catalog rows (user_id null) sort before customs, name A-Z within
+   *  each, so a user's customs always cluster at the bottom of every
+   *  muscle-group list and search result instead of interleaving. */
   list: async (): Promise<ExerciseDef[]> => {
     const { data, error } = await supabase
       .from('exercise_defs')
       .select('id, user_id, name, muscle_group, equipment, movement_pattern, image_key')
+      .order('user_id', { ascending: true, nullsFirst: true })
       .order('name', { ascending: true });
     checkError(error);
     return (data as ExerciseDefRow[]).map(d => ({
@@ -266,6 +270,17 @@ export const catalogApi = {
     });
     checkError(error);
     return data as CreateCustomResult;
+  },
+
+  /** Delete one of the caller's custom exercises (RLS blocks catalog rows
+   *  and other users' customs). Past logs keep their name snapshot but lose
+   *  the def link; the exercise is dropped from any presets it was in. */
+  deleteCustom: async (exerciseDefId: number): Promise<void> => {
+    const { error } = await supabase
+      .from('exercise_defs')
+      .delete()
+      .eq('id', exerciseDefId);
+    checkError(error);
   },
 
   /** Current best weight set and best e1RM set for a def (kg-compared server-side). */
