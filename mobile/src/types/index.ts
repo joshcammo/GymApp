@@ -201,6 +201,7 @@ export type RootStackParamList = {
   ChangeUsername: undefined;
   DayDetail:      { date: string; dayFull: string };
   AddExercise:    { date: string; dayFull: string; editExercise?: Exercise };
+  AiWorkout:      { date: string; dayFull: string };
   Presets:        undefined;
   EditPreset:     { preset?: Preset };
   PostDetail:     { postId: number };

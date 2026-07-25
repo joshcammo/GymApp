@@ -85,6 +85,13 @@ export function DayDetailScreen({ navigation, route }: Props) {
       headerRight: () => (
         <View style={styles.headerActions}>
           <TouchableOpacity
+            style={styles.headerIconOnly}
+            onPress={() => { haptics.tap(); navigation.navigate('AiWorkout', { date, dayFull }); }}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Feather name="zap" size={16} color={colors.primary} />
+          </TouchableOpacity>
+          <TouchableOpacity
             style={styles.headerAdd}
             onPress={() => { haptics.tap(); setPresetPickerVisible(true); }}
           >
@@ -271,6 +278,14 @@ const createStyles = (colors: ColorTokens) => StyleSheet.create({
     paddingVertical:    6,
     borderRadius:      RADIUS.pill,
     backgroundColor:   colors.primaryBg,
+  },
+  headerIconOnly: {
+    width:           28,
+    height:          28,
+    borderRadius:    RADIUS.pill,
+    backgroundColor: colors.primaryBg,
+    alignItems:      'center',
+    justifyContent:  'center',
   },
   headerAddText: {
     fontFamily: FONT.bold,
