@@ -85,11 +85,11 @@ export function DayDetailScreen({ navigation, route }: Props) {
       headerRight: () => (
         <View style={styles.headerActions}>
           <TouchableOpacity
-            style={styles.headerIconOnly}
+            style={styles.headerAdd}
             onPress={() => { haptics.tap(); navigation.navigate('AiWorkout', { date, dayFull }); }}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Feather name="zap" size={16} color={colors.primary} />
+            <Feather name="zap" size={15} color={colors.primary} />
+            <Text style={styles.headerAddText}>AI</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.headerAdd}
@@ -185,13 +185,22 @@ export function DayDetailScreen({ navigation, route }: Props) {
           message="No exercises logged"
           subMessage="Tap 'Add' in the top-right corner to log your first exercise for this day."
           action={
-            <TouchableOpacity
-              style={styles.loadPresetLink}
-              onPress={() => { haptics.tap(); setPresetPickerVisible(true); }}
-            >
-              <Feather name="layers" size={14} color={colors.primary} />
-              <Text style={styles.loadPresetLinkText}>Load a preset instead</Text>
-            </TouchableOpacity>
+            <View style={styles.emptyStateLinks}>
+              <TouchableOpacity
+                style={styles.loadPresetLink}
+                onPress={() => { haptics.tap(); navigation.navigate('AiWorkout', { date, dayFull }); }}
+              >
+                <Feather name="zap" size={14} color={colors.primary} />
+                <Text style={styles.loadPresetLinkText}>Generate a workout with AI</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.loadPresetLink}
+                onPress={() => { haptics.tap(); setPresetPickerVisible(true); }}
+              >
+                <Feather name="layers" size={14} color={colors.primary} />
+                <Text style={styles.loadPresetLinkText}>Load a preset instead</Text>
+              </TouchableOpacity>
+            </View>
           }
         />
       ) : (
@@ -279,18 +288,14 @@ const createStyles = (colors: ColorTokens) => StyleSheet.create({
     borderRadius:      RADIUS.pill,
     backgroundColor:   colors.primaryBg,
   },
-  headerIconOnly: {
-    width:           28,
-    height:          28,
-    borderRadius:    RADIUS.pill,
-    backgroundColor: colors.primaryBg,
-    alignItems:      'center',
-    justifyContent:  'center',
-  },
   headerAddText: {
     fontFamily: FONT.bold,
     fontSize:   14,
     color:      colors.primary,
+  },
+  emptyStateLinks: {
+    alignItems: 'center',
+    gap:        14,
   },
   loadPresetLink: {
     flexDirection: 'row',
