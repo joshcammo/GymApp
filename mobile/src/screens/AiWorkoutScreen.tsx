@@ -44,6 +44,11 @@ interface SuggestionRow {
   weight:        string;
   unit:          WeightUnit;
   notes?:        string;
+  /** True if `weight` was pre-filled from a previously logged set for this
+   *  exercise (via catalogApi.getLastWorkingSet). False means you've never
+   *  logged it before, so the field starts blank and needs your own number —
+   *  the AI never guesses a weight. */
+  hasHistory:    boolean;
 }
 
 export function AiWorkoutScreen({ navigation, route }: Props) {
@@ -92,6 +97,7 @@ export function AiWorkoutScreen({ navigation, route }: Props) {
             weight:        lastWorking ? String(lastWorking.weight) : '',
             unit:          lastWorking?.unit ?? 'KG',
             notes:         p.notes,
+            hasHistory:    lastWorking !== null,
           };
         })
       );
@@ -235,6 +241,11 @@ export function AiWorkoutScreen({ navigation, route }: Props) {
                 </View>
               </View>
 
+              <Text style={styles.weightExplainer}>
+                Sets and reps are the AI's suggestion. Weight is pulled from your last logged set
+                for each exercise, not guessed by the AI — blank means you haven't logged it yet.
+              </Text>
+
               {suggestions.map((row, i) => (
                 <View key={`${row.exerciseDefId}-${i}`} style={styles.suggestionBlock}>
                   <View style={styles.suggestionHeader}>
@@ -284,6 +295,15 @@ export function AiWorkoutScreen({ navigation, route }: Props) {
                       />
                     </View>
                   </View>
+
+                  {!row.hasHistory && (
+                    <View style={styles.noHistoryHint}>
+                      <Feather name="info" size={11} color={colors.textMuted} />
+                      <Text style={styles.noHistoryHintText}>
+                        Never logged before — enter your own weight.
+                      </Text>
+                    </View>
+                  )}
 
                   {row.notes ? <Text style={styles.suggestionNotes}>{row.notes}</Text> : null}
                 </View>
@@ -404,6 +424,24 @@ const createStyles = (colors: ColorTokens) => StyleSheet.create({
     fontFamily: FONT.bold,
     fontSize:   12,
     color:      colors.primary,
+  },
+  weightExplainer: {
+    fontFamily:   FONT.medium,
+    fontSize:     12,
+    color:        colors.textMuted,
+    lineHeight:   17,
+    marginBottom: 12,
+  },
+  noHistoryHint: {
+    flexDirection: 'row',
+    alignItems:    'center',
+    gap:           5,
+    marginTop:     8,
+  },
+  noHistoryHintText: {
+    fontFamily: FONT.medium,
+    fontSize:   11,
+    color:      colors.textMuted,
   },
   suggestionBlock: {
     backgroundColor: colors.card,
