@@ -16,7 +16,11 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
 const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY')!;
-const GEMINI_MODEL = 'gemini-2.5-flash';
+// gemini-2.5-flash was retired for new API keys (404 "no longer available to
+// new users") — 3.6-flash is the current stable, free-tier flash model.
+// Google's lineup moves fast; if this starts 404ing again, check
+// https://ai.google.dev/gemini-api/docs/models for the current flash-tier ID.
+const GEMINI_MODEL = 'gemini-3.6-flash';
 
 // Bounds are deliberately generous but finite — they exist to stop a
 // misbehaving/adversarial model response from producing something absurd,
