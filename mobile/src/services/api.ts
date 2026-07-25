@@ -365,6 +365,50 @@ export const presetApi = {
   },
 };
 
+// ── AI workout generator ─────────────────────────────────────────
+
+/** One exercise the generate-workout Edge Function proposed. Already
+ *  server-validated against the caller's own catalog — exercise_def_id is
+ *  guaranteed to exist and be accessible, but the row still needs a name/
+ *  muscle group resolved from the catalog before it can be shown. */
+export interface AiExerciseSuggestion {
+  exercise_def_id: number;
+  sets:             number;
+  target_reps:      number;
+  notes?:           string;
+}
+
+/** Best-effort extraction of the Edge Function's `{ error: string }` body
+ *  from a supabase-js FunctionsHttpError, whose `.context` is the raw
+ *  Response. Falls back to null if the body isn't there or isn't JSON. */
+async function extractFunctionErrorMessage(error: unknown): Promise<string | null> {
+  const context = (error as { context?: Response }).context;
+  if (!context || typeof context.json !== 'function') return null;
+  try {
+    const body = await context.json();
+    return typeof body?.error === 'string' ? body.error : null;
+  } catch {
+    return null;
+  }
+}
+
+export const aiApi = {
+  /** Ask the AI workout generator for a set of catalog exercises for `date`,
+   *  based on a free-text prompt. Never writes anything itself — the caller
+   *  reviews the suggestions and saves each one via workoutApi.create(),
+   *  same as adding exercises by hand. */
+  generateWorkout: async (date: string, prompt: string): Promise<AiExerciseSuggestion[]> => {
+    const { data, error } = await supabase.functions.invoke('generate-workout', {
+      body: { date, prompt },
+    });
+    if (error) {
+      const message = await extractFunctionErrorMessage(error);
+      throw new Error(message ?? 'Could not generate a workout. Please try again.');
+    }
+    return (data?.exercises ?? []) as AiExerciseSuggestion[];
+  },
+};
+
 // ── Progress / analytics ────────────────────────────────────────
 // All three RPCs are kg-normalized and keyed off exercise_def_id
 // server-side (see migration 011) — nothing here does unit math or

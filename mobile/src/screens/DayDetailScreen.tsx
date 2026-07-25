@@ -86,17 +86,17 @@ export function DayDetailScreen({ navigation, route }: Props) {
         <View style={styles.headerActions}>
           <TouchableOpacity
             style={styles.headerAdd}
+            onPress={() => { haptics.tap(); navigation.navigate('AiWorkout', { date, dayFull }); }}
+          >
+            <Feather name="zap" size={15} color={colors.primary} />
+            <Text style={styles.headerAddText}>AI</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.headerAdd}
             onPress={() => { haptics.tap(); setPresetPickerVisible(true); }}
           >
             <Feather name="layers" size={15} color={colors.primary} />
             <Text style={styles.headerAddText}>Preset</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.headerAdd}
-            onPress={() => navigation.navigate('AddExercise', { date, dayFull })}
-          >
-            <Feather name="plus" size={15} color={colors.primary} />
-            <Text style={styles.headerAddText}>Add</Text>
           </TouchableOpacity>
         </View>
       ),
@@ -176,15 +176,24 @@ export function DayDetailScreen({ navigation, route }: Props) {
       ) : exercises.length === 0 ? (
         <EmptyState
           message="No exercises logged"
-          subMessage="Tap 'Add' in the top-right corner to log your first exercise for this day."
+          subMessage="Tap 'Add' at the bottom of the screen to log your first exercise of the day."
           action={
-            <TouchableOpacity
-              style={styles.loadPresetLink}
-              onPress={() => { haptics.tap(); setPresetPickerVisible(true); }}
-            >
-              <Feather name="layers" size={14} color={colors.primary} />
-              <Text style={styles.loadPresetLinkText}>Load a preset instead</Text>
-            </TouchableOpacity>
+            <View style={styles.emptyStateLinks}>
+              <TouchableOpacity
+                style={styles.loadPresetLink}
+                onPress={() => { haptics.tap(); navigation.navigate('AiWorkout', { date, dayFull }); }}
+              >
+                <Feather name="zap" size={14} color={colors.primary} />
+                <Text style={styles.loadPresetLinkText}>Generate a workout with AI</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.loadPresetLink}
+                onPress={() => { haptics.tap(); setPresetPickerVisible(true); }}
+              >
+                <Feather name="layers" size={14} color={colors.primary} />
+                <Text style={styles.loadPresetLinkText}>Load a preset instead</Text>
+              </TouchableOpacity>
+            </View>
           }
         />
       ) : (
@@ -276,6 +285,10 @@ const createStyles = (colors: ColorTokens) => StyleSheet.create({
     fontFamily: FONT.bold,
     fontSize:   14,
     color:      colors.primary,
+  },
+  emptyStateLinks: {
+    alignItems: 'center',
+    gap:        14,
   },
   loadPresetLink: {
     flexDirection: 'row',
