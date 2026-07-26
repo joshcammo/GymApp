@@ -128,6 +128,25 @@ export interface MuscleGroupBalance {
   baseline_weekly_avg_sets: number;
 }
 
+/** One day in the dashboard's activity trend. Rest days are present with
+ *  zeroes (the RPC zero-fills), never missing. */
+export interface DailyActivityPoint {
+  activity_date:  string;   // 'YYYY-MM-DD'
+  exercise_count: number;
+  cardio_count:   number;
+  volume_kg:      number;
+}
+
+/** Lifetime totals backing the dashboard's badges. */
+export interface AchievementStats {
+  total_training_days:   number;
+  total_exercises:       number;
+  total_cardio:          number;
+  longest_streak:        number;
+  total_volume_kg:       number;
+  muscle_groups_last_7d: number;
+}
+
 /** The caller's own profile, or another user's as surfaced by search/friend views. */
 export interface Profile {
   id:           string;

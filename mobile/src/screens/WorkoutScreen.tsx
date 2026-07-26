@@ -3,7 +3,6 @@ import {
   View, ScrollView, StyleSheet,
   ActivityIndicator, RefreshControl,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import type { CompositeNavigationProp } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
@@ -95,8 +94,13 @@ export function WorkoutScreen({ navigation }: Props) {
   });
 
   // ── Render ────────────────────────────────────────────────────
+  // Deliberately NOT a SafeAreaView with a bottom edge: this is a tab
+  // screen, and the bottom tab bar already sits above the home-indicator
+  // inset. Adding another one padded the scroll viewport short of the
+  // screen, so the last day card was clipped by a hard line with dead
+  // space beneath it.
   return (
-    <SafeAreaView style={styles.safe} edges={['bottom']}>
+    <View style={styles.safe}>
       {/* ── Week navigator ── */}
       <WeekNavigator
         weekNumber={weekNumber}
@@ -158,7 +162,7 @@ export function WorkoutScreen({ navigation }: Props) {
           <View style={{ height: 24 }} />
         </ScrollView>
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 

@@ -1,8 +1,8 @@
 import { supabase } from '../lib/supabase';
 import {
-  CardioActivityType, CardioSession, CardioSource, DropSet, Exercise, ExerciseDef, MuscleGroup,
-  MuscleGroupBalance, MuscleGroupVolume, OneRmTrendPoint, Preset, PresetExercise, WeeklyVolumePoint,
-  WeightUnit,
+  AchievementStats, CardioActivityType, CardioSession, CardioSource, DailyActivityPoint, DropSet,
+  Exercise, ExerciseDef, MuscleGroup, MuscleGroupBalance, MuscleGroupVolume, OneRmTrendPoint,
+  Preset, PresetExercise, WeeklyVolumePoint, WeightUnit,
 } from '../types';
 
 const EXERCISE_SELECT = '*, exercise_sets(*)';
@@ -576,5 +576,20 @@ export const analyticsApi = {
     const { data, error } = await supabase.rpc('get_current_streak', {});
     checkError(error);
     return data as number;
+  },
+
+  /** Per-day activity for the last `days` days (server-clamped to 1-90),
+   *  zero-filled — rest days come back as real zeroes, not gaps. */
+  getDailyActivity: async (days: number): Promise<DailyActivityPoint[]> => {
+    const { data, error } = await supabase.rpc('get_daily_activity', { p_days: days });
+    checkError(error);
+    return data as DailyActivityPoint[];
+  },
+
+  /** Lifetime totals the dashboard's badges are derived from. */
+  getAchievementStats: async (): Promise<AchievementStats> => {
+    const { data, error } = await supabase.rpc('get_achievement_stats', {});
+    checkError(error);
+    return data as AchievementStats;
   },
 };
