@@ -18,7 +18,7 @@ import { ExercisePickerModal } from '../components/ExercisePickerModal';
 import { PressableScale } from '../components/PressableScale';
 import { EmptyState } from '../components/EmptyState';
 import { haptics } from '../utils/haptics';
-import { BalanceBucket, BalanceRead, classifyBalance } from '../utils/muscleBalance';
+import { BalanceRead, BucketStyle, classifyBalance, createBucketStyle } from '../utils/muscleBalance';
 
 type Tab = '1RM' | 'VOLUME' | 'BREAKDOWN' | 'HEATMAP';
 type VolumeMode = 'EXERCISE' | 'MUSCLE_GROUP';
@@ -460,24 +460,6 @@ function BreakdownTab({ range }: { range: TimeRange }) {
 }
 
 // ── Muscle group heatmap tab: last 7 days vs. own 8-week baseline ────
-type BucketStyle = { icon: keyof typeof Feather.glyphMap; label: string; color: string; bg: string; dashed?: boolean };
-
-// A function of the active colorway, not a static export — `cold` and
-// `primary` (the diverging over/under-trained pair) vary per colorway, and
-// for colorways whose own primary is blue (Navy Electric, Cobalt Cyan) the
-// colorway data picks a `cold` hue well clear of `primary` specifically so
-// this pair never collides. See theme/colorways.ts.
-function createBucketStyle(colors: ColorTokens): Record<BalanceBucket, BucketStyle> {
-  return {
-    NO_DATA:    { icon: 'circle',        label: 'No data',    color: colors.textMuted, bg: colors.card, dashed: true },
-    NEW:        { icon: 'zap',           label: 'New',        color: colors.textMuted, bg: colors.card, dashed: true },
-    WELL_UNDER: { icon: 'trending-down', label: 'Well under', color: colors.cold,      bg: colors.coldBg },
-    UNDER:      { icon: 'trending-down', label: 'Under',      color: colors.cold,      bg: colors.coldBgMild },
-    ON_TRACK:   { icon: 'check',         label: 'On track',   color: colors.textSub,  bg: colors.card },
-    OVER:       { icon: 'trending-up',   label: 'Over',       color: colors.primary,  bg: colors.primaryBgMild },
-    WELL_OVER:  { icon: 'trending-up',   label: 'Well over',  color: colors.primary,  bg: colors.primaryBg },
-  };
-}
 
 function balanceSubtext(row: MuscleGroupBalance, read: BalanceRead): string {
   if (read.bucket === 'NO_DATA') return 'Never logged';

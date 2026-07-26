@@ -52,7 +52,7 @@ export function AddExerciseScreen({ navigation, route }: Props) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const formStyles = useFormStyles();
-  const { date, dayFull, editExercise } = route.params;
+  const { date, dayFull, editExercise, initialMuscleGroup } = route.params;
   const isEditing = !!editExercise;
 
   // The chosen catalog/custom exercise. When editing a legacy entry that
@@ -95,7 +95,11 @@ export function AddExerciseScreen({ navigation, route }: Props) {
   });
 
   const [saving,        setSaving]        = useState(false);
-  const [pickerVisible, setPickerVisible] = useState(false);
+  // Jump straight into the picker, pre-filtered, when arriving from a
+  // muscle-group recommendation (e.g. the dashboard's Today's Focus card)
+  // rather than requiring an extra tap — but not when editing an exercise
+  // that's already chosen.
+  const [pickerVisible, setPickerVisible] = useState(!selectedDef && !!initialMuscleGroup);
   const [prSets,        setPrSets]        = useState<SetPrResult[]>([]);
   // set ids that are *currently* record holders (live, from exercise_set_pr_flags) —
   // separate from prSets above, which only reflects the moment a save just happened.
@@ -561,6 +565,7 @@ export function AddExerciseScreen({ navigation, route }: Props) {
           setSelectedDef({ id: def.id, name: def.name });
           setPickerVisible(false);
         }}
+        initialGroup={initialMuscleGroup}
       />
 
       <SupersetPickerModal

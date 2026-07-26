@@ -21,6 +21,9 @@ interface Props {
   onClose:  () => void;
   /** Called with the chosen catalog/custom exercise; caller closes the modal. */
   onSelect: (def: ExerciseDef) => void;
+  /** Pre-selects this muscle group's list when the picker opens, instead of
+   *  starting on "all groups". Still changeable — just a starting point. */
+  initialGroup?: MuscleGroup | null;
 }
 
 const EQUIPMENT: { key: string; label: string }[] = [
@@ -56,7 +59,7 @@ let defsCache: ExerciseDef[] | null = null;
  * searchable, with a guarded "add custom" escape hatch. Selecting always
  * yields an ExerciseDef — free-text names are no longer possible.
  */
-export function ExercisePickerModal({ visible, onClose, onSelect }: Props) {
+export function ExercisePickerModal({ visible, onClose, onSelect, initialGroup }: Props) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [defs,    setDefs]    = useState<ExerciseDef[] | null>(defsCache);
@@ -89,12 +92,12 @@ export function ExercisePickerModal({ visible, onClose, onSelect }: Props) {
   // slide-down animation. Also (re)fetch the catalog if we don't have it.
   useEffect(() => {
     if (!visible) return;
-    setGroup(null);
+    setGroup(initialGroup ?? null);
     setSearch('');
     setCustomVisible(false);
     setSuggestions(null);
     if (!defsCache) loadDefs();
-  }, [visible]);
+  }, [visible]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const pick = (def: ExerciseDef) => {
     haptics.tap();

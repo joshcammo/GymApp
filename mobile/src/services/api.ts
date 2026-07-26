@@ -569,4 +569,12 @@ export const analyticsApi = {
     checkError(error);
     return data as MuscleGroupBalance[];
   },
+
+  /** Consecutive days (ending today or yesterday) with an exercise or
+   *  cardio session logged — the dashboard's streak banner. */
+  getCurrentStreak: async (): Promise<number> => {
+    const { data, error } = await supabase.rpc('get_current_streak', {});
+    checkError(error);
+    return data as number;
+  },
 };
