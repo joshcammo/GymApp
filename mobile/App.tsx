@@ -32,6 +32,7 @@ import { EditPresetScreen }      from './src/screens/EditPresetScreen';
 import { PostDetailScreen }      from './src/screens/PostDetailScreen';
 import { UsernameSetupScreen }   from './src/screens/UsernameSetupScreen';
 import { ChangeUsernameScreen }  from './src/screens/ChangeUsernameScreen';
+import { FriendsScreen }         from './src/screens/FriendsScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -186,6 +187,11 @@ function AppContent() {
                 name="PostDetail"
                 component={PostDetailScreen}
                 options={{ title: 'Post' }}
+              />
+              <Stack.Screen
+                name="Friends"
+                component={FriendsScreen}
+                options={{ title: 'Friends' }}
               />
             </>
           ) : (

@@ -1,3 +1,5 @@
+import { Feather } from '@expo/vector-icons';
+import { ColorTokens } from '../theme/colorways';
 import { MuscleGroupBalance } from '../types';
 
 export type BalanceBucket = 'NO_DATA' | 'NEW' | 'WELL_UNDER' | 'UNDER' | 'ON_TRACK' | 'OVER' | 'WELL_OVER';
@@ -28,4 +30,26 @@ export function classifyBalance(row: MuscleGroupBalance): BalanceRead {
   if (ratio <= 1.25) return { bucket: 'ON_TRACK', pctDelta };
   if (ratio <= 2.0) return { bucket: 'OVER', pctDelta };
   return { bucket: 'WELL_OVER', pctDelta };
+}
+
+export type BucketStyle = { icon: keyof typeof Feather.glyphMap; label: string; color: string; bg: string; dashed?: boolean };
+
+/** A function of the active colorway, not a static export — `cold` and
+ *  `primary` (the diverging over/under-trained pair) vary per colorway, and
+ *  for colorways whose own primary is blue (Navy Electric, Cobalt Cyan) the
+ *  colorway data picks a `cold` hue well clear of `primary` specifically so
+ *  this pair never collides. See theme/colorways.ts.
+ *
+ *  Shared by the Progress screen's heatmap tiles and the Home dashboard's
+ *  body heatmap, so both use the same color for a given bucket. */
+export function createBucketStyle(colors: ColorTokens): Record<BalanceBucket, BucketStyle> {
+  return {
+    NO_DATA:    { icon: 'circle',        label: 'No data',    color: colors.textMuted, bg: colors.card, dashed: true },
+    NEW:        { icon: 'zap',           label: 'New',        color: colors.textMuted, bg: colors.card, dashed: true },
+    WELL_UNDER: { icon: 'trending-down', label: 'Well under', color: colors.cold,      bg: colors.coldBg },
+    UNDER:      { icon: 'trending-down', label: 'Under',      color: colors.cold,      bg: colors.coldBgMild },
+    ON_TRACK:   { icon: 'check',         label: 'On track',   color: colors.textSub,  bg: colors.card },
+    OVER:       { icon: 'trending-up',   label: 'Over',       color: colors.primary,  bg: colors.primaryBgMild },
+    WELL_OVER:  { icon: 'trending-up',   label: 'Well over',  color: colors.primary,  bg: colors.primaryBg },
+  };
 }

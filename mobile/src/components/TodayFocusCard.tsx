@@ -6,7 +6,7 @@ import { ColorTokens } from '../theme/colorways';
 import { useTheme } from '../theme/ThemeContext';
 import { FONT, RADIUS } from '../constants/theme';
 import { muscleGroupLabel } from '../constants/muscleGroups';
-import { MuscleGroupBalance } from '../types';
+import { MuscleGroup, MuscleGroupBalance } from '../types';
 import { analyticsApi } from '../services/api';
 import { classifyBalance } from '../utils/muscleBalance';
 import { GradientButton } from './GradientButton';
@@ -14,12 +14,12 @@ import { PressableScale } from './PressableScale';
 import { haptics } from '../utils/haptics';
 
 interface Props {
-  onAddExercise: () => void;
+  onAddExercise: (muscleGroup?: MuscleGroup) => void;
   onGenerateAi:  (prompt: string) => void;
 }
 
 type Recommendation =
-  | { kind: 'focus';    muscleGroup: string; pctDelta: number }
+  | { kind: 'focus'; muscleGroupKey: MuscleGroup; muscleGroupLabel: string; pctDelta: number }
   | { kind: 'balanced' }
   | { kind: 'no_data' };
 
@@ -40,7 +40,12 @@ function pickRecommendation(rows: MuscleGroupBalance[]): Recommendation {
   if (underTrained.length === 0) return { kind: 'balanced' };
 
   const top = underTrained[0];
-  return { kind: 'focus', muscleGroup: muscleGroupLabel(top.row.muscle_group), pctDelta: top.read.pctDelta! };
+  return {
+    kind: 'focus',
+    muscleGroupKey:   top.row.muscle_group,
+    muscleGroupLabel: muscleGroupLabel(top.row.muscle_group),
+    pctDelta:         top.read.pctDelta!,
+  };
 }
 
 export function TodayFocusCard({ onAddExercise, onGenerateAi }: Props) {
@@ -72,7 +77,7 @@ export function TodayFocusCard({ onAddExercise, onGenerateAi }: Props) {
         <>
           <Text style={styles.message}>
             {recommendation.kind === 'focus'
-              ? `${recommendation.muscleGroup} looks under-trained this week (${recommendation.pctDelta}% vs. usual) — a good place to focus today.`
+              ? `${recommendation.muscleGroupLabel} looks under-trained this week (${recommendation.pctDelta}% vs. usual) — a good place to focus today.`
               : recommendation.kind === 'balanced'
                 ? "You're on track across every muscle group this week. Nice work — pick whatever you feel like today."
                 : 'Log a few workouts to unlock a personalized recommendation here.'}
@@ -80,7 +85,13 @@ export function TodayFocusCard({ onAddExercise, onGenerateAi }: Props) {
 
           {recommendation.kind !== 'no_data' && (
             <View style={styles.actions}>
-              <PressableScale style={styles.secondaryBtn} onPress={() => { haptics.tap(); onAddExercise(); }}>
+              <PressableScale
+                style={styles.secondaryBtn}
+                onPress={() => {
+                  haptics.tap();
+                  onAddExercise(recommendation.kind === 'focus' ? recommendation.muscleGroupKey : undefined);
+                }}
+              >
                 <Feather name="plus" size={14} color={colors.primary} />
                 <Text style={styles.secondaryBtnText}>Add Exercise</Text>
               </PressableScale>
@@ -90,7 +101,7 @@ export function TodayFocusCard({ onAddExercise, onGenerateAi }: Props) {
                 style={styles.aiBtn}
                 onPress={() => onGenerateAi(
                   recommendation.kind === 'focus'
-                    ? `Focus on ${recommendation.muscleGroup.toLowerCase()}`
+                    ? `Focus on ${recommendation.muscleGroupLabel.toLowerCase()}`
                     : 'Based on what I trained last week'
                 )}
               />

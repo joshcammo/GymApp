@@ -204,8 +204,8 @@ export interface ShareTarget {
 /** Bottom tab routes shown once signed in and past the username gate. */
 export type MainTabParamList = {
   HomeTab:    undefined;
-  FeedTab:    undefined;
-  FriendsTab: undefined;
+  WorkoutTab: undefined;
+  SocialTab:  undefined;
   StatsTab:   undefined;
 };
 
@@ -219,11 +219,12 @@ export type RootStackParamList = {
   ChangePassword: undefined;
   ChangeUsername: undefined;
   DayDetail:      { date: string; dayFull: string };
-  AddExercise:    { date: string; dayFull: string; editExercise?: Exercise };
+  AddExercise:    { date: string; dayFull: string; editExercise?: Exercise; initialMuscleGroup?: MuscleGroup };
   AddCardio:      { date: string; dayFull: string; editSession?: CardioSession };
   AiWorkout:      { date: string; dayFull: string; initialPrompt?: string };
   Presets:        undefined;
   EditPreset:     { preset?: Preset };
   PostDetail:     { postId: number };
   UsernameSetup:  undefined;
+  Friends:        undefined;
 };
