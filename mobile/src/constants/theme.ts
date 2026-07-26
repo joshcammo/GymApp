@@ -1,10 +1,10 @@
 import { ColorTokens } from '../theme/colorways';
 
 /**
- * Display typeface — Space Grotesk, loaded in App.tsx.
+ * Display typeface: Space Grotesk, loaded in App.tsx.
  * Used for headings, numbers and buttons; body copy stays on the system font.
  *
- * NOTE: never combine these with `fontWeight` in a style — on Android that
+ * NOTE: never combine these with `fontWeight` in a style: on Android that
  * discards the custom family. The weight is baked into each family name.
  */
 export const FONT = {
@@ -21,7 +21,7 @@ export const RADIUS = {
   pill: 999,
 } as const;
 
-/** Primary CTA gradient for the active colorway — light → deep. */
+/** Primary CTA gradient for the active colorway: light → deep. */
 export function gradientPrimary(colors: ColorTokens): readonly [string, string] {
   return [colors.gradientStart, colors.gradientEnd];
 }

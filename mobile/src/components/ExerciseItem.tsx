@@ -37,7 +37,7 @@ export function ExerciseItem({ exercise, onEdit, onDelete, onShare, supersetLabe
   const styles = useMemo(() => createStyles(colors), [colors]);
   const setsCount = exercise.sets.length;
 
-  // If every set is identical (and none has drops — a drop set is never
+  // If every set is identical (and none has drops: a drop set is never
   // interchangeable with a plain one), collapse them into one summary chip.
   const allIdentical = setsCount > 0 && exercise.sets.every(s =>
     s.reps   === exercise.sets[0].reps &&

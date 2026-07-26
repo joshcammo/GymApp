@@ -59,7 +59,7 @@ const createStyles = (colors: ColorTokens) => StyleSheet.create({
   btn: {
     ...glow(colors),
     borderRadius: RADIUS.md,
-    // Opaque fill under the gradient — Android elevation and iOS shadows
+    // Opaque fill under the gradient: Android elevation and iOS shadows
     // need a background on the elevated view itself to render the glow.
     backgroundColor: colors.primary,
   },

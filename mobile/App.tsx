@@ -112,7 +112,7 @@ function AppContent() {
               backgroundColor: colors.bg,
             },
             animation: 'slide_from_right',
-            // Otherwise the back button shows the previous screen's title —
+            // Otherwise the back button shows the previous screen's title:
             // "MainTabs" for every screen pushed straight from a tab, since
             // that Stack.Screen has no title of its own. iOS only hides an
             // overlong label automatically, so short titles (e.g. "Friday")

@@ -38,7 +38,7 @@ export function SocialScreen({ navigation }: Props) {
   const [pickerVisible, setPickerVisible] = useState(false);
   const [shareTarget,   setShareTarget]   = useState<ShareTarget | null>(null);
   // Pending friend-request count, badged on the header's friends icon.
-  // Refreshed on focus — same as posts — since there are no push
+  // Refreshed on focus, same as posts, since there are no push
   // notifications to invalidate it any sooner (e.g. when a request is
   // accepted/declined on FriendsScreen, coming back here refocuses this
   // screen and picks up the change).
@@ -84,7 +84,7 @@ export function SocialScreen({ navigation }: Props) {
       const [data, session, friendships] = await Promise.all([
         postsApi.feed(),
         supabase.auth.getSession(),
-        friendsApi.list().catch(() => []), // best-effort — the badge is a nicety
+        friendsApi.list().catch(() => []), // best-effort: the badge is a nicety
       ]);
       setPosts(data);
       setMyId(session.data.session?.user.id ?? null);
@@ -106,7 +106,7 @@ export function SocialScreen({ navigation }: Props) {
 
   const toggleLike = async ({ id: postId }: Post) => {
     // Ignore re-taps while a like/unlike for this post is already in
-    // flight — otherwise a rapid double-tap fires the request twice
+    // flight: otherwise a rapid double-tap fires the request twice
     // against the same stale liked_by_me value, and the second call
     // errors (duplicate insert / already-removed) and reverts a like
     // that had already succeeded.
@@ -116,7 +116,7 @@ export function SocialScreen({ navigation }: Props) {
     const wasLiked = current.liked_by_me;
 
     setLikingIds(prev => new Set(prev).add(postId));
-    // Optimistic — feels instant, and a failure just reverts below.
+    // Optimistic: feels instant, and a failure just reverts below.
     setPosts(prev => prev.map(p => p.id === postId
       ? { ...p, liked_by_me: !wasLiked, like_count: p.like_count + (wasLiked ? -1 : 1) }
       : p

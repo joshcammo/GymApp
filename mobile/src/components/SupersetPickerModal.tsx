@@ -12,7 +12,7 @@ import { haptics } from '../utils/haptics';
 
 interface Props {
   visible: boolean;
-  /** Candidate partners — the caller's already-loaded list of that day's
+  /** Candidate partners: the caller's already-loaded list of that day's
    *  exercises, with the one being added/edited filtered out. */
   exercises: Exercise[];
   onClose:  () => void;
@@ -23,7 +23,7 @@ interface Props {
 /**
  * Picker for pairing the exercise being added/edited with another one
  * already logged the same day, to form a superset. Unlike the catalog
- * picker this list is just that day's log — no search or categories.
+ * picker this list is just that day's log, with no search or categories.
  */
 export function SupersetPickerModal({ visible, exercises, onClose, onSelect }: Props) {
   const { colors } = useTheme();
@@ -71,7 +71,7 @@ export function SupersetPickerModal({ visible, exercises, onClose, onSelect }: P
           }
           renderItem={({ item }) => {
             // Only found (and shown) when the partner is someone other than
-            // the exercise being edited — picking this row would silently
+            // the exercise being edited. Picking this row would silently
             // break that other pairing, so flag it up front.
             const partnerName = item.superset_partner_id != null
               ? exercises.find(e => e.id === item.superset_partner_id)?.name

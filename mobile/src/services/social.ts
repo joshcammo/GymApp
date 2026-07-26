@@ -3,7 +3,7 @@ import { checkError } from './api';
 import { Friendship, FriendshipStatus, MyExercisePr, Post, PostComment, Profile } from '../types';
 
 export const profileApi = {
-  /** The signed-in user's own profile row (always exists — created on signup). */
+  /** The signed-in user's own profile row (always exists, created on signup). */
   getMine: async (): Promise<Profile> => {
     const { data: session } = await supabase.auth.getSession();
     const { data, error } = await supabase
@@ -98,7 +98,7 @@ export const postsApi = {
     return data as number;
   },
 
-  /** Every exercise the caller has a logged weighted set for, with their current best — backs the "share a PR" picker. */
+  /** Every exercise the caller has a logged weighted set for, with their current best. Backs the "share a PR" picker. */
   myPrs: async (): Promise<MyExercisePr[]> => {
     const { data, error } = await supabase
       .from('my_exercise_prs')
@@ -123,7 +123,7 @@ export const postsApi = {
   },
 
   unlike: async (postId: number): Promise<void> => {
-    // No user_id filter needed — the post_likes_delete_own RLS policy
+    // No user_id filter needed: the post_likes_delete_own RLS policy
     // already restricts this to the caller's own like row.
     const { error } = await supabase.from('post_likes').delete().eq('post_id', postId);
     checkError(error);

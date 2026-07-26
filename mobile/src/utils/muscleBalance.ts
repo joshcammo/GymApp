@@ -12,7 +12,7 @@ export interface BalanceRead {
 
 /** Ratio thresholds are multiplicative around 1.0 (0.8 / 1.25 are reciprocals),
  *  so "under" and "over" require the same proportional swing either way.
- *  Measured in hard sets, not kg — a bodyweight pull-up counts the same
+ *  Measured in hard sets, not kg: a bodyweight pull-up counts the same
  *  as a loaded row, since weight is optional for bodyweight exercises
  *  and would otherwise be invisible to a kg-based comparison.
  *
@@ -34,7 +34,7 @@ export function classifyBalance(row: MuscleGroupBalance): BalanceRead {
 
 export type BucketStyle = { icon: keyof typeof Feather.glyphMap; label: string; color: string; bg: string; dashed?: boolean };
 
-/** A function of the active colorway, not a static export — `cold` and
+/** A function of the active colorway, not a static export: `cold` and
  *  `primary` (the diverging over/under-trained pair) vary per colorway, and
  *  for colorways whose own primary is blue (Navy Electric, Cobalt Cyan) the
  *  colorway data picks a `cold` hue well clear of `primary` specifically so

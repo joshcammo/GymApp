@@ -27,7 +27,7 @@ type Nav = CompositeNavigationProp<
 >;
 interface Props { navigation: Nav }
 
-/** Day-by-day browser for logging/reviewing exercises and cardio — split out
+/** Day-by-day browser for logging/reviewing exercises and cardio, split out
  *  of HomeScreen so Home can be a pure dashboard and this can be its own tab. */
 export function WorkoutScreen({ navigation }: Props) {
   const { colors } = useTheme();

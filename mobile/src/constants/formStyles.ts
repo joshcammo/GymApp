@@ -26,7 +26,7 @@ const createFormStyles = (colors: ColorTokens) => StyleSheet.create({
   },
 });
 
-/** Shared field label/input styling — used by every screen with a text form. */
+/** Shared field label/input styling, used by every screen with a text form. */
 export function useFormStyles() {
   const { colors } = useTheme();
   return useMemo(() => createFormStyles(colors), [colors]);

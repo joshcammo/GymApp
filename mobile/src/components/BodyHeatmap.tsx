@@ -24,7 +24,7 @@ interface Region {
   x: number; y: number; width: number; height: number; rx: number;
 }
 
-// Shared skeleton — front and back use the same limb positions so the two
+// Shared skeleton: front and back use the same limb positions so the two
 // figures read as the same body from two sides, not two different bodies.
 // Simplified/blocky by design: the app only tracks 11 broad muscle groups,
 // not fine anatomical subdivisions, so a literal anatomical illustration
@@ -49,7 +49,7 @@ const FRONT_REGIONS: Region[] = [
   { group: 'FOREARMS',   ...FOREARM_L },
   { group: 'FOREARMS',   ...FOREARM_R },
   { group: 'CORE',       x: 36, y: 66, width: 28, height: 36, rx: 8 },
-  { group: null,         x: 32, y: 100, width: 36, height: 14, rx: 6 }, // hips (front — no glute-specific region)
+  { group: null,         x: 32, y: 100, width: 36, height: 14, rx: 6 }, // hips (front, no glute-specific region)
   { group: 'QUADS',      ...UPPER_LEG_L, y: 114, height: 50 },
   { group: 'QUADS',      ...UPPER_LEG_R, y: 114, height: 50 },
   { group: 'CALVES',     ...LOWER_LEG_L },
@@ -83,7 +83,7 @@ function Figure({
 }) {
   return (
     <Svg viewBox="0 0 100 220" width="100%" height={190}>
-      {/* Head + neck — decorative, not a trainable region */}
+      {/* Head + neck: decorative, not a trainable region */}
       <Circle cx={50} cy={14} r={12} fill={neutralFill} stroke={neutralStroke} strokeWidth={1} />
       <Rect x={44} y={24} width={12} height={8} fill={neutralFill} stroke={neutralStroke} strokeWidth={1} />
 
@@ -112,14 +112,14 @@ function Figure({
         );
       })}
 
-      {/* Feet — decorative */}
+      {/* Feet: decorative */}
       <Ellipse cx={39} cy={214} rx={9} ry={5} fill={neutralFill} stroke={neutralStroke} strokeWidth={1} />
       <Ellipse cx={61} cy={214} rx={9} ry={5} fill={neutralFill} stroke={neutralStroke} strokeWidth={1} />
     </Svg>
   );
 }
 
-/** Front + back muscle-group heatmap — the same under/on-track/over-trained
+/** Front + back muscle-group heatmap: the same under/on-track/over-trained
  *  read as the Progress screen's tile heatmap, laid out on a simplified
  *  body instead of a grid, so it's easier to see at a glance what's been
  *  neglected. Self-fetches its own data (best-effort, like the other
@@ -150,7 +150,7 @@ export function BodyHeatmap({ onSelectMuscleGroup }: Props) {
     <View style={styles.card}>
       <Text style={styles.heading}>Muscle Heatmap</Text>
       <Text style={styles.caption}>
-        Last 7 days vs. your usual — same read as the Progress screen. Tap a region to log it.
+        Last 7 days vs. your usual, the same read as the Progress screen. Tap a region to log it.
       </Text>
 
       {rows === null ? (

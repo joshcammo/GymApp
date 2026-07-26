@@ -12,13 +12,13 @@ interface Props {
   /** Heaviest set from the most recent session, in `workingUnit`. */
   workingWeight: number;
   workingUnit:   WeightUnit;
-  /** Unit the sets are being logged in right now — suggestions are shown in this unit. */
+  /** Unit the sets are being logged in right now. Suggestions are shown in this unit. */
   targetUnit:    WeightUnit;
 }
 
 /** Suggested warm-up ramp (40/60/80% of last session's working weight),
  *  shown above the set editor once an exercise with prior history is
- *  picked. Purely informational — renders nothing when there's no
+ *  picked. Purely informational: renders nothing when there's no
  *  sensible ramp to suggest (see calculateWarmupSets). */
 export function WarmupSuggestion({ workingWeight, workingUnit, targetUnit }: Props) {
   const { colors } = useTheme();

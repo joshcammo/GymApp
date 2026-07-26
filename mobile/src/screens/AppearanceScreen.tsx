@@ -15,7 +15,7 @@ const MODES: { key: ThemeMode; label: string; icon: keyof typeof Feather.glyphMa
   { key: 'system', label: 'System', icon: 'smartphone' },
 ];
 
-/** One colorway swatch — previews that colorway in the *currently active*
+/** One colorway swatch: previews that colorway in the *currently active*
  *  light/dark mode, so what you see is what you'll get on tap. */
 function ColorwaySwatch({
   id, label, tokens, selected, onPress,

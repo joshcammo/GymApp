@@ -17,7 +17,7 @@ import { haptics } from '../utils/haptics';
 interface Props {
   visible: boolean;
   onClose: () => void;
-  /** An exercise was picked — caller should close this modal and open SharePostModal with it. */
+  /** An exercise was picked: the caller should close this modal and open SharePostModal with it. */
   onPick:  (target: ShareTarget) => void;
 }
 

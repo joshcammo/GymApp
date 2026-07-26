@@ -19,7 +19,7 @@ interface Props {
   /** Date ('YYYY-MM-DD') the chosen preset is applied to. */
   date:    string;
   onClose: () => void;
-  /** Called after a preset has been applied — caller should reload the day. */
+  /** Called after a preset has been applied: the caller should reload the day. */
   onApplied: () => void;
   /** Navigate to the full preset management screen. */
   onManage:  () => void;

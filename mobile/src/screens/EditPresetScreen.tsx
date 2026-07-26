@@ -24,7 +24,7 @@ type Nav   = NativeStackNavigationProp<RootStackParamList, 'EditPreset'>;
 type Route = RouteProp<RootStackParamList, 'EditPreset'>;
 interface Props { navigation: Nav; route: Route }
 
-/** Minimal shape kept for each chosen exercise — enough to render a row
+/** Minimal shape kept for each chosen exercise: enough to render a row
  *  and to send back as an ordered id list on save. */
 interface Chosen {
   id:        number;

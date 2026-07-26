@@ -27,7 +27,7 @@ type Recommendation =
 /** Ranks groups by the same thresholds as the Progress screen's heatmap and
  *  recommends the most under-trained one.
  *
- *  Over-training is checked *before* falling through to "balanced" — without
+ *  Over-training is checked *before* falling through to "balanced". Without
  *  that, a week where several groups are well above their usual reported
  *  "you're on track across every muscle group", directly contradicting the
  *  body heatmap rendered underneath this card. "Balanced" now means what it
@@ -82,7 +82,7 @@ export function TodayFocusCard({ onAddExercise, onGenerateAi }: Props) {
     return () => { stale = true; };
   }, []);
 
-  // Best-effort — a failed fetch just means no card, not a broken dashboard.
+  // Best-effort: a failed fetch just means no card, not a broken dashboard.
   if (recommendation === 'error') return null;
 
   return (
@@ -98,11 +98,11 @@ export function TodayFocusCard({ onAddExercise, onGenerateAi }: Props) {
         <>
           <Text style={styles.message}>
             {recommendation.kind === 'focus'
-              ? `${recommendation.muscleGroupLabel} looks under-trained this week (${recommendation.pctDelta}% vs. usual) — a good place to focus today.`
+              ? `${recommendation.muscleGroupLabel} looks under-trained this week (${recommendation.pctDelta}% vs. usual). A good place to focus today.`
               : recommendation.kind === 'ease'
-                ? `You're ahead of your usual everywhere — ${recommendation.muscleGroupLabel} most of all (+${recommendation.pctDelta}%). Nothing's lagging, so today's a good day to go easy or train something light.`
+                ? `You're ahead of your usual everywhere, ${recommendation.muscleGroupLabel} most of all (+${recommendation.pctDelta}%). Nothing's lagging, so today's a good day to go easy or train something light.`
                 : recommendation.kind === 'balanced'
-                  ? "You're on track across every muscle group this week. Nice work — pick whatever you feel like today."
+                  ? "You're on track across every muscle group this week. Nice work. Pick whatever you feel like today."
                   : 'Log a few workouts to unlock a personalized recommendation here.'}
           </Text>
 

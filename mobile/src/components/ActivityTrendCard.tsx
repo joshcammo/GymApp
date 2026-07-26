@@ -19,7 +19,7 @@ const SCREEN_PADDING = 16;
 const CARD_PADDING   = 16;
 const CHART_WIDTH = Dimensions.get('window').width - SCREEN_PADDING * 2 - CARD_PADDING * 2;
 
-/** 1 decimal place, no trailing '.0' — matches ProgressScreen's fmtKg. */
+/** 1 decimal place, no trailing '.0'. Matches ProgressScreen's fmtKg. */
 function fmtKg(kg: number): string {
   const rounded = Math.round(kg * 10) / 10;
   return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
@@ -37,7 +37,7 @@ function fmtShortDate(dateStr: string): string {
 }
 
 /**
- * Training volume per day over the last 7 or 30 days — a single series, so
+ * Training volume per day over the last 7 or 30 days, a single series, so
  * one hue and no legend (the title says what's plotted).
  *
  * Volume is strength-only by definition (kg x reps), which is why the
@@ -46,7 +46,7 @@ function fmtShortDate(dateStr: string): string {
  * that has no tonnage. Cardio's own totals live in the hero card above.
  *
  * A one-line summary sits under the chart so every headline value is
- * readable without touching the chart — the tooltip enhances, it doesn't
+ * readable without touching the chart: the tooltip enhances, it doesn't
  * gate.
  */
 export function ActivityTrendCard() {
@@ -82,7 +82,7 @@ export function ActivityTrendCard() {
     return {
       value: Math.round(Number(p.volume_kg)),
       label: (i % labelEvery === 0 || isLast) ? fmtShortDate(p.activity_date) : '',
-      // Only the endpoint is directly labelled — a value on every point is
+      // Only the endpoint is directly labelled: a value on every point is
       // unreadable, and the summary row below carries the rest.
       dataPointText: isLast && Number(p.volume_kg) > 0 ? fmtCompactKg(Number(p.volume_kg)) : undefined,
     };

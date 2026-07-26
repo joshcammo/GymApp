@@ -16,7 +16,7 @@ const formatTime = (s: number) =>
 
 /**
  * Optional rest-between-sets countdown. Fully self-contained (own
- * AsyncStorage-persisted duration, own interval) — drop it in wherever
+ * AsyncStorage-persisted duration, own interval). Drop it in wherever
  * sets are being logged. Never tied to save/add-set actions; the user
  * starts and stops it manually.
  */

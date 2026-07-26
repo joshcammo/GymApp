@@ -34,7 +34,7 @@ type Nav = CompositeNavigationProp<
 >;
 interface Props { navigation: Nav }
 
-/** The dashboard — a "week at a glance" summary, today's recommended focus,
+/** The dashboard: a "week at a glance" summary, today's recommended focus,
  *  and a muscle-group heatmap. Day-by-day logging lives on the Workout tab. */
 export function HomeScreen({ navigation }: Props) {
   const { colors, effectiveMode } = useTheme();
@@ -45,7 +45,7 @@ export function HomeScreen({ navigation }: Props) {
   const [refreshing, setRefreshing] = useState(false);
   const [error,      setError]      = useState<string | null>(null);
 
-  // Always the current calendar week — the dashboard doesn't browse other
+  // Always the current calendar week: the dashboard doesn't browse other
   // weeks, that's what the Workout tab is for.
   const weekStart = getWeekStart(0);
   const weekDays  = getWeekDays(weekStart);
@@ -163,7 +163,7 @@ export function HomeScreen({ navigation }: Props) {
           }
         >
           {/* Hero metric first, then what to do about it, then the trend,
-              then the detail views — "how am I doing" is answered before
+              then the detail views, so "how am I doing" is answered before
               anything asks the user to interpret a chart. */}
           <HeroCard days={days} />
           <TodayFocusCard

@@ -22,7 +22,7 @@ interface Props {
   /** Called with the chosen catalog/custom exercise; caller closes the modal. */
   onSelect: (def: ExerciseDef) => void;
   /** Pre-selects this muscle group's list when the picker opens, instead of
-   *  starting on "all groups". Still changeable — just a starting point. */
+   *  starting on "all groups". Still changeable, just a starting point. */
   initialGroup?: MuscleGroup | null;
 }
 
@@ -57,7 +57,7 @@ let defsCache: ExerciseDef[] | null = null;
 /**
  * Catalog-first exercise picker: muscle groups -> illustrated exercises,
  * searchable, with a guarded "add custom" escape hatch. Selecting always
- * yields an ExerciseDef — free-text names are no longer possible.
+ * yields an ExerciseDef: free-text names are no longer possible.
  */
 export function ExercisePickerModal({ visible, onClose, onSelect, initialGroup }: Props) {
   const { colors } = useTheme();
@@ -87,7 +87,7 @@ export function ExercisePickerModal({ visible, onClose, onSelect, initialGroup }
       .finally(() => setLoading(false));
   };
 
-  // Reset navigation state when the picker opens (not when it closes) —
+  // Reset navigation state when the picker opens (not when it closes):
   // resetting on close makes the content visibly flip back during the
   // slide-down animation. Also (re)fetch the catalog if we don't have it.
   useEffect(() => {
@@ -201,13 +201,13 @@ export function ExercisePickerModal({ visible, onClose, onSelect, initialGroup }
     return counts;
   }, [defs]);
 
-  /** First exercise with art in a group — used as the group tile image. */
+  /** First exercise with art in a group, used as the group tile image. */
   const groupThumb = (g: MuscleGroup): ExerciseDef | undefined =>
     defs?.find(d => d.muscle_group === g && d.image_key && EXERCISE_IMAGES[d.image_key]);
 
   // Android hardware-back steps up one level; on iOS onRequestClose fires
   // after a pageSheet swipe-dismiss, when the sheet is already natively
-  // gone — anything but a full close would desync `visible` from reality
+  // gone: anything but a full close would desync `visible` from reality
   // and permanently block reopening.
   const handleRequestClose =
     Platform.OS === 'android' && (customVisible || group || search)

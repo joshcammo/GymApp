@@ -22,7 +22,7 @@ import { BalanceRead, BucketStyle, classifyBalance, createBucketStyle } from '..
 type Tab = '1RM' | 'VOLUME' | 'BREAKDOWN' | 'HEATMAP';
 type VolumeMode = 'EXERCISE' | 'MUSCLE_GROUP';
 
-/** usesRange defaults to true — only a tab that ignores the shared
+/** usesRange defaults to true: only a tab that ignores the shared
  *  time-range selector (like the heatmap, which is always "last 7 days
  *  vs. your own baseline") needs to opt out. */
 const TABS: { key: Tab; label: string; usesRange?: boolean }[] = [
@@ -39,14 +39,14 @@ const TIME_RANGES: { key: TimeRange; label: string }[] = [
   { key: 'ALL', label: 'All' },
 ];
 
-// Shared with styles.content.padding and styles.chartCard.padding below —
+// Shared with styles.content.padding and styles.chartCard.padding below:
 // CHART_WIDTH is derived from these, not a separate hardcoded number, so
 // the two can't silently drift out of sync.
 const SCREEN_PADDING = 16;
 const CARD_PADDING   = 16;
 const CHART_WIDTH = Dimensions.get('window').width - SCREEN_PADDING * 2 - CARD_PADDING * 2;
 
-/** 1 decimal place, no trailing '.0' — e.g. 82.5, 100 */
+/** 1 decimal place, no trailing '.0', e.g. 82.5, 100 */
 function fmtKg(kg: number): string {
   const rounded = Math.round(kg * 10) / 10;
   return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
@@ -94,7 +94,7 @@ function Segmented<T extends string>({
   );
 }
 
-/** Raw-value list under every chart — the "can't read the chart" fallback,
+/** Raw-value list under every chart: the "can't read the chart" fallback,
  *  and the only place tied values or a to-be-added dark/light legend live. */
 function TableView({ rows }: { rows: { label: string; value: string }[] }) {
   const { colors } = useTheme();
@@ -111,7 +111,7 @@ function TableView({ rows }: { rows: { label: string; value: string }[] }) {
   );
 }
 
-/** Ranked horizontal bars for the muscle-group breakdown — built from plain
+/** Ranked horizontal bars for the muscle-group breakdown, built from plain
  *  Views rather than the charting library's horizontal bar mode, which
  *  auto-sizes its label gutter unpredictably (label truncation, bars
  *  overflowing the card). Three aligned columns (label / bar / value) keep
@@ -159,7 +159,7 @@ function ExercisePickerField({ def, onPress }: { def: ExerciseDef | null; onPres
   );
 }
 
-/** Small always-visible methodology note — so a color-coded tile never
+/** Small always-visible methodology note, so a color-coded tile never
  *  has to be taken on faith. Sits inline rather than behind a tooltip
  *  tap, since "how is this measured" is exactly the question a heatmap
  *  like this invites. */
@@ -186,7 +186,7 @@ function ErrorFill({ message, error }: { message: string; error: string }) {
 
 /** Shared fetch-on-dependency-change hook for the three tabs below.
  *  `fetcher: null` means "not ready to fetch yet" (e.g. no exercise picked)
- *  — clears any prior data instead of issuing a request. Guards against the
+ *  and clears any prior data instead of issuing a request. Guards against the
  *  same race every one of the three tabs would otherwise hit independently:
  *  if the deps change again before a request resolves, that stale response
  *  is dropped instead of overwriting the newer one (mirrors the `stale`
@@ -395,7 +395,7 @@ function VolumeTab({ range }: { range: TimeRange }) {
             {/* barWidth/spacing: fit exactly `chartData.length` bars across the
                 available width, clamped to a 12-28px range so a handful of
                 weeks doesn't render absurdly fat bars and a year's worth
-                doesn't shrink to slivers — the library horizontally scrolls
+                doesn't shrink to slivers: the library horizontally scrolls
                 past that floor rather than overlapping bars. */}
             <BarChart
               data={chartData}
@@ -524,7 +524,7 @@ function HeatmapTab() {
     [],
   );
 
-  // Classified once per row per fetch, not once per row per render — reused
+  // Classified once per row per fetch, not once per row per render, and reused
   // below by the tiles, the empty-state check, and the table.
   const reads = useMemo(
     () => (rows ?? []).map(row => ({ row, read: classifyBalance(row) })),

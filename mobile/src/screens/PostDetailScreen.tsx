@@ -60,7 +60,7 @@ export function PostDetailScreen({ route }: Props) {
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
   const toggleLike = async () => {
-    // Ignore a re-tap while the previous like/unlike is still in flight —
+    // Ignore a re-tap while the previous like/unlike is still in flight:
     // see SocialScreen's toggleLike for why (stale-argument double-fire).
     if (liking || !postRef.current) return;
     const current = postRef.current;
