@@ -2,7 +2,6 @@ import React, { useCallback, useLayoutEffect, useMemo, useRef, useState } from '
 import {
   View, Text, FlatList, StyleSheet, ActivityIndicator, RefreshControl, TouchableOpacity, Alert,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import type { CompositeNavigationProp } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
@@ -156,7 +155,9 @@ export function SocialScreen({ navigation }: Props) {
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={['bottom']}>
+    // No bottom safe-area edge: the tab bar already clears the home
+    // indicator, and doubling it clips the last card off the scroll view.
+    <View style={styles.safe}>
       {loading ? (
         <View style={styles.centred}>
           <ActivityIndicator size="large" color={colors.primary} />
@@ -214,7 +215,7 @@ export function SocialScreen({ navigation }: Props) {
         onClose={() => setShareTarget(null)}
         onShared={() => { setShareTarget(null); load(); }}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -232,13 +233,19 @@ const createStyles = (colors: ColorTokens) => StyleSheet.create({
     padding:       16,
     flexGrow:      1,
   },
+  // Two buttons instead of the original one overflowed the header's right
+  // edge, clipping the second. The explicit right margin keeps the pair
+  // clear of the screen edge rather than relying on the navigator's own
+  // (inconsistent) headerRight padding.
   headerActions: {
     flexDirection: 'row',
-    gap:           10,
+    alignItems:    'center',
+    gap:           8,
+    marginRight:   12,
   },
   headerBtn: {
-    width:           38,
-    height:          38,
+    width:           34,
+    height:          34,
     borderRadius:    RADIUS.pill,
     backgroundColor: colors.primaryBg,
     borderWidth:      1,

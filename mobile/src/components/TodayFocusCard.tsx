@@ -20,12 +20,18 @@ interface Props {
 
 type Recommendation =
   | { kind: 'focus'; muscleGroupKey: MuscleGroup; muscleGroupLabel: string; pctDelta: number }
+  | { kind: 'ease';  muscleGroupLabel: string; pctDelta: number }
   | { kind: 'balanced' }
   | { kind: 'no_data' };
 
-/** Ranks under/well-under-trained groups (same thresholds as the Progress
- *  screen's heatmap) and recommends the most under-trained one. Falls back
- *  to a "balanced" or "no data yet" read when nothing qualifies. */
+/** Ranks groups by the same thresholds as the Progress screen's heatmap and
+ *  recommends the most under-trained one.
+ *
+ *  Over-training is checked *before* falling through to "balanced" — without
+ *  that, a week where several groups are well above their usual reported
+ *  "you're on track across every muscle group", directly contradicting the
+ *  body heatmap rendered underneath this card. "Balanced" now means what it
+ *  says: nothing meaningfully under OR over. */
 function pickRecommendation(rows: MuscleGroupBalance[]): Recommendation {
   const reads = rows.map(row => ({ row, read: classifyBalance(row) }));
 
@@ -37,15 +43,30 @@ function pickRecommendation(rows: MuscleGroupBalance[]): Recommendation {
     .filter(({ read }) => read.bucket === 'WELL_UNDER' || read.bucket === 'UNDER')
     .sort((a, b) => a.read.pctDelta! - b.read.pctDelta!);
 
-  if (underTrained.length === 0) return { kind: 'balanced' };
+  if (underTrained.length > 0) {
+    const top = underTrained[0];
+    return {
+      kind: 'focus',
+      muscleGroupKey:   top.row.muscle_group,
+      muscleGroupLabel: muscleGroupLabel(top.row.muscle_group),
+      pctDelta:         top.read.pctDelta!,
+    };
+  }
 
-  const top = underTrained[0];
-  return {
-    kind: 'focus',
-    muscleGroupKey:   top.row.muscle_group,
-    muscleGroupLabel: muscleGroupLabel(top.row.muscle_group),
-    pctDelta:         top.read.pctDelta!,
-  };
+  const overTrained = reads
+    .filter(({ read }) => read.bucket === 'WELL_OVER' || read.bucket === 'OVER')
+    .sort((a, b) => b.read.pctDelta! - a.read.pctDelta!);
+
+  if (overTrained.length > 0) {
+    const top = overTrained[0];
+    return {
+      kind: 'ease',
+      muscleGroupLabel: muscleGroupLabel(top.row.muscle_group),
+      pctDelta:         top.read.pctDelta!,
+    };
+  }
+
+  return { kind: 'balanced' };
 }
 
 export function TodayFocusCard({ onAddExercise, onGenerateAi }: Props) {
@@ -78,9 +99,11 @@ export function TodayFocusCard({ onAddExercise, onGenerateAi }: Props) {
           <Text style={styles.message}>
             {recommendation.kind === 'focus'
               ? `${recommendation.muscleGroupLabel} looks under-trained this week (${recommendation.pctDelta}% vs. usual) — a good place to focus today.`
-              : recommendation.kind === 'balanced'
-                ? "You're on track across every muscle group this week. Nice work — pick whatever you feel like today."
-                : 'Log a few workouts to unlock a personalized recommendation here.'}
+              : recommendation.kind === 'ease'
+                ? `You're ahead of your usual everywhere — ${recommendation.muscleGroupLabel} most of all (+${recommendation.pctDelta}%). Nothing's lagging, so today's a good day to go easy or train something light.`
+                : recommendation.kind === 'balanced'
+                  ? "You're on track across every muscle group this week. Nice work — pick whatever you feel like today."
+                  : 'Log a few workouts to unlock a personalized recommendation here.'}
           </Text>
 
           {recommendation.kind !== 'no_data' && (

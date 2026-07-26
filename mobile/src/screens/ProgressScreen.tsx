@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Dimensions } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { LineChart, BarChart } from 'react-native-gifted-charts';
 
@@ -575,7 +574,9 @@ export function ProgressScreen() {
   const showRange = TABS.find(t => t.key === tab)?.usesRange !== false;
 
   return (
-    <SafeAreaView style={styles.safe} edges={['bottom']}>
+    // No bottom safe-area edge: the tab bar already clears the home
+    // indicator, and doubling it clips content off the scroll view.
+    <View style={styles.safe}>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.selectorGroup}>
           <Segmented options={TABS} value={tab} onChange={setTab} />
@@ -587,7 +588,7 @@ export function ProgressScreen() {
         {tab === 'BREAKDOWN' && <BreakdownTab range={range} />}
         {tab === 'HEATMAP' && <HeatmapTab />}
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
