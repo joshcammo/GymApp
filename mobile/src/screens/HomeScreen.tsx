@@ -18,10 +18,11 @@ import { workoutApi, cardioApi } from '../services/api';
 import { Logo, Wordmark } from '../components/Logo';
 import { PressableScale } from '../components/PressableScale';
 import { EmptyState } from '../components/EmptyState';
-import { WeeklySummaryCard } from '../components/WeeklySummaryCard';
+import { HeroCard } from '../components/HeroCard';
 import { TodayFocusCard } from '../components/TodayFocusCard';
-import { StreakBanner } from '../components/StreakBanner';
+import { ActivityTrendCard } from '../components/ActivityTrendCard';
 import { BodyHeatmap } from '../components/BodyHeatmap';
+import { BadgesRow } from '../components/BadgesRow';
 import {
   getWeekStart, getWeekDays, toDateStr,
   getDayShort, getDayFull, isToday, isPastDay,
@@ -161,13 +162,17 @@ export function HomeScreen({ navigation }: Props) {
             />
           }
         >
-          <StreakBanner />
-          <WeeklySummaryCard days={days} />
+          {/* Hero metric first, then what to do about it, then the trend,
+              then the detail views — "how am I doing" is answered before
+              anything asks the user to interpret a chart. */}
+          <HeroCard days={days} />
           <TodayFocusCard
             onAddExercise={goToAddExercise}
             onGenerateAi={prompt => navigation.navigate('AiWorkout', { date: todayDate, dayFull: todayDayFull, initialPrompt: prompt })}
           />
+          <ActivityTrendCard />
           <BodyHeatmap onSelectMuscleGroup={goToAddExercise} />
+          <BadgesRow />
 
           {/* Bottom breathing room */}
           <View style={{ height: 24 }} />
