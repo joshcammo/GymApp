@@ -20,6 +20,8 @@ import { PressableScale } from '../components/PressableScale';
 import { WeekNavigator } from '../components/WeekNavigator';
 import { DayCard } from '../components/DayCard';
 import { EmptyState } from '../components/EmptyState';
+import { WeeklySummaryCard } from '../components/WeeklySummaryCard';
+import { TodayFocusCard } from '../components/TodayFocusCard';
 import {
   getISOWeek, getWeekStart, getWeekDays,
   toDateStr, fmtWeekRange,
@@ -96,6 +98,12 @@ export function HomeScreen({ navigation }: Props) {
     };
   });
 
+  // Actual today, independent of weekOffset — the Today's Focus card should
+  // always target today even while browsing a different week.
+  const now = new Date();
+  const todayDate    = toDateStr(now);
+  const todayDayFull = getDayFull(now);
+
   // ── Render ────────────────────────────────────────────────────
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -167,6 +175,12 @@ export function HomeScreen({ navigation }: Props) {
             />
           }
         >
+          <WeeklySummaryCard days={days} />
+          <TodayFocusCard
+            onAddExercise={() => navigation.navigate('AddExercise', { date: todayDate, dayFull: todayDayFull })}
+            onGenerateAi={prompt => navigation.navigate('AiWorkout', { date: todayDate, dayFull: todayDayFull, initialPrompt: prompt })}
+          />
+
           {days.map(day => (
             <DayCard
               key={day.date}
