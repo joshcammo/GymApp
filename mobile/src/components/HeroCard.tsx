@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -7,7 +7,6 @@ import { ColorTokens } from '../theme/colorways';
 import { useTheme } from '../theme/ThemeContext';
 import { FONT, RADIUS, gradientPrimary, glow } from '../constants/theme';
 import { DayInfo } from '../types';
-import { analyticsApi } from '../services/api';
 import { formatDuration } from '../utils/cardioFormat';
 
 interface Props {
@@ -15,34 +14,48 @@ interface Props {
 }
 
 /**
- * The one number the dashboard leads with. Streak is the hero figure —
- * it's the metric that answers "am I keeping this up?" without the user
- * having to interpret anything — with the current week's shape underneath
- * it as supporting context.
+ * Encouragement keyed to how many days were trained this week. Deliberately
+ * not a consecutive-day streak: rest is part of training, so a message that
+ * treats a day off as a broken run punishes the user for recovering.
  *
- * White-on-gradient is the same treatment GradientButton uses, so it
- * inherits contrast that's already been checked across all nine colorways
- * rather than introducing a new foreground/background pair.
+ * Every tier is positive about what has been done and points at the next
+ * step, and the top tiers nudge toward recovery instead of implying seven
+ * days is the target to chase.
+ */
+const MESSAGES: Record<number, string> = {
+  0: 'Fresh week. One session is all it takes to get going.',
+  1: 'One session in. Two or three a week is where progress starts.',
+  2: 'Two sessions this week. A solid base, and one more makes it a strong week.',
+  3: "Three sessions this week. That's a genuinely consistent week.",
+  4: 'Four sessions this week. Strong week, well ahead of most.',
+  5: 'Five sessions this week. Excellent consistency.',
+  6: 'Six sessions this week. Outstanding. Keep an eye on recovery.',
+  7: 'Seven for seven. Huge week. Make sure some of it was light.',
+};
+
+/**
+ * The one number the dashboard leads with: days trained this week. It answers
+ * "am I keeping this up?" without the user having to interpret anything, with
+ * the shape of the week underneath it as supporting context.
+ *
+ * Everything shown here is derived from the week data HomeScreen has already
+ * loaded, so the card costs no extra request and can never disagree with the
+ * day list on the Workout tab.
+ *
+ * White-on-gradient is the same treatment GradientButton uses, so it inherits
+ * contrast that's already been checked across all nine colorways rather than
+ * introducing a new foreground/background pair.
  */
 export function HeroCard({ days }: Props) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  // null = still loading; a failed fetch falls back to 0 so the card keeps
-  // its shape (the week stats below are still worth showing on their own).
-  const [streak, setStreak] = useState<number | null>(null);
 
-  useEffect(() => {
-    let stale = false;
-    analyticsApi.getCurrentStreak()
-      .then(n => { if (!stale) setStreak(n); })
-      .catch(() => { if (!stale) setStreak(0); });
-    return () => { stale = true; };
-  }, []);
+  const trainedDays = days.map(d => d.exercises.length > 0 || d.cardioSessions.length > 0);
+  const daysTrained = trainedDays.filter(Boolean).length;
 
   const totalExercises = days.reduce((sum, d) => sum + d.exercises.length, 0);
   const cardioSessions = days.flatMap(d => d.cardioSessions);
   const cardioSeconds  = cardioSessions.reduce((sum, s) => sum + s.duration_seconds, 0);
-  const activeDays     = days.filter(d => d.exercises.length > 0 || d.cardioSessions.length > 0).length;
 
   return (
     <LinearGradient
@@ -54,32 +67,41 @@ export function HeroCard({ days }: Props) {
       {/* ── Hero figure ── */}
       <View style={styles.heroRow}>
         <View style={styles.heroFigure}>
-          <Text style={styles.heroNumber}>{streak ?? '—'}</Text>
+          <Text style={styles.heroNumber}>{daysTrained}</Text>
           <View style={styles.heroLabelBlock}>
-            <MaterialCommunityIcons name="fire" size={16} color="#FFFFFF" />
+            <MaterialCommunityIcons name="calendar-check" size={16} color="#FFFFFF" />
             <Text style={styles.heroLabel}>
-              day{streak === 1 ? '' : 's'} in a row
+              {daysTrained === 1 ? 'day trained this week' : 'days trained this week'}
             </Text>
           </View>
         </View>
       </View>
 
-      <Text style={styles.heroCaption}>
-        {streak === null
-          ? ' '
-          : streak === 0
-            ? 'Log anything today to start a streak.'
-            : 'Keep it going — log something today.'}
-      </Text>
+      <Text style={styles.heroCaption}>{MESSAGES[daysTrained]}</Text>
 
-      {/* ── Weekly meter ── */}
-      <View style={styles.meterBlock}>
-        <View style={styles.meterHeader}>
-          <Text style={styles.meterLabel}>This week</Text>
-          <Text style={styles.meterValue}>{activeDays} of 7 days active</Text>
-        </View>
-        <View style={styles.meterTrack}>
-          <View style={[styles.meterFill, { width: `${(activeDays / 7) * 100}%` }]} />
+      {/* ── Week shape ──
+          Replaces a 0-of-7 progress bar: once the hero figure *is* the count,
+          a bar repeats it. Which days were trained is new information. */}
+      <View style={styles.weekBlock}>
+        <Text style={styles.weekLabel}>This week</Text>
+        <View style={styles.dayRow}>
+          {days.map((day, i) => {
+            const trained = trainedDays[i];
+            return (
+              <View
+                key={day.date}
+                style={[
+                  styles.dayDot,
+                  trained ? styles.dayDotTrained : styles.dayDotRest,
+                  day.isToday && !trained && styles.dayDotToday,
+                ]}
+              >
+                <Text style={[styles.dayInitial, trained && styles.dayInitialTrained]}>
+                  {day.dayShort.charAt(0)}
+                </Text>
+              </View>
+            );
+          })}
         </View>
       </View>
 
@@ -120,7 +142,7 @@ const createStyles = (colors: ColorTokens) => StyleSheet.create({
   },
   heroNumber: {
     fontFamily: FONT.bold,
-    // The dashboard's single hero figure. Deliberately not tabular-nums —
+    // The dashboard's single hero figure. Deliberately not tabular-nums:
     // equal-width digits make a number like 12 look loose at this size.
     fontSize:   54,
     lineHeight: 58,
@@ -130,11 +152,13 @@ const createStyles = (colors: ColorTokens) => StyleSheet.create({
     flexDirection: 'row',
     alignItems:    'center',
     gap:           5,
+    flexShrink:    1,
   },
   heroLabel: {
     fontFamily: FONT.semibold,
     fontSize:   15,
     color:      '#FFFFFF',
+    flexShrink: 1,
   },
   heroCaption: {
     fontFamily: FONT.medium,
@@ -142,40 +166,50 @@ const createStyles = (colors: ColorTokens) => StyleSheet.create({
     color:      'rgba(255,255,255,0.85)',
     marginTop:  2,
   },
-  // ── Meter ──
-  meterBlock: {
+  // ── Week shape ──
+  weekBlock: {
     marginTop: 18,
   },
-  meterHeader: {
-    flexDirection:  'row',
-    justifyContent: 'space-between',
-    alignItems:     'center',
-    marginBottom:   7,
-  },
-  meterLabel: {
+  weekLabel: {
     fontFamily:    FONT.semibold,
     fontSize:      11,
     letterSpacing: 1,
     textTransform: 'uppercase',
     color:         'rgba(255,255,255,0.75)',
+    marginBottom:  8,
   },
-  meterValue: {
-    fontFamily: FONT.semibold,
-    fontSize:   13,
-    color:      '#FFFFFF',
+  dayRow: {
+    flexDirection:  'row',
+    justifyContent: 'space-between',
   },
-  // Track is a translucent step of the fill itself, so empty and filled
-  // read as one scale rather than two unrelated colors.
-  meterTrack: {
-    height:          7,
-    borderRadius:    4,
-    backgroundColor: 'rgba(255,255,255,0.25)',
-    overflow:        'hidden',
+  dayDot: {
+    flex:           1,
+    aspectRatio:    1,
+    maxWidth:       34,
+    borderRadius:   RADIUS.pill,
+    alignItems:     'center',
+    justifyContent: 'center',
+    borderWidth:    1,
+    borderColor:    'transparent',
   },
-  meterFill: {
-    height:          '100%',
-    borderRadius:    4,
+  dayDotTrained: {
     backgroundColor: '#FFFFFF',
+  },
+  // Rest days are a quiet step of the same scale rather than a second color,
+  // so an untrained day reads as "not yet" instead of as a warning.
+  dayDotRest: {
+    backgroundColor: 'rgba(255,255,255,0.20)',
+  },
+  dayDotToday: {
+    borderColor: 'rgba(255,255,255,0.9)',
+  },
+  dayInitial: {
+    fontFamily: FONT.semibold,
+    fontSize:   12,
+    color:      'rgba(255,255,255,0.85)',
+  },
+  dayInitialTrained: {
+    color: colors.primary,
   },
   // ── Supporting stats ──
   statsRow: {

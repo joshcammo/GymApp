@@ -14,14 +14,14 @@ interface BadgeDef {
   icon:   keyof typeof MaterialCommunityIcons.glyphMap;
   /** How close the user is, 0-1. 1 means earned. */
   progress: (s: AchievementStats) => number;
-  /** Shown on the locked card — what it takes to earn it. */
+  /** Shown on the locked card: what it takes to earn it. */
   requirement: string;
 }
 
 const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
 
 /**
- * Badges are *derived*, not stored — every one is a pure function of the
+ * Badges are *derived*, not stored: every one is a pure function of the
  * lifetime stats the server already computes. That means no new table, no
  * award-granting write path, and no way for the badge state to drift out of
  * sync with the underlying training history (delete a workout and the badge
@@ -33,10 +33,12 @@ const BADGES: BadgeDef[] = [
     progress: s => clamp01(s.total_training_days / 1),
     requirement: 'Log your first day',
   },
+  // Frequency, not consecutive days: five sessions in a week is a hard,
+  // realistic target that a rest day doesn't reset.
   {
-    key: 'week_streak', label: 'Week Streak', icon: 'fire',
-    progress: s => clamp01(s.longest_streak / 7),
-    requirement: '7 days in a row',
+    key: 'big_week', label: 'Big Week', icon: 'calendar-star',
+    progress: s => clamp01(s.best_week_days / 5),
+    requirement: '5 days in one week',
   },
   {
     key: 'full_body', label: 'Full Body', icon: 'arm-flex',
@@ -65,7 +67,7 @@ const BADGES: BadgeDef[] = [
   },
 ];
 
-/** Light gamification — earned badges first, then whichever is closest to
+/** Light gamification: earned badges first, then whichever is closest to
  *  being earned, so there's always a visible next thing to chase. */
 export function BadgesRow() {
   const { colors } = useTheme();
@@ -94,7 +96,7 @@ export function BadgesRow() {
       });
   }, [stats]);
 
-  // Best-effort, like the other dashboard cards — a failure hides the row
+  // Best-effort, like the other dashboard cards: a failure hides the row
   // rather than showing a broken one. Placed after every hook so the hook
   // order stays identical across renders.
   if (stats === 'error') return null;

@@ -16,7 +16,7 @@ export interface ExerciseDef {
 }
 
 /** A reduced-weight continuation performed immediately after a set, no rest
- *  between. Never counts toward PR detection — only the parent set does. */
+ *  between. Never counts toward PR detection: only the parent set does. */
 export interface DropSet {
   reps:   number | null;
   weight: number | null;
@@ -52,7 +52,7 @@ export interface Exercise {
 
 export type CardioActivityType = 'run' | 'bike' | 'walk' | 'hike' | 'swim' | 'other';
 
-/** Where a cardio session came from. Only 'manual' is loggable today —
+/** Where a cardio session came from. Only 'manual' is loggable today;
  *  the others are reserved for the planned Garmin/Strava/HealthKit imports. */
 export type CardioSource = 'manual' | 'strava' | 'garmin' | 'apple_health';
 
@@ -99,13 +99,13 @@ export interface Preset {
 /** Progress screen time-range selector. 'ALL' maps to no lower date bound. */
 export type TimeRange = '4W' | '3M' | '1Y' | 'ALL';
 
-/** One point on the 1RM trend line — the day's best estimated 1RM (Epley), kg. */
+/** One point on the 1RM trend line: the day's best estimated 1RM (Epley), kg. */
 export interface OneRmTrendPoint {
   log_date: string;   // 'YYYY-MM-DD'
   e1rm_kg:  number;
 }
 
-/** One point on the weekly volume trend — total weight x reps that week, kg. */
+/** One point on the weekly volume trend: total weight x reps that week, kg. */
 export interface WeeklyVolumePoint {
   week_start: string;  // 'YYYY-MM-DD', Monday
   volume_kg:  number;
@@ -118,7 +118,7 @@ export interface MuscleGroupVolume {
 }
 
 /** One muscle group's recent hard-set count vs. its own trailing
- *  baseline — backs the Progress screen's over/under-trained heatmap.
+ *  baseline, which backs the Progress screen's over/under-trained heatmap.
  *  Counted in sets, not kg, so bodyweight work (logged with no weight)
  *  counts the same as loaded work. All 11 groups are always present,
  *  even at 0/0 (never trained). */
@@ -142,7 +142,11 @@ export interface AchievementStats {
   total_training_days:   number;
   total_exercises:       number;
   total_cardio:          number;
+  /** Still returned by the RPC, but nothing renders it: consecutive-day
+   *  streaks were dropped in favour of best_week_days. */
   longest_streak:        number;
+  /** Most days trained inside a single Monday-based week. */
+  best_week_days:        number;
   total_volume_kg:       number;
   muscle_groups_last_7d: number;
 }
@@ -156,7 +160,7 @@ export interface Profile {
 
 export type FriendshipStatus = 'pending' | 'accepted';
 
-/** One row from `friendships_with_profiles` — a friendship from the caller's point of view. */
+/** One row from `friendships_with_profiles`: a friendship from the caller's point of view. */
 export interface Friendship {
   id:                  number;
   status:              FriendshipStatus;
@@ -169,7 +173,7 @@ export interface Friendship {
   other_display_name:  string | null;
 }
 
-/** One row from `posts_feed` — a shared lift, with author + engagement counts baked in. */
+/** One row from `posts_feed`: a shared lift, with author + engagement counts baked in. */
 export interface Post {
   id:            number;
   user_id:       string;
@@ -198,7 +202,7 @@ export interface PostComment {
   display_name: string | null;
 }
 
-/** One row from `my_exercise_prs` — an exercise the caller has logged a
+/** One row from `my_exercise_prs`: an exercise the caller has logged a
  *  weighted set for, with their current best (same as what share_post()
  *  would share for it right now). Backs the "share a PR" picker. */
 export interface MyExercisePr {
@@ -210,7 +214,7 @@ export interface MyExercisePr {
   e1rm_kg:         number | null;
 }
 
-/** Everything SharePostModal needs to preview + create a post — built either
+/** Everything SharePostModal needs to preview + create a post, built either
  *  from a specific day's PR'd exercise entry, or from a MyExercisePr row. */
 export interface ShareTarget {
   exerciseDefId: number;
