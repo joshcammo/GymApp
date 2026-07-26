@@ -221,7 +221,7 @@ export type RootStackParamList = {
   DayDetail:      { date: string; dayFull: string };
   AddExercise:    { date: string; dayFull: string; editExercise?: Exercise };
   AddCardio:      { date: string; dayFull: string; editSession?: CardioSession };
-  AiWorkout:      { date: string; dayFull: string };
+  AiWorkout:      { date: string; dayFull: string; initialPrompt?: string };
   Presets:        undefined;
   EditPreset:     { preset?: Preset };
   PostDetail:     { postId: number };

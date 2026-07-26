@@ -55,9 +55,9 @@ export function AiWorkoutScreen({ navigation, route }: Props) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const formStyles = useFormStyles();
-  const { date, dayFull } = route.params;
+  const { date, dayFull, initialPrompt } = route.params;
 
-  const [prompt, setPrompt] = useState('');
+  const [prompt, setPrompt] = useState(initialPrompt ?? '');
   const [generating, setGenerating] = useState(false);
   const [suggestions, setSuggestions] = useState<SuggestionRow[] | null>(null);
   const [saving, setSaving] = useState(false);
