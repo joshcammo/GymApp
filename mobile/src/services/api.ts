@@ -1,7 +1,8 @@
 import { supabase } from '../lib/supabase';
 import {
-  DropSet, Exercise, ExerciseDef, MuscleGroup, MuscleGroupBalance, MuscleGroupVolume, OneRmTrendPoint,
-  Preset, PresetExercise, WeeklyVolumePoint, WeightUnit,
+  CardioActivityType, CardioSession, CardioSource, DropSet, Exercise, ExerciseDef, MuscleGroup,
+  MuscleGroupBalance, MuscleGroupVolume, OneRmTrendPoint, Preset, PresetExercise, WeeklyVolumePoint,
+  WeightUnit,
 } from '../types';
 
 const EXERCISE_SELECT = '*, exercise_sets(*)';
@@ -192,6 +193,119 @@ export const workoutApi = {
       p_partner_id:  partnerId,
     });
     checkError(error);
+  },
+};
+
+// ── Cardio sessions ──────────────────────────────────────────────
+
+interface CardioSessionRow {
+  id:               number;
+  activity_type:    CardioActivityType;
+  date:             string;
+  duration_seconds: number;
+  distance_meters:  number | null;
+  notes:            string | null;
+  source:           CardioSource;
+  created_at:       string;
+  updated_at:       string;
+}
+
+function mapCardioRow(row: CardioSessionRow): CardioSession {
+  return {
+    id:               row.id,
+    activity_type:    row.activity_type,
+    date:             row.date,
+    duration_seconds: row.duration_seconds,
+    distance_meters:  row.distance_meters,
+    notes:            row.notes,
+    source:           row.source,
+    created_at:       row.created_at,
+    updated_at:       row.updated_at,
+  };
+}
+
+export interface CreateCardioDto {
+  activityType:    CardioActivityType;
+  date:            string;   // 'YYYY-MM-DD'
+  durationSeconds: number;
+  distanceMeters?: number | null;
+  notes?:          string | null;
+}
+
+async function fetchCardioSessionById(id: number): Promise<CardioSession> {
+  const { data, error } = await supabase
+    .from('cardio_sessions')
+    .select('*')
+    .eq('id', id)
+    .single();
+  checkError(error);
+  return mapCardioRow(data as CardioSessionRow);
+}
+
+export const cardioApi = {
+  /** All cardio sessions in [startDate, endDate] */
+  getByRange: async (startDate: string, endDate: string): Promise<CardioSession[]> => {
+    const { data, error } = await supabase
+      .from('cardio_sessions')
+      .select('*')
+      .gte('date', startDate)
+      .lte('date', endDate)
+      .order('date', { ascending: true })
+      .order('created_at', { ascending: true });
+    checkError(error);
+    return (data as CardioSessionRow[]).map(mapCardioRow);
+  },
+
+  /** All cardio sessions on a single day */
+  getByDate: async (date: string): Promise<CardioSession[]> => {
+    const { data, error } = await supabase
+      .from('cardio_sessions')
+      .select('*')
+      .eq('date', date)
+      .order('created_at', { ascending: true });
+    checkError(error);
+    return (data as CardioSessionRow[]).map(mapCardioRow);
+  },
+
+  /** Create a new manually-logged cardio session. */
+  create: async (dto: CreateCardioDto): Promise<CardioSession> => {
+    const { data, error } = await supabase.rpc('create_cardio_session', {
+      p_activity_type:    dto.activityType,
+      p_date:              dto.date,
+      p_duration_seconds:  dto.durationSeconds,
+      p_distance_meters:   dto.distanceMeters ?? null,
+      // '' (not null) tells the RPC "no notes" — see update()'s comment below.
+      p_notes:             dto.notes ?? '',
+    });
+    checkError(error);
+    return fetchCardioSessionById(data as number);
+  },
+
+  /** Update an existing cardio session. Only fields present on `dto` change. */
+  update: async (id: number, dto: Partial<CreateCardioDto>): Promise<CardioSession> => {
+    const { error } = await supabase.rpc('update_cardio_session', {
+      p_id:                id,
+      p_activity_type:     dto.activityType ?? null,
+      p_duration_seconds:  dto.durationSeconds ?? null,
+      p_distance_meters:   dto.distanceMeters ?? null,
+      // Distinguishes "distance not touched" from "distance cleared to null" —
+      // coalesce alone can't tell those apart for a nullable column.
+      p_distance_provided: dto.distanceMeters !== undefined,
+      // The RPC treats null as "notes not provided, leave unchanged" and ''
+      // as "explicitly cleared", same convention as update_exercise_with_sets.
+      p_notes:             dto.notes === undefined ? null : (dto.notes ?? ''),
+    });
+    checkError(error);
+    return fetchCardioSessionById(id);
+  },
+
+  /** Delete a cardio session. */
+  delete: async (id: number): Promise<void> => {
+    const { data, error } = await supabase.from('cardio_sessions').delete().eq('id', id).select('id');
+    checkError(error);
+    if (!data || data.length === 0) {
+      throw new Error('Cardio session not found. It may have already been deleted.');
+    }
   },
 };
 
