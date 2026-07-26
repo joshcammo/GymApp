@@ -14,7 +14,7 @@ import { haptics } from '../utils/haptics';
 interface Props {
   post:             Post;
   onToggleLike:     (post: Post) => void;
-  /** Tapping the card body / comment count — omit to render a non-navigable card. */
+  /** Tapping the card body / comment count. Omit to render a non-navigable card. */
   onPressComments?: () => void;
   /** Only passed for the caller's own posts. */
   onDelete?:        () => void;

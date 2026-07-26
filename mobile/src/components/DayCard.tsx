@@ -37,7 +37,7 @@ export function DayCard({ day, onPress }: Props) {
       style={[styles.card, day.isToday && styles.cardToday]}
       onPress={onPress}
     >
-      {/* Left — date block */}
+      {/* Left: date block */}
       <View style={[styles.dayCol, day.isToday && styles.dayColToday]}>
         <Text style={[styles.dayShort, day.isToday && styles.dayShortToday]}>
           {day.dayShort}
@@ -47,7 +47,7 @@ export function DayCard({ day, onPress }: Props) {
         </Text>
       </View>
 
-      {/* Middle — exercise + cardio summary */}
+      {/* Middle: exercise + cardio summary */}
       <View style={styles.summaryCol}>
         {hasExercises && (
           <>
@@ -74,12 +74,12 @@ export function DayCard({ day, onPress }: Props) {
         )}
         {!hasExercises && !hasCardio && (
           <Text style={styles.emptyLabel}>
-            {day.isToday ? 'Tap to log today’s workout' : day.isPast ? 'Rest day' : '—'}
+            {day.isToday ? 'Tap to log today’s workout' : day.isPast ? 'Rest day' : 'Upcoming'}
           </Text>
         )}
       </View>
 
-      {/* Right — chevron */}
+      {/* Right: chevron */}
       <Feather name="chevron-right" size={20} color={colors.textMuted} />
     </PressableScale>
   );

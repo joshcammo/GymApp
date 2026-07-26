@@ -28,7 +28,7 @@ interface LogoProps {
 }
 
 /**
- * GymTracker logomark — a loaded barbell inside an open progress ring.
+ * GymTracker logomark: a loaded barbell inside an open progress ring.
  * The 300° ring reads as "a set nearly done"; the gap sits at the bottom
  * so the mark feels like it is lifting.
  */
@@ -47,7 +47,7 @@ export const Logo = React.memo(function Logo({ size = 64, withWordmark = false }
           </LinearGradient>
         </Defs>
 
-        {/* Progress ring — 300° arc, gap at the bottom */}
+        {/* Progress ring: 300° arc, gap at the bottom */}
         <Path
           d="M 45 54.5 A 26 26 0 1 0 19 54.5"
           stroke="url(#brand)"
@@ -56,7 +56,7 @@ export const Logo = React.memo(function Logo({ size = 64, withWordmark = false }
           fill="none"
         />
 
-        {/* Barbell — bar */}
+        {/* Barbell: bar */}
         <Rect x={13} y={29.5} width={38} height={5} rx={2.5} fill={colors.text} />
         {/* Plates */}
         <Rect x={19} y={21} width={6} height={22} rx={3} fill="url(#brand)" />

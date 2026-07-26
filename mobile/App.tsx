@@ -32,6 +32,7 @@ import { EditPresetScreen }      from './src/screens/EditPresetScreen';
 import { PostDetailScreen }      from './src/screens/PostDetailScreen';
 import { UsernameSetupScreen }   from './src/screens/UsernameSetupScreen';
 import { ChangeUsernameScreen }  from './src/screens/ChangeUsernameScreen';
+import { FriendsScreen }         from './src/screens/FriendsScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -111,7 +112,7 @@ function AppContent() {
               backgroundColor: colors.bg,
             },
             animation: 'slide_from_right',
-            // Otherwise the back button shows the previous screen's title —
+            // Otherwise the back button shows the previous screen's title:
             // "MainTabs" for every screen pushed straight from a tab, since
             // that Stack.Screen has no title of its own. iOS only hides an
             // overlong label automatically, so short titles (e.g. "Friday")
@@ -186,6 +187,11 @@ function AppContent() {
                 name="PostDetail"
                 component={PostDetailScreen}
                 options={{ title: 'Post' }}
+              />
+              <Stack.Screen
+                name="Friends"
+                component={FriendsScreen}
+                options={{ title: 'Friends' }}
               />
             </>
           ) : (

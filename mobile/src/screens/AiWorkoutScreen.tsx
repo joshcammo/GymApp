@@ -32,7 +32,7 @@ const QUICK_PROMPTS = [
 ];
 
 /** One AI-suggested exercise, resolved against the catalog and editable
- *  before saving. Sets/reps/weight apply uniformly to every set — this
+ *  before saving. Sets/reps/weight apply uniformly to every set: this
  *  screen proposes a rep/set scheme, not a full per-set editor (that's
  *  what editing the saved exercise afterward, via AddExerciseScreen, is for). */
 interface SuggestionRow {
@@ -46,7 +46,7 @@ interface SuggestionRow {
   notes?:        string;
   /** True if `weight` was pre-filled from a previously logged set for this
    *  exercise (via catalogApi.getLastWorkingSet). False means you've never
-   *  logged it before, so the field starts blank and needs your own number —
+   *  logged it before, so the field starts blank and needs your own number, because
    *  the AI never guesses a weight. */
   hasHistory:    boolean;
 }
@@ -55,9 +55,9 @@ export function AiWorkoutScreen({ navigation, route }: Props) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const formStyles = useFormStyles();
-  const { date, dayFull } = route.params;
+  const { date, dayFull, initialPrompt } = route.params;
 
-  const [prompt, setPrompt] = useState('');
+  const [prompt, setPrompt] = useState(initialPrompt ?? '');
   const [generating, setGenerating] = useState(false);
   const [suggestions, setSuggestions] = useState<SuggestionRow[] | null>(null);
   const [saving, setSaving] = useState(false);
@@ -86,7 +86,7 @@ export function AiWorkoutScreen({ navigation, route }: Props) {
       const rows = await Promise.all(
         proposed.map(async (p): Promise<SuggestionRow | null> => {
           const def = catalogById.get(p.exercise_def_id);
-          if (!def) return null; // shouldn't happen — server already validated this
+          if (!def) return null; // shouldn't happen: server already validated this
           const lastWorking = await catalogApi.getLastWorkingSet(p.exercise_def_id).catch(() => null);
           return {
             exerciseDefId: def.id,
@@ -243,7 +243,7 @@ export function AiWorkoutScreen({ navigation, route }: Props) {
 
               <Text style={styles.weightExplainer}>
                 Sets and reps are the AI's suggestion. Weight is pulled from your last logged set
-                for each exercise, not guessed by the AI — blank means you haven't logged it yet.
+                for each exercise, not guessed by the AI. Blank means you haven't logged it yet.
               </Text>
 
               {suggestions.map((row, i) => (
@@ -278,7 +278,7 @@ export function AiWorkoutScreen({ navigation, route }: Props) {
                         style={[formStyles.input, styles.suggestionInput]}
                         value={row.reps}
                         onChangeText={v => updateRow(i, 'reps', v)}
-                        placeholder="—"
+                        placeholder="0"
                         placeholderTextColor={colors.textMuted}
                         keyboardType="number-pad"
                       />
@@ -300,7 +300,7 @@ export function AiWorkoutScreen({ navigation, route }: Props) {
                     <View style={styles.noHistoryHint}>
                       <Feather name="info" size={11} color={colors.textMuted} />
                       <Text style={styles.noHistoryHintText}>
-                        Never logged before — enter your own weight.
+                        Never logged before. Enter your own weight.
                       </Text>
                     </View>
                   )}

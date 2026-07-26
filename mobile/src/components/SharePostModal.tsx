@@ -22,7 +22,7 @@ interface Props {
   onShared: () => void;
 }
 
-/** Caption step for sharing a lift — the preview shown here is a snapshot for
+/** Caption step for sharing a lift. The preview shown here is a snapshot for
  *  display only; share_post() independently re-derives the caller's current
  *  best set server-side at submit time (see migration 013). */
 export function SharePostModal({ target, onClose, onShared }: Props) {

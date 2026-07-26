@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Dimensions } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { LineChart, BarChart } from 'react-native-gifted-charts';
 
@@ -18,11 +17,12 @@ import { ExercisePickerModal } from '../components/ExercisePickerModal';
 import { PressableScale } from '../components/PressableScale';
 import { EmptyState } from '../components/EmptyState';
 import { haptics } from '../utils/haptics';
+import { BalanceRead, BucketStyle, classifyBalance, createBucketStyle } from '../utils/muscleBalance';
 
 type Tab = '1RM' | 'VOLUME' | 'BREAKDOWN' | 'HEATMAP';
 type VolumeMode = 'EXERCISE' | 'MUSCLE_GROUP';
 
-/** usesRange defaults to true — only a tab that ignores the shared
+/** usesRange defaults to true: only a tab that ignores the shared
  *  time-range selector (like the heatmap, which is always "last 7 days
  *  vs. your own baseline") needs to opt out. */
 const TABS: { key: Tab; label: string; usesRange?: boolean }[] = [
@@ -39,14 +39,14 @@ const TIME_RANGES: { key: TimeRange; label: string }[] = [
   { key: 'ALL', label: 'All' },
 ];
 
-// Shared with styles.content.padding and styles.chartCard.padding below —
+// Shared with styles.content.padding and styles.chartCard.padding below:
 // CHART_WIDTH is derived from these, not a separate hardcoded number, so
 // the two can't silently drift out of sync.
 const SCREEN_PADDING = 16;
 const CARD_PADDING   = 16;
 const CHART_WIDTH = Dimensions.get('window').width - SCREEN_PADDING * 2 - CARD_PADDING * 2;
 
-/** 1 decimal place, no trailing '.0' — e.g. 82.5, 100 */
+/** 1 decimal place, no trailing '.0', e.g. 82.5, 100 */
 function fmtKg(kg: number): string {
   const rounded = Math.round(kg * 10) / 10;
   return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
@@ -94,7 +94,7 @@ function Segmented<T extends string>({
   );
 }
 
-/** Raw-value list under every chart — the "can't read the chart" fallback,
+/** Raw-value list under every chart: the "can't read the chart" fallback,
  *  and the only place tied values or a to-be-added dark/light legend live. */
 function TableView({ rows }: { rows: { label: string; value: string }[] }) {
   const { colors } = useTheme();
@@ -111,7 +111,7 @@ function TableView({ rows }: { rows: { label: string; value: string }[] }) {
   );
 }
 
-/** Ranked horizontal bars for the muscle-group breakdown — built from plain
+/** Ranked horizontal bars for the muscle-group breakdown, built from plain
  *  Views rather than the charting library's horizontal bar mode, which
  *  auto-sizes its label gutter unpredictably (label truncation, bars
  *  overflowing the card). Three aligned columns (label / bar / value) keep
@@ -159,7 +159,7 @@ function ExercisePickerField({ def, onPress }: { def: ExerciseDef | null; onPres
   );
 }
 
-/** Small always-visible methodology note — so a color-coded tile never
+/** Small always-visible methodology note, so a color-coded tile never
  *  has to be taken on faith. Sits inline rather than behind a tooltip
  *  tap, since "how is this measured" is exactly the question a heatmap
  *  like this invites. */
@@ -186,7 +186,7 @@ function ErrorFill({ message, error }: { message: string; error: string }) {
 
 /** Shared fetch-on-dependency-change hook for the three tabs below.
  *  `fetcher: null` means "not ready to fetch yet" (e.g. no exercise picked)
- *  — clears any prior data instead of issuing a request. Guards against the
+ *  and clears any prior data instead of issuing a request. Guards against the
  *  same race every one of the three tabs would otherwise hit independently:
  *  if the deps change again before a request resolves, that stale response
  *  is dropped instead of overwriting the newer one (mirrors the `stale`
@@ -395,7 +395,7 @@ function VolumeTab({ range }: { range: TimeRange }) {
             {/* barWidth/spacing: fit exactly `chartData.length` bars across the
                 available width, clamped to a 12-28px range so a handful of
                 weeks doesn't render absurdly fat bars and a year's worth
-                doesn't shrink to slivers — the library horizontally scrolls
+                doesn't shrink to slivers: the library horizontally scrolls
                 past that floor rather than overlapping bars. */}
             <BarChart
               data={chartData}
@@ -459,50 +459,6 @@ function BreakdownTab({ range }: { range: TimeRange }) {
 }
 
 // ── Muscle group heatmap tab: last 7 days vs. own 8-week baseline ────
-type BalanceBucket = 'NO_DATA' | 'NEW' | 'WELL_UNDER' | 'UNDER' | 'ON_TRACK' | 'OVER' | 'WELL_OVER';
-
-interface BalanceRead {
-  bucket:  BalanceBucket;
-  /** null when there's no baseline to compare against (NO_DATA / NEW) */
-  pctDelta: number | null;
-}
-
-/** Ratio thresholds are multiplicative around 1.0 (0.8 / 1.25 are reciprocals),
- *  so "under" and "over" require the same proportional swing either way.
- *  Measured in hard sets, not kg — a bodyweight pull-up counts the same
- *  as a loaded row, since weight is optional for bodyweight exercises
- *  and would otherwise be invisible to a kg-based comparison. */
-function classifyBalance(row: MuscleGroupBalance): BalanceRead {
-  if (row.baseline_weekly_avg_sets <= 0) {
-    return row.recent_sets > 0 ? { bucket: 'NEW', pctDelta: null } : { bucket: 'NO_DATA', pctDelta: null };
-  }
-  const ratio = row.recent_sets / row.baseline_weekly_avg_sets;
-  const pctDelta = Math.round((ratio - 1) * 100);
-  if (ratio < 0.5) return { bucket: 'WELL_UNDER', pctDelta };
-  if (ratio < 0.8) return { bucket: 'UNDER', pctDelta };
-  if (ratio <= 1.25) return { bucket: 'ON_TRACK', pctDelta };
-  if (ratio <= 2.0) return { bucket: 'OVER', pctDelta };
-  return { bucket: 'WELL_OVER', pctDelta };
-}
-
-type BucketStyle = { icon: keyof typeof Feather.glyphMap; label: string; color: string; bg: string; dashed?: boolean };
-
-// A function of the active colorway, not a static export — `cold` and
-// `primary` (the diverging over/under-trained pair) vary per colorway, and
-// for colorways whose own primary is blue (Navy Electric, Cobalt Cyan) the
-// colorway data picks a `cold` hue well clear of `primary` specifically so
-// this pair never collides. See theme/colorways.ts.
-function createBucketStyle(colors: ColorTokens): Record<BalanceBucket, BucketStyle> {
-  return {
-    NO_DATA:    { icon: 'circle',        label: 'No data',    color: colors.textMuted, bg: colors.card, dashed: true },
-    NEW:        { icon: 'zap',           label: 'New',        color: colors.textMuted, bg: colors.card, dashed: true },
-    WELL_UNDER: { icon: 'trending-down', label: 'Well under', color: colors.cold,      bg: colors.coldBg },
-    UNDER:      { icon: 'trending-down', label: 'Under',      color: colors.cold,      bg: colors.coldBgMild },
-    ON_TRACK:   { icon: 'check',         label: 'On track',   color: colors.textSub,  bg: colors.card },
-    OVER:       { icon: 'trending-up',   label: 'Over',       color: colors.primary,  bg: colors.primaryBgMild },
-    WELL_OVER:  { icon: 'trending-up',   label: 'Well over',  color: colors.primary,  bg: colors.primaryBg },
-  };
-}
 
 function balanceSubtext(row: MuscleGroupBalance, read: BalanceRead): string {
   if (read.bucket === 'NO_DATA') return 'Never logged';
@@ -568,7 +524,7 @@ function HeatmapTab() {
     [],
   );
 
-  // Classified once per row per fetch, not once per row per render — reused
+  // Classified once per row per fetch, not once per row per render, and reused
   // below by the tiles, the empty-state check, and the table.
   const reads = useMemo(
     () => (rows ?? []).map(row => ({ row, read: classifyBalance(row) })),
@@ -618,7 +574,9 @@ export function ProgressScreen() {
   const showRange = TABS.find(t => t.key === tab)?.usesRange !== false;
 
   return (
-    <SafeAreaView style={styles.safe} edges={['bottom']}>
+    // No bottom safe-area edge: the tab bar already clears the home
+    // indicator, and doubling it clips content off the scroll view.
+    <View style={styles.safe}>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.selectorGroup}>
           <Segmented options={TABS} value={tab} onChange={setTab} />
@@ -630,7 +588,7 @@ export function ProgressScreen() {
         {tab === 'BREAKDOWN' && <BreakdownTab range={range} />}
         {tab === 'HEATMAP' && <HeatmapTab />}
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 

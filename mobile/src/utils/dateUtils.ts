@@ -1,4 +1,4 @@
-/** Returns the ISO week number (1–53) for a given date */
+/** Returns the ISO week number (1 to 53) for a given date */
 export function getISOWeek(date: Date): number {
   const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
   const dayNum = d.getUTCDay() || 7;
@@ -22,7 +22,7 @@ export function getWeekStart(weekOffset = 0): Date {
   return monday;
 }
 
-/** Returns an array of 7 Date objects for Mon–Sun of the given week */
+/** Returns an array of 7 Date objects for Mon to Sun of the given week */
 export function getWeekDays(weekStart: Date): Date[] {
   return Array.from({ length: 7 }, (_, i) => {
     const d = new Date(weekStart);
@@ -33,7 +33,7 @@ export function getWeekDays(weekStart: Date): Date[] {
 
 /** Subtract N calendar months, clamping the day-of-month to the target
  *  month's last day instead of letting a native `setMonth` call silently
- *  roll into the month after — e.g. May 31 minus 3 months would otherwise
+ *  roll into the month after. For example, May 31 minus 3 months would otherwise
  *  normalize to Mar 2/3 (Feb has no 31st), same for Feb 29 minus 12 months
  *  landing on a non-leap year. */
 function subtractMonths(date: Date, months: number): Date {
@@ -94,7 +94,7 @@ export function isToday(date: Date): boolean {
   );
 }
 
-/** '2m', '5h', '3d', or a short date beyond a week — for post/comment timestamps. */
+/** '2m', '5h', '3d', or a short date beyond a week, for post/comment timestamps. */
 export function timeAgo(isoString: string): string {
   const minutes = Math.floor((Date.now() - new Date(isoString).getTime()) / 60_000);
   if (minutes < 1)  return 'now';

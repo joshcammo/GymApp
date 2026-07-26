@@ -19,7 +19,7 @@ export interface WarmupSet {
 }
 
 /** Standard barbell ramp: light and high-rep up to close to the working
- *  weight, in three steps — same shape as StrongLifts/5-3-1 style warm-ups. */
+ *  weight, in three steps, the same shape as StrongLifts/5-3-1 style warm-ups. */
 const RAMP: { percent: number; reps: number }[] = [
   { percent: 0.4, reps: 8 },
   { percent: 0.6, reps: 5 },
@@ -27,7 +27,7 @@ const RAMP: { percent: number; reps: number }[] = [
 ];
 
 /** Smallest practical plate jump to round suggestions to (a 1.25kg / 2.5lb
- *  plate each side of a barbell) — exact percentages aren't loadable. */
+ *  plate each side of a barbell), since exact percentages aren't loadable. */
 const ROUNDING: Record<WeightUnit, number> = { KG: 2.5, LBS: 5 };
 
 /** Below this there's no bar-empty-ish weight to meaningfully ramp into. */

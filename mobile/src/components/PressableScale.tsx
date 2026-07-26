@@ -19,7 +19,7 @@ interface Props {
 }
 
 /**
- * Touchable that sinks slightly on press — used in place of
+ * Touchable that sinks slightly on press, used in place of
  * TouchableOpacity so every tappable surface responds the same way.
  */
 export function PressableScale({

@@ -1,54 +1,49 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import {
   View, ScrollView, StyleSheet,
-  ActivityIndicator, RefreshControl, StatusBar,
+  ActivityIndicator, RefreshControl,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import type { CompositeNavigationProp } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Feather } from '@expo/vector-icons';
 
 import { ColorTokens } from '../theme/colorways';
 import { useTheme } from '../theme/ThemeContext';
-import { RADIUS } from '../constants/theme';
-import { RootStackParamList, MainTabParamList, DayInfo, Exercise, CardioSession, MuscleGroup } from '../types';
+import { RootStackParamList, MainTabParamList, DayInfo, Exercise, CardioSession } from '../types';
 import { workoutApi, cardioApi } from '../services/api';
-import { Logo, Wordmark } from '../components/Logo';
-import { PressableScale } from '../components/PressableScale';
+import { WeekNavigator } from '../components/WeekNavigator';
+import { DayCard } from '../components/DayCard';
 import { EmptyState } from '../components/EmptyState';
-import { HeroCard } from '../components/HeroCard';
-import { TodayFocusCard } from '../components/TodayFocusCard';
-import { ActivityTrendCard } from '../components/ActivityTrendCard';
-import { BodyHeatmap } from '../components/BodyHeatmap';
-import { BadgesRow } from '../components/BadgesRow';
 import {
-  getWeekStart, getWeekDays, toDateStr,
+  getISOWeek, getWeekStart, getWeekDays,
+  toDateStr, fmtWeekRange,
   getDayShort, getDayFull, isToday, isPastDay,
 } from '../utils/dateUtils';
 
 type Nav = CompositeNavigationProp<
-  BottomTabNavigationProp<MainTabParamList, 'HomeTab'>,
+  BottomTabNavigationProp<MainTabParamList, 'WorkoutTab'>,
   NativeStackNavigationProp<RootStackParamList>
 >;
 interface Props { navigation: Nav }
 
-/** The dashboard: a "week at a glance" summary, today's recommended focus,
- *  and a muscle-group heatmap. Day-by-day logging lives on the Workout tab. */
-export function HomeScreen({ navigation }: Props) {
-  const { colors, effectiveMode } = useTheme();
+/** Day-by-day browser for logging/reviewing exercises and cardio, split out
+ *  of HomeScreen so Home can be a pure dashboard and this can be its own tab. */
+export function WorkoutScreen({ navigation }: Props) {
+  const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const [weekOffset, setWeekOffset] = useState(0);
   const [exercises,  setExercises]  = useState<Exercise[]>([]);
   const [cardioSessions, setCardioSessions] = useState<CardioSession[]>([]);
   const [loading,    setLoading]    = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error,      setError]      = useState<string | null>(null);
 
-  // Always the current calendar week: the dashboard doesn't browse other
-  // weeks, that's what the Workout tab is for.
-  const weekStart = getWeekStart(0);
-  const weekDays  = getWeekDays(weekStart);
+  // ── Derived week info ────────────────────────────────────────
+  const weekStart  = getWeekStart(weekOffset);
+  const weekDays   = getWeekDays(weekStart);
+  const weekNumber = getISOWeek(weekStart);
+  const weekRange  = fmtWeekRange(weekStart);
 
   // ── Data loading ─────────────────────────────────────────────
   const loadData = useCallback(async (showFullLoader = false) => {
@@ -69,9 +64,14 @@ export function HomeScreen({ navigation }: Props) {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [weekOffset]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useFocusEffect(useCallback(() => { loadData(true); }, [loadData]));
+  // Reload whenever the screen comes into focus or the week changes
+  useFocusEffect(
+    useCallback(() => {
+      loadData(true);
+    }, [loadData])
+  );
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -93,38 +93,22 @@ export function HomeScreen({ navigation }: Props) {
     };
   });
 
-  const now = new Date();
-  const todayDate    = toDateStr(now);
-  const todayDayFull = getDayFull(now);
-
-  const goToAddExercise = (muscleGroup?: MuscleGroup) =>
-    navigation.navigate('AddExercise', { date: todayDate, dayFull: todayDayFull, initialMuscleGroup: muscleGroup });
-
   // ── Render ────────────────────────────────────────────────────
+  // Deliberately NOT a SafeAreaView with a bottom edge: this is a tab
+  // screen, and the bottom tab bar already sits above the home-indicator
+  // inset. Adding another one padded the scroll viewport short of the
+  // screen, so the last day card was clipped by a hard line with dead
+  // space beneath it.
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
-      <StatusBar
-        barStyle={effectiveMode === 'dark' ? 'light-content' : 'dark-content'}
-        backgroundColor={colors.bg}
+    <View style={styles.safe}>
+      {/* ── Week navigator ── */}
+      <WeekNavigator
+        weekNumber={weekNumber}
+        weekRange={weekRange}
+        weekOffset={weekOffset}
+        onPrev={() => setWeekOffset(o => o - 1)}
+        onNext={() => setWeekOffset(o => o + 1)}
       />
-
-      {/* ── Header ── */}
-      <View style={styles.header}>
-        <View style={styles.brand}>
-          <Logo size={34} />
-          <Wordmark fontSize={19} letterSpacing={2} />
-        </View>
-        <View style={styles.headerActions}>
-          <PressableScale
-            onPress={() => navigation.navigate('Settings')}
-            style={styles.settingsBtn}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            pressScale={0.9}
-          >
-            <Feather name="settings" size={17} color={colors.textSub} />
-          </PressableScale>
-        </View>
-      </View>
 
       {/* ── Body ── */}
       {loading ? (
@@ -145,7 +129,7 @@ export function HomeScreen({ navigation }: Props) {
         >
           <EmptyState
             emoji="⚠️"
-            message="Could not load your dashboard"
+            message="Could not load workouts"
             subMessage={`${error}\n\nCheck your connection and pull to retry.`}
           />
         </ScrollView>
@@ -162,23 +146,23 @@ export function HomeScreen({ navigation }: Props) {
             />
           }
         >
-          {/* Hero metric first, then what to do about it, then the trend,
-              then the detail views, so "how am I doing" is answered before
-              anything asks the user to interpret a chart. */}
-          <HeroCard days={days} />
-          <TodayFocusCard
-            onAddExercise={goToAddExercise}
-            onGenerateAi={prompt => navigation.navigate('AiWorkout', { date: todayDate, dayFull: todayDayFull, initialPrompt: prompt })}
-          />
-          <ActivityTrendCard />
-          <BodyHeatmap onSelectMuscleGroup={goToAddExercise} />
-          <BadgesRow />
-
+          {days.map(day => (
+            <DayCard
+              key={day.date}
+              day={day}
+              onPress={() =>
+                navigation.navigate('DayDetail', {
+                  date:    day.date,
+                  dayFull: day.dayFull,
+                })
+              }
+            />
+          ))}
           {/* Bottom breathing room */}
           <View style={{ height: 24 }} />
         </ScrollView>
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -187,33 +171,6 @@ const createStyles = (colors: ColorTokens) => StyleSheet.create({
     flex:            1,
     backgroundColor: colors.bg,
   },
-  header: {
-    flexDirection:     'row',
-    justifyContent:    'space-between',
-    alignItems:        'center',
-    paddingHorizontal: 20,
-    paddingTop:        10,
-    paddingBottom:     16,
-  },
-  brand: {
-    flexDirection: 'row',
-    alignItems:    'center',
-    gap:           10,
-  },
-  headerActions: {
-    flexDirection: 'row',
-    gap:           10,
-  },
-  settingsBtn: {
-    width:           38,
-    height:          38,
-    borderRadius:    RADIUS.pill,
-    backgroundColor: colors.card,
-    borderWidth:      1,
-    borderColor:      colors.border,
-    alignItems:      'center',
-    justifyContent:  'center',
-  },
   centred: {
     flex:           1,
     justifyContent: 'center',
@@ -221,8 +178,8 @@ const createStyles = (colors: ColorTokens) => StyleSheet.create({
   },
   scroll: { flex: 1 },
   scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop:        4,
+    padding:    16,
+    paddingTop: 12,
   },
   errorContent: {
     flexGrow: 1,

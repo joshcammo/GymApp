@@ -4,7 +4,7 @@
  *
  * Values come from EXPO_PUBLIC_* env vars (see .env.example),
  * which Expo inlines at build time and are safe to ship in the
- * client — access control is enforced by Row Level Security in
+ * client: access control is enforced by Row Level Security in
  * Supabase, not by keeping these values secret.
  * ─────────────────────────────────────────────────────────────
  */

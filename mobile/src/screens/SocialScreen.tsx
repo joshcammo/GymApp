@@ -2,7 +2,6 @@ import React, { useCallback, useLayoutEffect, useMemo, useRef, useState } from '
 import {
   View, Text, FlatList, StyleSheet, ActivityIndicator, RefreshControl, TouchableOpacity, Alert,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import type { CompositeNavigationProp } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
@@ -13,7 +12,7 @@ import { ColorTokens } from '../theme/colorways';
 import { useTheme } from '../theme/ThemeContext';
 import { FONT, RADIUS } from '../constants/theme';
 import { RootStackParamList, MainTabParamList, Post, ShareTarget } from '../types';
-import { postsApi } from '../services/social';
+import { postsApi, friendsApi } from '../services/social';
 import { supabase } from '../lib/supabase';
 import { PostCard } from '../components/PostCard';
 import { EmptyState } from '../components/EmptyState';
@@ -22,7 +21,7 @@ import { SharePostModal } from '../components/SharePostModal';
 import { haptics } from '../utils/haptics';
 
 type Nav = CompositeNavigationProp<
-  BottomTabNavigationProp<MainTabParamList, 'FeedTab'>,
+  BottomTabNavigationProp<MainTabParamList, 'SocialTab'>,
   NativeStackNavigationProp<RootStackParamList>
 >;
 interface Props { navigation: Nav }
@@ -38,6 +37,12 @@ export function SocialScreen({ navigation }: Props) {
   const [likingIds,  setLikingIds]  = useState<Set<number>>(new Set());
   const [pickerVisible, setPickerVisible] = useState(false);
   const [shareTarget,   setShareTarget]   = useState<ShareTarget | null>(null);
+  // Pending friend-request count, badged on the header's friends icon.
+  // Refreshed on focus, same as posts, since there are no push
+  // notifications to invalidate it any sooner (e.g. when a request is
+  // accepted/declined on FriendsScreen, coming back here refocuses this
+  // screen and picks up the change).
+  const [pendingCount, setPendingCount] = useState(0);
   // Kept in sync with `posts` so toggleLike always reads the current
   // liked_by_me/like_count instead of the (possibly stale) snapshot the
   // FlatList row was rendered with when the tap fired.
@@ -47,24 +52,43 @@ export function SocialScreen({ navigation }: Props) {
   useLayoutEffect(() => {
     navigation.setOptions({
       headerRight: () => (
-        <TouchableOpacity
-          style={styles.headerBtn}
-          onPress={() => { haptics.tap(); setPickerVisible(true); }}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <Feather name="plus" size={19} color={colors.primary} />
-        </TouchableOpacity>
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            style={styles.headerBtn}
+            onPress={() => { haptics.tap(); navigation.navigate('Friends'); }}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Feather name="users" size={17} color={colors.primary} />
+            {pendingCount > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{pendingCount > 9 ? '9+' : pendingCount}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.headerBtn}
+            onPress={() => { haptics.tap(); setPickerVisible(true); }}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Feather name="plus" size={19} color={colors.primary} />
+          </TouchableOpacity>
+        </View>
       ),
     });
-  }, [navigation, colors]);
+  }, [navigation, colors, pendingCount, styles]);
 
   const load = useCallback(async (showFullLoader = false) => {
     if (showFullLoader) setLoading(true);
     setError(null);
     try {
-      const [data, session] = await Promise.all([postsApi.feed(), supabase.auth.getSession()]);
+      const [data, session, friendships] = await Promise.all([
+        postsApi.feed(),
+        supabase.auth.getSession(),
+        friendsApi.list().catch(() => []), // best-effort: the badge is a nicety
+      ]);
       setPosts(data);
       setMyId(session.data.session?.user.id ?? null);
+      setPendingCount(friendships.filter(f => f.status === 'pending' && !f.is_requester).length);
     } catch (e) {
       setError((e as Error).message ?? 'Failed to load the feed');
     } finally {
@@ -82,7 +106,7 @@ export function SocialScreen({ navigation }: Props) {
 
   const toggleLike = async ({ id: postId }: Post) => {
     // Ignore re-taps while a like/unlike for this post is already in
-    // flight — otherwise a rapid double-tap fires the request twice
+    // flight: otherwise a rapid double-tap fires the request twice
     // against the same stale liked_by_me value, and the second call
     // errors (duplicate insert / already-removed) and reverts a like
     // that had already succeeded.
@@ -92,7 +116,7 @@ export function SocialScreen({ navigation }: Props) {
     const wasLiked = current.liked_by_me;
 
     setLikingIds(prev => new Set(prev).add(postId));
-    // Optimistic — feels instant, and a failure just reverts below.
+    // Optimistic: feels instant, and a failure just reverts below.
     setPosts(prev => prev.map(p => p.id === postId
       ? { ...p, liked_by_me: !wasLiked, like_count: p.like_count + (wasLiked ? -1 : 1) }
       : p
@@ -131,7 +155,9 @@ export function SocialScreen({ navigation }: Props) {
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={['bottom']}>
+    // No bottom safe-area edge: the tab bar already clears the home
+    // indicator, and doubling it clips the last card off the scroll view.
+    <View style={styles.safe}>
       {loading ? (
         <View style={styles.centred}>
           <ActivityIndicator size="large" color={colors.primary} />
@@ -164,7 +190,7 @@ export function SocialScreen({ navigation }: Props) {
           ListEmptyComponent={
             <EmptyState
               message="No posts yet"
-              subMessage="Tap + above to share a PR, or add friends from the Friends tab to see theirs."
+              subMessage="Tap + above to share a PR, or the friends icon to add people and see theirs."
               action={
                 <TouchableOpacity
                   style={styles.emptyLink}
@@ -189,7 +215,7 @@ export function SocialScreen({ navigation }: Props) {
         onClose={() => setShareTarget(null)}
         onShared={() => { setShareTarget(null); load(); }}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -207,15 +233,44 @@ const createStyles = (colors: ColorTokens) => StyleSheet.create({
     padding:       16,
     flexGrow:      1,
   },
+  // Two buttons instead of the original one overflowed the header's right
+  // edge, clipping the second. The explicit right margin keeps the pair
+  // clear of the screen edge rather than relying on the navigator's own
+  // (inconsistent) headerRight padding.
+  headerActions: {
+    flexDirection: 'row',
+    alignItems:    'center',
+    gap:           8,
+    marginRight:   12,
+  },
   headerBtn: {
-    width:           38,
-    height:          38,
+    width:           34,
+    height:          34,
     borderRadius:    RADIUS.pill,
     backgroundColor: colors.primaryBg,
     borderWidth:      1,
     borderColor:      colors.primary,
     alignItems:      'center',
     justifyContent:  'center',
+  },
+  badge: {
+    position:        'absolute',
+    top:              -4,
+    right:            -4,
+    minWidth:         18,
+    height:           18,
+    borderRadius:     9,
+    paddingHorizontal: 4,
+    backgroundColor:  colors.danger,
+    borderWidth:       2,
+    borderColor:       colors.bgAlt,
+    alignItems:       'center',
+    justifyContent:   'center',
+  },
+  badgeText: {
+    fontFamily: FONT.bold,
+    fontSize:   10,
+    color:      '#FFFFFF',
   },
   emptyLink: {
     flexDirection: 'row',

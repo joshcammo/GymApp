@@ -1,8 +1,8 @@
 import { supabase } from '../lib/supabase';
 import {
-  CardioActivityType, CardioSession, CardioSource, DropSet, Exercise, ExerciseDef, MuscleGroup,
-  MuscleGroupBalance, MuscleGroupVolume, OneRmTrendPoint, Preset, PresetExercise, WeeklyVolumePoint,
-  WeightUnit,
+  AchievementStats, CardioActivityType, CardioSession, CardioSource, DailyActivityPoint, DropSet,
+  Exercise, ExerciseDef, MuscleGroup, MuscleGroupBalance, MuscleGroupVolume, OneRmTrendPoint,
+  Preset, PresetExercise, WeeklyVolumePoint, WeightUnit,
 } from '../types';
 
 const EXERCISE_SELECT = '*, exercise_sets(*)';
@@ -29,7 +29,7 @@ interface ExerciseRow {
   exercise_sets: SetRow[];
 }
 
-/** Supabase embeds the child table under its own name (`exercise_sets`) —
+/** Supabase embeds the child table under its own name (`exercise_sets`):
  *  rename to `sets` and order by set_number so the shape matches `Exercise`. */
 function mapRow(row: ExerciseRow): Exercise {
   return {
@@ -145,7 +145,7 @@ export const workoutApi = {
       p_name:  dto.name,
       p_date:  dto.date,
       p_unit:  dto.unit,
-      // '' (not null) tells the RPC "no notes" — see update()'s comment below.
+      // '' (not null) tells the RPC "no notes". See update()'s comment below.
       p_notes: dto.notes ?? '',
       p_sets:  dto.sets,
       p_exercise_def_id: dto.exerciseDefId ?? null,
@@ -274,7 +274,7 @@ export const cardioApi = {
       p_date:              dto.date,
       p_duration_seconds:  dto.durationSeconds,
       p_distance_meters:   dto.distanceMeters ?? null,
-      // '' (not null) tells the RPC "no notes" — see update()'s comment below.
+      // '' (not null) tells the RPC "no notes". See update()'s comment below.
       p_notes:             dto.notes ?? '',
     });
     checkError(error);
@@ -288,7 +288,7 @@ export const cardioApi = {
       p_activity_type:     dto.activityType ?? null,
       p_duration_seconds:  dto.durationSeconds ?? null,
       p_distance_meters:   dto.distanceMeters ?? null,
-      // Distinguishes "distance not touched" from "distance cleared to null" —
+      // Distinguishes "distance not touched" from "distance cleared to null":
       // coalesce alone can't tell those apart for a nullable column.
       p_distance_provided: dto.distanceMeters !== undefined,
       // The RPC treats null as "notes not provided, leave unchanged" and ''
@@ -341,7 +341,7 @@ export interface ExercisePr {
 }
 
 /** Heaviest weighted set from the most recent session logged against an
- *  exercise def — the reference weight warm-up suggestions ramp into. */
+ *  exercise def: the reference weight warm-up suggestions ramp into. */
 export interface LastWorkingSet {
   weight: number;
   unit:   WeightUnit;
@@ -407,7 +407,7 @@ export const catalogApi = {
   },
 
   /** Heaviest set from the most recent session for a def, or null if never
-   *  logged — the reference weight warm-up suggestions ramp into. */
+   *  logged: the reference weight warm-up suggestions ramp into. */
   getLastWorkingSet: async (exerciseDefId: number): Promise<LastWorkingSet | null> => {
     const { data, error } = await supabase.rpc('get_last_working_set', {
       p_exercise_def_id: exerciseDefId,
@@ -467,7 +467,7 @@ export const presetApi = {
     }
   },
 
-  /** Apply a preset to a day — creates one exercise (with one empty set) per
+  /** Apply a preset to a day: creates one exercise (with one empty set) per
    *  preset item, in saved order. Always appends; caller should refetch the
    *  day's exercises afterward. */
   applyToDay: async (presetId: number, date: string): Promise<void> => {
@@ -482,7 +482,7 @@ export const presetApi = {
 // ── AI workout generator ─────────────────────────────────────────
 
 /** One exercise the generate-workout Edge Function proposed. Already
- *  server-validated against the caller's own catalog — exercise_def_id is
+ *  server-validated against the caller's own catalog: exercise_def_id is
  *  guaranteed to exist and be accessible, but the row still needs a name/
  *  muscle group resolved from the catalog before it can be shown. */
 export interface AiExerciseSuggestion {
@@ -508,7 +508,7 @@ async function extractFunctionErrorMessage(error: unknown): Promise<string | nul
 
 export const aiApi = {
   /** Ask the AI workout generator for a set of catalog exercises for `date`,
-   *  based on a free-text prompt. Never writes anything itself — the caller
+   *  based on a free-text prompt. Never writes anything itself: the caller
    *  reviews the suggestions and saves each one via workoutApi.create(),
    *  same as adding exercises by hand. */
   generateWorkout: async (date: string, prompt: string): Promise<AiExerciseSuggestion[]> => {
@@ -525,7 +525,7 @@ export const aiApi = {
 
 // ── Progress / analytics ────────────────────────────────────────
 // All three RPCs are kg-normalized and keyed off exercise_def_id
-// server-side (see migration 011) — nothing here does unit math or
+// server-side (see migration 011). Nothing here does unit math or
 // exercise-identity matching client-side.
 
 export const analyticsApi = {
@@ -563,10 +563,25 @@ export const analyticsApi = {
   },
 
   /** Each muscle group's last 7 days of hard sets vs. its own trailing
-   *  8-week weekly average — the over/under-trained heatmap. */
+   *  8-week weekly average: the over/under-trained heatmap. */
   getMuscleGroupBalance: async (): Promise<MuscleGroupBalance[]> => {
     const { data, error } = await supabase.rpc('muscle_group_training_balance', {});
     checkError(error);
     return data as MuscleGroupBalance[];
+  },
+
+  /** Per-day activity for the last `days` days (server-clamped to 1-90),
+   *  zero-filled: rest days come back as real zeroes, not gaps. */
+  getDailyActivity: async (days: number): Promise<DailyActivityPoint[]> => {
+    const { data, error } = await supabase.rpc('get_daily_activity', { p_days: days });
+    checkError(error);
+    return data as DailyActivityPoint[];
+  },
+
+  /** Lifetime totals the dashboard's badges are derived from. */
+  getAchievementStats: async (): Promise<AchievementStats> => {
+    const { data, error } = await supabase.rpc('get_achievement_stats', {});
+    checkError(error);
+    return data as AchievementStats;
   },
 };

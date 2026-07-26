@@ -32,7 +32,7 @@ type GroupedItem =
   | { type: 'single';   exercise: Exercise }
   | { type: 'superset'; a: Exercise; b: Exercise };
 
-/** Pairs up superset partners (both always present — same-day, mutual link
+/** Pairs up superset partners (both always present: same-day, mutual link
  *  enforced server-side) in list order, leaving everyone else as singles. */
 function groupExercises(exercises: Exercise[]): GroupedItem[] {
   const byId = new Map(exercises.map(e => [e.id, e]));
@@ -53,7 +53,7 @@ function groupExercises(exercises: Exercise[]): GroupedItem[] {
   return result;
 }
 
-/** Heaviest set (most reps as tie-break) — same rule share_post() applies
+/** Heaviest set (most reps as tie-break), the same rule share_post() applies
  *  server-side, used here only to build an immediate share preview. */
 function bestSetOf(exercise: Exercise): ExerciseSet | null {
   const weighted = exercise.sets.filter(s => s.weight != null && s.weight > 0);

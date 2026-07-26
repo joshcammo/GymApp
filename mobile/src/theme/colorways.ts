@@ -1,5 +1,5 @@
 /**
- * Colorway definitions — each id has a light and dark token set matching
+ * Colorway definitions: each id has a light and dark token set matching
  * the ColorTokens shape below. Generated with a shared HSL formula (see
  * scratchpad contrast/generate scripts from the theming session) so every
  * pair clears WCAG contrast (text/textSub vs bg/card >= 4.5:1, primary/cold
@@ -17,7 +17,7 @@ export type ColorTokens = {
   border: string; divider: string;
   danger: string; dangerBg: string; success: string; successBg: string;
   cold: string; coldBg: string; coldBgMild: string;
-  /** Hero two-tone gradient (buttons, logo) — same across light/dark for a given colorway. */
+  /** Hero two-tone gradient (buttons, logo), the same across light/dark for a given colorway. */
   gradientStart: string; gradientEnd: string;
 };
 

@@ -2,7 +2,7 @@ import { ImageSourcePropType } from 'react-native';
 
 /**
  * image_key (from exercise_defs) -> bundled illustration.
- * GENERATED from the contents of assets/exercises/ — regenerate with
+ * GENERATED from the contents of assets/exercises/. Regenerate with
  * scripts/gen_image_map.js after adding art. Keys missing here (new
  * catalog art not yet generated, custom exercises) fall back to a
  * muscle-group icon tile in the picker.

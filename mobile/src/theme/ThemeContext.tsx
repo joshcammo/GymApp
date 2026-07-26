@@ -13,14 +13,14 @@ interface ThemeContextValue {
   colors:       ColorTokens;
   colorwayId:   ColorwayId;
   mode:         ThemeMode;
-  /** 'system' resolved against the device scheme — what actually renders. */
+  /** 'system' resolved against the device scheme: what actually renders. */
   effectiveMode: 'light' | 'dark';
   setColorwayId: (id: ColorwayId) => void;
   setMode:       (mode: ThemeMode) => void;
   colorwayList:  { id: ColorwayId; label: string }[];
 }
 
-// Sensible pre-load default — matches the app's original always-dark look,
+// Sensible pre-load default: matches the app's original always-dark look,
 // so there's no flash of the wrong theme while AsyncStorage resolves.
 const DEFAULT_COLORWAY: ColorwayId = 'ember';
 const DEFAULT_MODE: ThemeMode = 'dark';

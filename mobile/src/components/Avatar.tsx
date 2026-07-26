@@ -6,7 +6,7 @@ import { useTheme } from '../theme/ThemeContext';
 import { FONT } from '../constants/theme';
 
 interface Props {
-  /** Display name, username, or null — the first character (uppercased) is shown, '?' if none. */
+  /** Display name, username, or null: the first character (uppercased) is shown, '?' if none. */
   name: string | null | undefined;
   /** Diameter in px (default 36). */
   size?: number;

@@ -27,7 +27,7 @@ type Nav   = NativeStackNavigationProp<RootStackParamList, 'AddExercise'>;
 type Route = RouteProp<RootStackParamList, 'AddExercise'>;
 interface Props { navigation: Nav; route: Route }
 
-/** A drop performed immediately after a set, no rest between — same
+/** A drop performed immediately after a set, no rest between, same
  *  string-controlled shape as a set row, minus id (drops are never
  *  independently addressable) and never PR-eligible. */
 interface DropRow {
@@ -35,7 +35,7 @@ interface DropRow {
   weight: string;
 }
 
-/** A row in the per-set editor — strings so the input controls them.
+/** A row in the per-set editor: strings so the input controls them.
  *  `id` (the underlying exercise_sets.id) is carried through so a live
  *  record badge stays attached to the right row even if earlier rows are
  *  added/removed before saving; new/unsaved rows have no id yet. */
@@ -52,12 +52,12 @@ export function AddExerciseScreen({ navigation, route }: Props) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const formStyles = useFormStyles();
-  const { date, dayFull, editExercise } = route.params;
+  const { date, dayFull, editExercise, initialMuscleGroup } = route.params;
   const isEditing = !!editExercise;
 
   // The chosen catalog/custom exercise. When editing a legacy entry that
   // predates the catalog (exercise_def_id null), this starts null and the
-  // user must pick — the old free-text name is shown as a hint.
+  // user must pick: the old free-text name is shown as a hint.
   const [selectedDef, setSelectedDef] = useState<{ id: number; name: string } | null>(
     editExercise?.exercise_def_id != null
       ? { id: editExercise.exercise_def_id, name: editExercise.name }
@@ -67,18 +67,18 @@ export function AddExerciseScreen({ navigation, route }: Props) {
   const [notes, setNotes] = useState(editExercise?.notes ?? '');
   // Current best for the selected exercise ("Current PR: 60 KG × 5").
   const [currentPr, setCurrentPr] = useState<ExercisePr | null>(null);
-  // Heaviest set from the last time this exercise was logged — backs the
+  // Heaviest set from the last time this exercise was logged. Backs the
   // "Suggested Warm-up" ramp shown above the set editor.
   const [lastWorkingSet, setLastWorkingSet] = useState<LastWorkingSet | null>(null);
 
-  // Superset partner — another exercise logged the same day. `name` is
+  // Superset partner: another exercise logged the same day. `name` is
   // carried alongside the id purely for display in the picker field.
   const initialPartnerId = editExercise?.superset_partner_id ?? null;
   const [supersetPartner, setSupersetPartner] = useState<{ id: number; name: string } | null>(null);
   const [dayExercises, setDayExercises] = useState<Exercise[]>([]);
   const [supersetPickerVisible, setSupersetPickerVisible] = useState(false);
 
-  // Initialise sets — from existing exercise if editing, else one empty row
+  // Initialise sets: from existing exercise if editing, else one empty row
   const [setRows, setSetRows] = useState<SetRow[]>(() => {
     if (editExercise && editExercise.sets.length > 0) {
       return editExercise.sets.map(s => ({
@@ -95,13 +95,17 @@ export function AddExerciseScreen({ navigation, route }: Props) {
   });
 
   const [saving,        setSaving]        = useState(false);
-  const [pickerVisible, setPickerVisible] = useState(false);
+  // Jump straight into the picker, pre-filtered, when arriving from a
+  // muscle-group recommendation (e.g. the dashboard's Today's Focus card)
+  // rather than requiring an extra tap, but not when editing an exercise
+  // that's already chosen.
+  const [pickerVisible, setPickerVisible] = useState(!selectedDef && !!initialMuscleGroup);
   const [prSets,        setPrSets]        = useState<SetPrResult[]>([]);
-  // set ids that are *currently* record holders (live, from exercise_set_pr_flags) —
+  // set ids that are *currently* record holders (live, from exercise_set_pr_flags),
   // separate from prSets above, which only reflects the moment a save just happened.
   const [recordSetIds, setRecordSetIds] = useState<Set<number>>(new Set());
 
-  // Fetch the current PR for whatever exercise is selected — the small
+  // Fetch the current PR for whatever exercise is selected: the small
   // "Current PR" chip under the picker field. Best-effort: a failure just
   // means no chip.
   useEffect(() => {
@@ -113,7 +117,7 @@ export function AddExerciseScreen({ navigation, route }: Props) {
     return () => { stale = true; };
   }, [selectedDef?.id]);
 
-  // Fetch the reference weight for the "Suggested Warm-up" ramp — best-effort,
+  // Fetch the reference weight for the "Suggested Warm-up" ramp: best-effort,
   // same as the PR chip above.
   useEffect(() => {
     if (!selectedDef) { setLastWorkingSet(null); return; }
@@ -125,7 +129,7 @@ export function AddExerciseScreen({ navigation, route }: Props) {
   }, [selectedDef?.id]);
 
   // Load this day's other exercises for the superset picker, and resolve
-  // the current partner's name for display (best-effort — a failed fetch
+  // the current partner's name for display (best-effort: a failed fetch
   // just leaves the picker with nothing to offer).
   useEffect(() => {
     workoutApi.getByDate(date)
@@ -150,7 +154,7 @@ export function AddExerciseScreen({ navigation, route }: Props) {
         .map(f => f.set_id);
       setRecordSetIds(new Set(ids));
     }).catch(() => {
-      // Best-effort — a failed fetch here just means no live badges show, it
+      // Best-effort: a failed fetch here just means no live badges show, it
       // shouldn't block editing/saving the exercise.
     });
   }, [isEditing, editExercise]);
@@ -221,14 +225,14 @@ export function AddExerciseScreen({ navigation, route }: Props) {
       if (r.reps && (isNaN(+r.reps) || +r.reps < 1)) {
         return `${setLabel}: reps must be a positive number.`;
       }
-      // At least one of reps or weight should be filled — otherwise it's an empty set
+      // At least one of reps or weight should be filled, otherwise it's an empty set
       if (!r.reps && !r.weight) {
         return `${setLabel}: enter at least reps or weight.`;
       }
 
       for (let di = 0; di < r.drops.length; di++) {
         const d = r.drops[di];
-        if (!d.reps && !d.weight) continue; // untouched drop row — dropped silently on save
+        if (!d.reps && !d.weight) continue; // untouched drop row, dropped silently on save
         const dropLabel = `${setLabel}, Drop ${di + 1}`;
         if (d.weight && (isNaN(+d.weight) || +d.weight < 0)) {
           return `${dropLabel}: weight must be 0 or higher.`;
@@ -252,7 +256,7 @@ export function AddExerciseScreen({ navigation, route }: Props) {
         reps:   r.reps   ? Number(r.reps)   : null,
         weight: r.weight ? Number(r.weight) : null,
         // Untouched drop rows (both fields blank) are dropped here rather
-        // than blocked at validation — tapping "Add Drop" then changing
+        // than blocked at validation. Tapping "Add Drop" then changing
         // your mind shouldn't require removing the row by hand.
         drops: r.drops
           .filter(d => d.reps || d.weight)
@@ -284,7 +288,7 @@ export function AddExerciseScreen({ navigation, route }: Props) {
 
       const hasPr = newPrSets.some(s => s.is_weight_pr || s.is_e1rm_pr);
       if (hasPr) {
-        // Save has already completed — this is a deliberate pause so the
+        // Save has already completed. This is a deliberate pause so the
         // PR badge is visible before the screen navigates away, not added
         // latency on the save itself.
         setPrSets(newPrSets);
@@ -439,7 +443,7 @@ export function AddExerciseScreen({ navigation, route }: Props) {
                     style={[formStyles.input, styles.setInput]}
                     value={row.reps}
                     onChangeText={v => updateRow(i, 'reps', v)}
-                    placeholder="—"
+                    placeholder="0"
                     placeholderTextColor={colors.textMuted}
                     keyboardType="number-pad"
                     returnKeyType="next"
@@ -475,7 +479,7 @@ export function AddExerciseScreen({ navigation, route }: Props) {
                       style={[formStyles.input, styles.setInput, styles.dropInput]}
                       value={drop.reps}
                       onChangeText={v => updateDrop(i, di, 'reps', v)}
-                      placeholder="—"
+                      placeholder="0"
                       placeholderTextColor={colors.textMuted}
                       keyboardType="number-pad"
                       returnKeyType="next"
@@ -561,6 +565,7 @@ export function AddExerciseScreen({ navigation, route }: Props) {
           setSelectedDef({ id: def.id, name: def.name });
           setPickerVisible(false);
         }}
+        initialGroup={initialMuscleGroup}
       />
 
       <SupersetPickerModal

@@ -1,44 +1,27 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { createBottomTabNavigator, BottomTabScreenProps } from '@react-navigation/bottom-tabs';
+import React from 'react';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Feather } from '@expo/vector-icons';
 
 import { FONT } from '../constants/theme';
 import { useTheme } from '../theme/ThemeContext';
 import { MainTabParamList } from '../types';
-import { friendsApi } from '../services/social';
 import { HomeScreen } from '../screens/HomeScreen';
+import { WorkoutScreen } from '../screens/WorkoutScreen';
 import { SocialScreen } from '../screens/SocialScreen';
-import { FriendsScreen } from '../screens/FriendsScreen';
 import { ProgressScreen } from '../screens/ProgressScreen';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
 const ICONS: Record<keyof MainTabParamList, keyof typeof Feather.glyphMap> = {
   HomeTab:    'home',
-  FeedTab:    'activity',
-  FriendsTab: 'users',
+  WorkoutTab: 'edit-3',
+  SocialTab:  'users',
   StatsTab:   'bar-chart-2',
 };
 
-/** Bottom tabs shown once signed in and past the username gate. Owns the
- *  pending-friend-request count so the Friends tab can badge it — refreshed
- *  on mount, on any tab press, and immediately after FriendsScreen resolves
- *  a request (no push notifications exist, so this polling-on-interaction
- *  approach is the closest to "real time" without that infrastructure). */
+/** Bottom tabs shown once signed in and past the username gate. */
 export function MainTabs() {
   const { colors } = useTheme();
-  const [pendingCount, setPendingCount] = useState(0);
-
-  const refreshPendingCount = useCallback(async () => {
-    try {
-      const friendships = await friendsApi.list();
-      setPendingCount(friendships.filter(f => f.status === 'pending' && !f.is_requester).length);
-    } catch {
-      // The badge is a nicety, not critical — leave the last known count.
-    }
-  }, []);
-
-  useEffect(() => { refreshPendingCount(); }, [refreshPendingCount]);
 
   return (
     <Tab.Navigator
@@ -58,9 +41,6 @@ export function MainTabs() {
         headerTitleStyle:  { fontFamily: FONT.semibold, fontSize: 17 },
         headerShadowVisible: false,
       })}
-      screenListeners={{
-        tabPress: () => { refreshPendingCount(); },
-      }}
     >
       <Tab.Screen
         name="HomeTab"
@@ -68,22 +48,15 @@ export function MainTabs() {
         options={{ headerShown: false, tabBarLabel: 'Home' }}
       />
       <Tab.Screen
-        name="FeedTab"
-        component={SocialScreen}
-        options={{ title: 'Feed', tabBarLabel: 'Feed' }}
+        name="WorkoutTab"
+        component={WorkoutScreen}
+        options={{ title: 'Workout', tabBarLabel: 'Workout' }}
       />
       <Tab.Screen
-        name="FriendsTab"
-        options={{
-          title: 'Friends',
-          tabBarLabel: 'Friends',
-          tabBarBadge: pendingCount > 0 ? pendingCount : undefined,
-        }}
-      >
-        {(props: BottomTabScreenProps<MainTabParamList, 'FriendsTab'>) => (
-          <FriendsScreen {...props} onRequestsChanged={refreshPendingCount} />
-        )}
-      </Tab.Screen>
+        name="SocialTab"
+        component={SocialScreen}
+        options={{ title: 'Social', tabBarLabel: 'Social' }}
+      />
       <Tab.Screen
         name="StatsTab"
         component={ProgressScreen}
