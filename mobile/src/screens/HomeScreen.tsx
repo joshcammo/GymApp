@@ -22,7 +22,6 @@ import { DayCard } from '../components/DayCard';
 import { EmptyState } from '../components/EmptyState';
 import { WeeklySummaryCard } from '../components/WeeklySummaryCard';
 import { TodayFocusCard } from '../components/TodayFocusCard';
-import { VitalsRow } from '../components/VitalsRow';
 import {
   getISOWeek, getWeekStart, getWeekDays,
   toDateStr, fmtWeekRange,
@@ -181,7 +180,6 @@ export function HomeScreen({ navigation }: Props) {
             onAddExercise={() => navigation.navigate('AddExercise', { date: todayDate, dayFull: todayDayFull })}
             onGenerateAi={prompt => navigation.navigate('AiWorkout', { date: todayDate, dayFull: todayDayFull, initialPrompt: prompt })}
           />
-          <VitalsRow />
 
           {days.map(day => (
             <DayCard
