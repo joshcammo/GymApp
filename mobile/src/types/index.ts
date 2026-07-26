@@ -50,6 +50,24 @@ export interface Exercise {
   superset_partner_id: number | null;
 }
 
+export type CardioActivityType = 'run' | 'bike' | 'walk' | 'hike' | 'swim' | 'other';
+
+/** Where a cardio session came from. Only 'manual' is loggable today —
+ *  the others are reserved for the planned Garmin/Strava/HealthKit imports. */
+export type CardioSource = 'manual' | 'strava' | 'garmin' | 'apple_health';
+
+export interface CardioSession {
+  id:               number;
+  activity_type:    CardioActivityType;
+  date:             string;    // 'YYYY-MM-DD'
+  duration_seconds: number;
+  distance_meters?: number | null;
+  notes?:           string | null;
+  source:           CardioSource;
+  created_at:       string;
+  updated_at:       string;
+}
+
 export interface DayInfo {
   date:         string;   // 'YYYY-MM-DD'
   dayShort:     string;   // 'MON'
@@ -58,6 +76,7 @@ export interface DayInfo {
   isToday:      boolean;
   isPast:       boolean;
   exercises:    Exercise[];
+  cardioSessions: CardioSession[];
 }
 
 /** One exercise within a preset, in saved order. */
@@ -201,6 +220,7 @@ export type RootStackParamList = {
   ChangeUsername: undefined;
   DayDetail:      { date: string; dayFull: string };
   AddExercise:    { date: string; dayFull: string; editExercise?: Exercise };
+  AddCardio:      { date: string; dayFull: string; editSession?: CardioSession };
   AiWorkout:      { date: string; dayFull: string };
   Presets:        undefined;
   EditPreset:     { preset?: Preset };

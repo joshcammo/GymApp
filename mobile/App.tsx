@@ -25,6 +25,7 @@ import { AppearanceScreen }      from './src/screens/AppearanceScreen';
 import { ChangePasswordScreen }  from './src/screens/ChangePasswordScreen';
 import { DayDetailScreen }       from './src/screens/DayDetailScreen';
 import { AddExerciseScreen }     from './src/screens/AddExerciseScreen';
+import { AddCardioScreen }       from './src/screens/AddCardioScreen';
 import { AiWorkoutScreen }       from './src/screens/AiWorkoutScreen';
 import { PresetsScreen }         from './src/screens/PresetsScreen';
 import { EditPresetScreen }      from './src/screens/EditPresetScreen';
@@ -163,6 +164,10 @@ function AppContent() {
               <Stack.Screen
                 name="AddExercise"
                 component={AddExerciseScreen}
+              />
+              <Stack.Screen
+                name="AddCardio"
+                component={AddCardioScreen}
               />
               <Stack.Screen
                 name="AiWorkout"

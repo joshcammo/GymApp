@@ -13,8 +13,8 @@ import { Feather } from '@expo/vector-icons';
 import { ColorTokens } from '../theme/colorways';
 import { useTheme } from '../theme/ThemeContext';
 import { RADIUS } from '../constants/theme';
-import { RootStackParamList, MainTabParamList, DayInfo, Exercise } from '../types';
-import { workoutApi } from '../services/api';
+import { RootStackParamList, MainTabParamList, DayInfo, Exercise, CardioSession } from '../types';
+import { workoutApi, cardioApi } from '../services/api';
 import { Logo, Wordmark } from '../components/Logo';
 import { PressableScale } from '../components/PressableScale';
 import { WeekNavigator } from '../components/WeekNavigator';
@@ -37,6 +37,7 @@ export function HomeScreen({ navigation }: Props) {
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [weekOffset, setWeekOffset] = useState(0);
   const [exercises,  setExercises]  = useState<Exercise[]>([]);
+  const [cardioSessions, setCardioSessions] = useState<CardioSession[]>([]);
   const [loading,    setLoading]    = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error,      setError]      = useState<string | null>(null);
@@ -54,8 +55,12 @@ export function HomeScreen({ navigation }: Props) {
     try {
       const start = toDateStr(weekDays[0]);
       const end   = toDateStr(weekDays[6]);
-      const data  = await workoutApi.getByRange(start, end);
-      setExercises(data);
+      const [exerciseData, cardioData] = await Promise.all([
+        workoutApi.getByRange(start, end),
+        cardioApi.getByRange(start, end),
+      ]);
+      setExercises(exerciseData);
+      setCardioSessions(cardioData);
     } catch (e) {
       setError((e as Error).message ?? 'Failed to load workouts');
     } finally {
@@ -87,6 +92,7 @@ export function HomeScreen({ navigation }: Props) {
       isToday:     isToday(date),
       isPast:      isPastDay(date),
       exercises:   exercises.filter(e => e.date === ds),
+      cardioSessions: cardioSessions.filter(s => s.date === ds),
     };
   });
 
