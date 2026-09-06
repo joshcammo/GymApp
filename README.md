@@ -46,6 +46,9 @@ Row Level Security is enabled on every table — access control is enforced in P
 
 ## 🚀 Running Locally
 
+React Native 0.86 and Metro declare `node: ^20.19.4 || ^22.13.0 || ^24.3.0 || >= 25`.
+Older versions only warn on install, but are untested — use **Node 22.13+**.
+
 ```bash
 cd mobile
 npm install
@@ -78,7 +81,7 @@ Then:
 
 | Layer | Technology |
 |-------|-----------|
-| Mobile | React Native + Expo SDK 51 |
-| Navigation | React Navigation v6 |
+| Mobile | React Native + Expo SDK 57 |
+| Navigation | React Navigation v7 |
 | Backend | Supabase (Postgres + Auth + RLS) |
 | Distribution | EAS Update / EAS Build |
