@@ -117,7 +117,7 @@ function AppContent() {
             // overlong label automatically, so short titles (e.g. "Friday")
             // were leaking it while longer ones (e.g. "Thursday") happened
             // to collapse to just the chevron.
-            headerBackTitleVisible: false,
+            headerBackButtonDisplayMode: 'minimal',
           }}
         >
           {session && profile && !profile.username ? (
