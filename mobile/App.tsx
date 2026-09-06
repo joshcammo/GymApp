@@ -95,7 +95,8 @@ function AppContent() {
 
   return (
     <SafeAreaProvider>
-      <StatusBar style={effectiveMode === 'dark' ? 'light' : 'dark'} backgroundColor={colors.bg} />
+      {/* Android draws edge-to-edge from SDK 55 on, so the bar has no background of its own. */}
+      <StatusBar style={effectiveMode === 'dark' ? 'light' : 'dark'} />
       <NavigationContainer>
         <Stack.Navigator
           screenOptions={{
@@ -118,7 +119,7 @@ function AppContent() {
             // overlong label automatically, so short titles (e.g. "Friday")
             // were leaking it while longer ones (e.g. "Thursday") happened
             // to collapse to just the chevron.
-            headerBackTitleVisible: false,
+            headerBackButtonDisplayMode: 'minimal',
           }}
         >
           {session && profile && !profile.username ? (

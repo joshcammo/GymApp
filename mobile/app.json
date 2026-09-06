@@ -2,15 +2,10 @@
   "expo": {
     "name": "GymTracker",
     "slug": "gym-tracker",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "icon": "./assets/icon.png",
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#0B0B0E"
-    },
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.gymtracker.app"
@@ -26,7 +21,16 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-font"
+      "expo-font",
+      "expo-status-bar",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#0B0B0E"
+        }
+      ]
     ],
     "extra": {
       "eas": {
