@@ -14,7 +14,7 @@ work the next unchecked phase.**
 | Phase | Scope | Status |
 |-------|-------|--------|
 | 0 | Audit + this checklist | ✅ done |
-| 1 | Legal pages (privacy / terms / support) + GitHub Pages | ⬜ not started |
+| 1 | Legal pages (privacy / terms / support) + GitHub Pages | ✅ written, Pages not yet enabled |
 | 2 | Migration 023: blocks, reports, content filter, account deletion | ⬜ not started |
 | 3 | Settings: legal links, blocked users, delete account | ⬜ not started |
 | 4 | Report + block UI, sign-up terms gate, AI disclaimer | ⬜ not started |
@@ -48,13 +48,25 @@ Apple requires a public privacy policy URL (5.1.1(i)), a support URL with a
 working contact method (1.5), and, for UGC apps, terms the user agrees to that
 carry a zero-tolerance clause (1.2).
 
-- [ ] `docs/index.html` — support / contact landing page
-- [ ] `docs/privacy.html` — privacy policy
-- [ ] `docs/terms.html` — terms of use / EULA with zero-tolerance clause
-- [ ] `docs/.nojekyll` so Pages serves the HTML verbatim
+- [x] `docs/index.html` — support / contact landing page
+- [x] `docs/privacy.html` — privacy policy
+- [x] `docs/terms.html` — terms of use / EULA with zero-tolerance clause
+- [x] `docs/.nojekyll` so Pages serves the HTML verbatim
+- [x] `docs/style.css` — shared styling, mirrors the app's dark palette
 - [ ] **Manual step:** enable GitHub Pages — repo Settings → Pages → Deploy from
       branch → `main` → `/docs`
 - [ ] Verify the three URLs load publicly before submitting
+
+Once Pages is enabled the URLs are:
+
+| Page | URL |
+|------|-----|
+| Support | `https://joshcammo.github.io/GymApp/` |
+| Privacy policy | `https://joshcammo.github.io/GymApp/privacy.html` |
+| Terms of use | `https://joshcammo.github.io/GymApp/terms.html` |
+
+These are the URLs Phase 3 links from inside the app and Phase 6 enters into
+App Store Connect.
 
 The privacy policy must name every third party that touches user data and
 confirm they provide equivalent protection:
