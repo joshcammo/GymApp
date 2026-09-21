@@ -15,7 +15,7 @@ work the next unchecked phase.**
 |-------|-------|--------|
 | 0 | Audit + this checklist | ✅ done |
 | 1 | Legal pages (privacy / terms / support) + GitHub Pages | ✅ written, Pages not yet enabled |
-| 2 | Migration 023: blocks, reports, content filter, account deletion | ⬜ not started |
+| 2 | Migration 023: blocks, reports, content filter, account deletion | ✅ written, ⚠️ NOT YET RUN |
 | 3 | Settings: legal links, blocked users, delete account | ⬜ not started |
 | 4 | Report + block UI, sign-up terms gate, AI disclaimer | ⬜ not started |
 | 5 | `app.json` / `eas.json` build + submit config | ⬜ not started |
@@ -93,23 +93,40 @@ page.
 Single idempotent `DO` block is **not** required here (that constraint applies to
 data scripts); this is DDL and runs as an ordinary migration in the SQL editor.
 
-- [ ] `public.user_blocks` — blocker/blocked pair, cascade from `auth.users`
-- [ ] `public.is_blocked(a, b)` helper, direction-agnostic
-- [ ] Fold `is_blocked` into RLS on `posts`, `post_likes`, `post_comments`, and
-      into `profiles` search and `send_friend_request`, so a block hides content
-      **both ways, immediately**
-- [ ] Blocking also deletes any existing friendship row
-- [ ] `public.content_reports` — reporter, target (post / comment / user),
-      reason, free-text detail, status
-- [ ] `public.blocked_terms` + `public.is_objectionable(text)` + BEFORE
-      INSERT/UPDATE triggers on `posts.caption`, `post_comments.body`,
-      `profiles.username`, `profiles.display_name` (Guideline 1.2 filter)
-- [ ] `public.delete_my_account()` — `security definer`, deletes the caller's
+- [x] `public.user_blocks` — blocker/blocked pair, cascade from `auth.users`
+- [x] `public.is_blocked(a, b)` helper, direction-agnostic
+- [x] Blocking folded into `are_friends()`, so all six dependent policies on
+      `posts` / `post_likes` / `post_comments` inherit it; plus explicit author
+      checks on the comment and like select policies (a block must hold between
+      two people commenting under a *mutual friend's* post, which the friendship
+      check alone does not cover), plus `profiles` search
+- [x] `send_friend_request()` refuses across a block, with the same error text as
+      "no such user" so the block is not disclosed to the sender
+- [x] Blocking also deletes any friendship or pending request, both directions
+- [x] `public.content_reports` + `report_content()` RPC — write-only for users,
+      snapshots the reported text so a report outlives the content
+- [x] `public.blocked_terms` + `normalize_for_filter()` + `is_objectionable()` +
+      BEFORE triggers on `posts.caption`, `post_comments.body`,
+      `profiles.username`, `profiles.display_name`
+- [x] `public.delete_my_account()` — `security definer`, deletes the caller's
       `auth.users` row. Every user-owned table already cascades from
       `auth.users`, so this is sufficient. Verified 2026-09-21 across
       `exercises`, `exercise_defs`, `presets`, `profiles`, `friendships`,
       `posts`, `post_likes`, `post_comments`, `ai_generation_log`,
       `cardio_sessions`.
+
+> **This migration has not been executed.** There is no local Postgres, Docker
+> or Supabase CLI on this machine, and the only live database is production, so
+> it was reviewed statically rather than run. Static review caught and fixed
+> four defects: a duplicated character in the `translate()` leet map, `'cp'`
+> failing the 3-character minimum on `blocked_terms.term` (which would have
+> aborted the whole migration), `INSERT ... RETURNING` in `report_content()`
+> requiring a SELECT policy that the write-only report queue deliberately does
+> not have, and a substring-matching pass that rejected "scraped my shin".
+> Expect to iterate on first run.
+
+Target Postgres is **17.6**, confirmed from `supabase/.temp/postgres-version`,
+so the `NULLS NOT DISTINCT` index (PG15+) is supported.
 
 **Manual step:** run the migration in the Supabase SQL editor before the app
 code that calls it ships.
