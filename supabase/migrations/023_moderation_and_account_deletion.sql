@@ -70,11 +70,23 @@ create policy user_blocks_delete_own on public.user_blocks
 -- invoker function would silently return false for exactly the case
 -- that matters most.
 --
--- This does let a user probe whether someone has blocked them. That
--- is already inferable from the app's behaviour (their content
--- disappears), it returns nothing but a boolean about a pair the
--- caller is half of, and the alternative is a block that only works
--- in one direction. Accepted deliberately.
+-- Because it is definer and granted to authenticated, it is callable
+-- directly over the REST API with any two ids — and profile search
+-- hands out ids freely. The auth.uid() guard is what stops that being
+-- a way to map the block graph between two unrelated third parties;
+-- without it, anyone could enumerate who has blocked whom. Every
+-- legitimate caller (the policies below, are_friends, block checks in
+-- the RPCs) passes the caller as one side of the pair.
+--
+-- It still lets a user learn whether someone has blocked *them*. That
+-- is already inferable from the app's behaviour — their content
+-- disappears — and the alternative is a block that only works in one
+-- direction. Accepted deliberately.
+--
+-- Returns false rather than raising for a pair the caller is not part
+-- of: are_friends() is itself callable directly, and an exception
+-- inside it would propagate into RLS policy evaluation. False is safe
+-- here because no policy ever asks about a pair it is not part of.
 create function public.is_blocked(a uuid, b uuid)
 returns boolean
 language sql
@@ -82,11 +94,12 @@ stable
 security definer
 set search_path = public, pg_temp
 as $$
-  select exists (
-    select 1 from public.user_blocks ub
-    where (ub.blocker_id = a and ub.blocked_id = b)
-       or (ub.blocker_id = b and ub.blocked_id = a)
-  );
+  select auth.uid() in (a, b)
+     and exists (
+       select 1 from public.user_blocks ub
+       where (ub.blocker_id = a and ub.blocked_id = b)
+          or (ub.blocker_id = b and ub.blocked_id = a)
+     );
 $$;
 
 revoke execute on function public.is_blocked(uuid, uuid) from public;
@@ -344,24 +357,33 @@ create unique index uq_content_reports_one_per_reporter
 
 alter table public.content_reports enable row level security;
 
-create policy content_reports_insert_own on public.content_reports
-  for insert with check (reporter_id = auth.uid());
+-- Deliberately NO policies of any kind, and the grants revoked on top.
+-- RLS with no policy already denies everything to a non-owning role,
+-- which is what keeps the moderation queue unreadable — but an INSERT
+-- policy here would also make the table *writable* straight over the
+-- REST API, and every column with it. An attacker could then file
+-- reports carrying a fabricated target_username and target_snapshot,
+-- i.e. plant invented evidence against an innocent user and have a
+-- moderator act on it. Reports may only be created through
+-- report_content() below, which derives those fields itself.
+revoke all on public.content_reports from anon, authenticated;
 
 -- ── RPC: report a post, comment or user ─────────────────────────
--- security invoker: the snapshot is taken by reading the content
--- through the reporter's own RLS, so nobody can use this to read
--- back a post they were never able to see.
+-- security definer, because the table above accepts no writes from
+-- the authenticated role at all. That means RLS no longer filters the
+-- lookups below, so entitlement is checked explicitly instead: you may
+-- only report something you could actually see. Without that check a
+-- definer function would happily snapshot any post in the database
+-- back into a report.
 --
--- Returns void rather than the new report id on purpose. content_
--- reports has no select policy, and Postgres checks the SELECT
--- policy for INSERT ... RETURNING — so returning the id would mean
--- giving users read access to the moderation queue. The client has
--- no use for the id anyway.
+-- Returns void rather than the new report id on purpose. The queue has
+-- no select policy, and the id is of no use to the client.
 --
--- One consequence of security invoker: report the content first,
--- then block. Once a block is in place the reporter can no longer
--- see the profile row this needs to snapshot, and the call fails.
--- The report-then-block ordering is enforced in the client.
+-- Report first, then block. Both visibility checks below run through
+-- are_friends()/is_blocked(), so once a block exists the reporter can
+-- no longer "see" the content and the report is refused. The
+-- report-then-block ordering is enforced in the client, in
+-- reportsApi.reportAndBlock.
 create function public.report_content(
   p_target_type text,
   p_reason      text,
@@ -372,35 +394,56 @@ create function public.report_content(
 )
 returns void
 language plpgsql
-security invoker
+security definer
+set search_path = public, pg_temp
 as $$
 declare
-  v_username text;
-  v_snapshot text;
-  v_author   uuid;
+  v_username   text;
+  v_snapshot   text;
+  v_author     uuid;
+  v_post_owner uuid;
+  v_visible    boolean;
 begin
+  if auth.uid() is null then
+    raise exception 'Not authenticated' using errcode = '28000';
+  end if;
+
   if p_target_type = 'post' then
     select pr.username, coalesce(po.caption, po.exercise_name), po.user_id
       into v_username, v_snapshot, v_author
     from public.posts po
     join public.profiles pr on pr.id = po.user_id
     where po.id = p_post_id;
+    v_visible := v_author = auth.uid() or public.are_friends(v_author, auth.uid());
   elsif p_target_type = 'comment' then
-    select pr.username, pc.body, pc.user_id
-      into v_username, v_snapshot, v_author
+    select pr.username, pc.body, pc.user_id, po.user_id
+      into v_username, v_snapshot, v_author, v_post_owner
     from public.post_comments pc
     join public.profiles pr on pr.id = pc.user_id
+    join public.posts po     on po.id = pc.post_id
     where pc.id = p_comment_id;
+    -- Mirrors post_comments_select_visible: the post has to be visible
+    -- to the caller and the comment's own author must not be blocked.
+    v_visible := (v_post_owner = auth.uid() or public.are_friends(v_post_owner, auth.uid()))
+                 and not public.is_blocked(v_author, auth.uid());
   elsif p_target_type = 'user' then
     select pr.username, coalesce(pr.display_name, pr.username), pr.id
       into v_username, v_snapshot, v_author
     from public.profiles pr
     where pr.id = p_user_id;
+    v_visible := not public.is_blocked(v_author, auth.uid());
   else
     raise exception 'Unknown report target type "%"', p_target_type;
   end if;
 
-  if not found then
+  -- Tested on v_author rather than FOUND: the v_visible assignments
+  -- above run queries of their own, and relying on FOUND surviving
+  -- them would be subtle. Every source table has a NOT NULL author
+  -- column, so a null here means nothing matched.
+  --
+  -- Same message either way: whether a given post id exists is not
+  -- something a stranger should be able to probe for.
+  if v_author is null or not v_visible then
     raise exception 'That content no longer exists' using errcode = 'P0002';
   end if;
   if v_author = auth.uid() then
