@@ -15,7 +15,7 @@ as published September 2026.
 |-------|-------|--------|
 | 0 | Audit + this checklist | done |
 | 1 | Legal pages (privacy / terms / support) | done — Pages not yet enabled |
-| 2 | Migration 023: blocks, reports, content filter, account deletion | written — **not yet run** |
+| 2 | Migration 023: blocks, reports, content filter, account deletion | applied to production 2026-09-21 |
 | 3 | Settings: legal links, blocked users, delete account | done |
 | 4 | Report + block UI, sign-up terms gate, AI disclaimer | done |
 | 5 | `app.json` / `eas.json` build + submit config | done |
@@ -38,12 +38,14 @@ Decisions made 2026-09-21:
 None of this can be done from a coding session. All of it has to happen before
 submission, and the first two before the app will even run correctly.
 
-1. **Run migration 023** in the Supabase SQL editor. Until this runs, Settings →
-   Blocked Users, Delete Account, and every report/block action will error
-   against the live database. It has never been executed — see Phase 2.
+1. ~~Run migration 023~~ — **done 2026-09-21**. Confirm it applied *completely*
+   with the verification query in Phase 2 before trusting it; a partial apply
+   is worse than none.
 2. **Enable GitHub Pages**: repo Settings → Pages → Deploy from branch → `main`
    → `/docs`. Until this is live the three in-app legal links 404, which is
-   itself a rejection under 2.1 ("fully functional URLs").
+   itself a rejection under 2.1 ("fully functional URLs"). **Note the pages
+   only exist on `feat/app-store-compliance` so far — they reach `main` when
+   PR #36 merges, and Pages serves from `main`.**
 3. **Test on a real device** — see "What has not been tested".
 4. **Create the demo account** for App Store Connect (Phase 6).
 5. **Decide on the app name** — see Phase 6.
@@ -104,9 +106,39 @@ rather not publish your business address; it appears in `docs/*.html` and in
 
 ---
 
-## Phase 2 — Migration 023 (written, NOT RUN)
+## Phase 2 — Migration 023 (applied 2026-09-21)
 
 `supabase/migrations/023_moderation_and_account_deletion.sql`.
+
+### Verify it applied completely
+
+Run this in the SQL editor. Every row should read `ok`; anything else means the
+migration stopped partway and the objects after that point are missing.
+
+```sql
+select 'table user_blocks'     as object, case when to_regclass('public.user_blocks')     is not null then 'ok' else 'MISSING' end as status
+union all select 'table content_reports',  case when to_regclass('public.content_reports')   is not null then 'ok' else 'MISSING' end
+union all select 'table blocked_terms',    case when to_regclass('public.blocked_terms')     is not null then 'ok' else 'MISSING' end
+union all select 'fn is_blocked',          case when to_regproc('public.is_blocked')         is not null then 'ok' else 'MISSING' end
+union all select 'fn block_user',          case when to_regproc('public.block_user')         is not null then 'ok' else 'MISSING' end
+union all select 'fn unblock_user',        case when to_regproc('public.unblock_user')       is not null then 'ok' else 'MISSING' end
+union all select 'fn my_blocked_users',    case when to_regproc('public.my_blocked_users')   is not null then 'ok' else 'MISSING' end
+union all select 'fn report_content',      case when to_regproc('public.report_content')     is not null then 'ok' else 'MISSING' end
+union all select 'fn is_objectionable',    case when to_regproc('public.is_objectionable')   is not null then 'ok' else 'MISSING' end
+union all select 'fn delete_my_account',   case when to_regproc('public.delete_my_account')  is not null then 'ok' else 'MISSING' end
+union all select 'blocklist seeded',       case when (select count(*) from public.blocked_terms) >= 50 then 'ok'
+                                                else 'ONLY ' || (select count(*) from public.blocked_terms)::text end
+union all select 'content filter triggers', case when (select count(*) from pg_trigger
+                                                       where tgname in ('trg_posts_content_filter',
+                                                                        'trg_post_comments_content_filter',
+                                                                        'trg_profiles_content_filter')) = 3
+                                                then 'ok' else 'MISSING' end;
+```
+
+If anything is missing, the migration is **not** safely re-runnable as a whole —
+`create table` and `create function` (without `or replace`) will fail on the
+objects that did land. Drop what it created and re-run the whole file, or apply
+just the missing tail by hand.
 
 - [x] `public.user_blocks` — per-direction, cascade from `auth.users`
 - [x] `public.is_blocked(a, b)` — direction-agnostic, `security definer`
@@ -135,12 +167,14 @@ rather not publish your business address; it appears in `docs/*.html` and in
       this is sufficient. Verified 2026-09-21 across `exercises`,
       `exercise_defs`, `presets`, `profiles`, `friendships`, `posts`,
       `post_likes`, `post_comments`, `ai_generation_log`, `cardio_sessions`.
-- [ ] **Manual:** run it in the Supabase SQL editor
+- [x] **Manual:** run it in the Supabase SQL editor — done 2026-09-21
 
-> **This migration has never been executed.** There is no local Postgres, Docker
-> or Supabase CLI on this machine, and the only live database is production, so
-> it was reviewed statically rather than run. Static review caught and fixed
-> four defects: a duplicated character in the `translate()` leet map; a
+> **Applied to production 2026-09-21 by Josh.** It was never executed from a
+> coding session — there is no local Postgres, Docker or Supabase CLI on this
+> machine — so it went to production reviewed statically rather than tested.
+> Run the verification query above, and treat the first real use of each
+> feature as the actual test. Static review caught and fixed four defects
+> before it was applied: a duplicated character in the `translate()` leet map; a
 > two-character term failing the three-character minimum on
 > `blocked_terms.term`, which would have aborted the entire migration;
 > `INSERT ... RETURNING` in `report_content()` requiring a SELECT policy that
@@ -298,7 +332,8 @@ Not code. Do this after a build is uploaded.
 Being explicit, because none of this was verifiable from a coding session on
 this machine:
 
-- **Migration 023 has never been executed** against any database.
+- **Migration 023 was applied to production without ever being executed in a
+  test environment.** Its behaviour is unverified beyond static review.
 - **No app code has been run.** There is no simulator, emulator or device
   available here. `tsc --noEmit` passes, and that is the only gate this project
   has — there is no ESLint, Prettier or test setup in the repo.
