@@ -6,6 +6,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { RouteProp } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Feather } from '@expo/vector-icons';
 
 import { ColorTokens } from '../theme/colorways';
@@ -17,13 +18,15 @@ import { supabase } from '../lib/supabase';
 import { PostCard } from '../components/PostCard';
 import { Avatar } from '../components/Avatar';
 import { EmptyState } from '../components/EmptyState';
+import { useContentActions } from '../components/ContentActions';
 import { timeAgo } from '../utils/dateUtils';
 import { haptics } from '../utils/haptics';
 
 type Route = RouteProp<RootStackParamList, 'PostDetail'>;
-interface Props { route: Route }
+type Nav   = NativeStackNavigationProp<RootStackParamList, 'PostDetail'>;
+interface Props { route: Route; navigation: Nav }
 
-export function PostDetailScreen({ route }: Props) {
+export function PostDetailScreen({ route, navigation }: Props) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { postId } = route.params;
@@ -34,22 +37,35 @@ export function PostDetailScreen({ route }: Props) {
   const [draft,    setDraft]    = useState('');
   const [posting,  setPosting]  = useState(false);
   const [liking,   setLiking]   = useState(false);
+  const [myId,     setMyId]     = useState<string | null>(null);
   // Kept in sync with `post` so toggleLike always reads the current
   // liked_by_me/like_count instead of the stale snapshot PostCard was
   // rendered with when the tap fired.
   const postRef = useRef<Post | null>(null);
   postRef.current = post;
 
+  // Blocking the post's author makes the post itself unreadable under
+  // RLS, so there is nothing left on this screen to show — go back to
+  // the feed. Blocking a commenter only removes their comments.
+  const { openMenu, reportSheet } = useContentActions({
+    onBlocked: userId => {
+      if (postRef.current?.user_id === userId) navigation.goBack();
+      else setComments(prev => prev.filter(c => c.user_id !== userId));
+    },
+  });
+
   const load = useCallback(async () => {
     setError(null);
     try {
-      const [{ data: postData, error: postError }, commentData] = await Promise.all([
+      const [{ data: postData, error: postError }, commentData, session] = await Promise.all([
         supabase.from('posts_feed').select('*').eq('id', postId).single(),
         postsApi.listComments(postId),
+        supabase.auth.getSession(),
       ]);
       if (postError) throw new Error(postError.message);
       setPost(postData as Post);
       setComments(commentData);
+      setMyId(session.data.session?.user.id ?? null);
     } catch (e) {
       setError((e as Error).message ?? 'Failed to load post');
     } finally {
@@ -124,7 +140,18 @@ export function PostDetailScreen({ route }: Props) {
           data={comments}
           keyExtractor={c => String(c.id)}
           contentContainerStyle={styles.listContent}
-          ListHeaderComponent={<PostCard post={post} onToggleLike={toggleLike} />}
+          ListHeaderComponent={
+            <PostCard
+              post={post}
+              onToggleLike={toggleLike}
+              onMenu={post.user_id === myId ? undefined : () => openMenu({
+                kind:       'post',
+                postId:     post.id,
+                authorId:   post.user_id,
+                authorName: post.username,
+              })}
+            />
+          }
           renderItem={({ item }) => (
             <View style={styles.commentRow}>
               <Avatar name={item.display_name || item.username} size={28} />
@@ -135,6 +162,21 @@ export function PostDetailScreen({ route }: Props) {
                 </Text>
                 <Text style={styles.commentText}>{item.body}</Text>
               </View>
+              {item.user_id !== myId && (
+                <TouchableOpacity
+                  style={styles.commentMenuBtn}
+                  accessibilityLabel="Comment options"
+                  onPress={() => openMenu({
+                    kind:       'comment',
+                    commentId:  item.id,
+                    authorId:   item.user_id,
+                    authorName: item.username,
+                  })}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                  <Feather name="more-horizontal" size={16} color={colors.textMuted} />
+                </TouchableOpacity>
+              )}
             </View>
           )}
           ListEmptyComponent={
@@ -165,6 +207,7 @@ export function PostDetailScreen({ route }: Props) {
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
+      {reportSheet}
     </SafeAreaView>
   );
 }
@@ -191,6 +234,10 @@ const createStyles = (colors: ColorTokens) => StyleSheet.create({
   },
   commentBody: {
     flex: 1,
+  },
+  commentMenuBtn: {
+    paddingHorizontal: 4,
+    paddingTop:        2,
   },
   commentMeta: {
     fontSize: 11,

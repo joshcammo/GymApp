@@ -16,8 +16,12 @@ interface Props {
   onToggleLike:     (post: Post) => void;
   /** Tapping the card body / comment count. Omit to render a non-navigable card. */
   onPressComments?: () => void;
-  /** Only passed for the caller's own posts. */
-  onDelete?:        () => void;
+  /**
+   * The ⋯ overflow menu. The caller decides what it contains: delete for
+   * the caller's own posts, report/block for everyone else's (Guideline
+   * 1.2 wants both reachable from the content itself). Omit to hide it.
+   */
+  onMenu?:          () => void;
 }
 
 /** '8 × 60 KG' or '60 KG' if reps weren't logged for the shared set. */
@@ -25,7 +29,7 @@ function setSummary(post: Post): string {
   return post.reps ? `${post.reps} × ${post.weight} ${post.unit}` : `${post.weight} ${post.unit}`;
 }
 
-export function PostCard({ post, onToggleLike, onPressComments, onDelete }: Props) {
+export function PostCard({ post, onToggleLike, onPressComments, onMenu }: Props) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const name = post.display_name || post.username || 'Someone';
@@ -38,13 +42,14 @@ export function PostCard({ post, onToggleLike, onPressComments, onDelete }: Prop
           <Text style={styles.name}>{name}</Text>
           <Text style={styles.meta}>{post.username ? `@${post.username}` : ''} · {timeAgo(post.created_at)}</Text>
         </View>
-        {onDelete && (
+        {onMenu && (
           <TouchableOpacity
-            style={styles.deleteBtn}
-            onPress={onDelete}
+            style={styles.menuBtn}
+            onPress={onMenu}
+            accessibilityLabel="Post options"
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <Feather name="trash-2" size={14} color={colors.danger} />
+            <Feather name="more-horizontal" size={18} color={colors.textSub} />
           </TouchableOpacity>
         )}
       </View>
@@ -118,11 +123,11 @@ const createStyles = (colors: ColorTokens) => StyleSheet.create({
     color:     colors.textMuted,
     marginTop:  1,
   },
-  deleteBtn: {
+  menuBtn: {
     width:           28,
     height:          28,
     borderRadius:    RADIUS.sm,
-    backgroundColor: colors.dangerBg,
+    backgroundColor: colors.bgAlt,
     alignItems:      'center',
     justifyContent:  'center',
   },

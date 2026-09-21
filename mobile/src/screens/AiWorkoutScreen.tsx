@@ -230,6 +230,18 @@ export function AiWorkoutScreen({ navigation, route }: Props) {
               loading={generating}
               style={styles.generateBtn}
             />
+
+            {/* Guideline 5.1.2(i) requires disclosing where personal data
+                goes to a third-party AI, at the point it happens rather
+                than only in the privacy policy. The health disclaimer is
+                here for 1.4.1: generated training advice is not medical
+                advice, and this is the screen that generates it. */}
+            <Text style={styles.aiDisclaimer}>
+              Your request and a summary of your last 30 days of training are sent to Google's
+              Gemini API to generate this. Suggestions are informational only — not medical or
+              professional training advice. Check anything new against your own judgement, and
+              consult a professional before changing how you train.
+            </Text>
           </View>
 
           {suggestions && (
@@ -392,6 +404,12 @@ const createStyles = (colors: ColorTokens) => StyleSheet.create({
   },
   generateBtn: {
     marginTop: 0,
+  },
+  aiDisclaimer: {
+    marginTop:  14,
+    fontSize:   11,
+    lineHeight: 16,
+    color:      colors.textMuted,
   },
   loadingWrap: {
     flexDirection:  'row',

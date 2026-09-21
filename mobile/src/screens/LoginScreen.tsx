@@ -1,15 +1,17 @@
 import React, { useState, useMemo } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
-  StyleSheet, Alert,
+  StyleSheet, Alert, Linking,
   KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Feather } from '@expo/vector-icons';
 
 import { ColorTokens } from '../theme/colorways';
 import { useTheme } from '../theme/ThemeContext';
 import { FONT, RADIUS } from '../constants/theme';
 import { useFormStyles } from '../constants/formStyles';
+import { LEGAL } from '../constants/legal';
 import { supabase } from '../lib/supabase';
 import { Logo } from '../components/Logo';
 import { GradientButton } from '../components/GradientButton';
@@ -24,6 +26,10 @@ export function LoginScreen() {
   const [password,        setPassword]        = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [submitting,      setSubmitting]      = useState(false);
+  // Guideline 1.2 requires users to agree to terms carrying a
+  // zero-tolerance clause before they can post user-generated content.
+  // Gating account creation is the one point every user passes through.
+  const [agreed,          setAgreed]          = useState(false);
 
   const isSignUp = mode === 'signUp';
 
@@ -32,6 +38,15 @@ export function LoginScreen() {
     setMode(m => (m === 'signIn' ? 'signUp' : 'signIn'));
     setPassword('');
     setConfirmPassword('');
+    setAgreed(false);
+  };
+
+  const openLegal = async (url: string) => {
+    try {
+      await Linking.openURL(url);
+    } catch {
+      Alert.alert('Could not open that page', `Visit ${url} in your browser.`);
+    }
   };
 
   const handleSignIn = async () => {
@@ -67,6 +82,13 @@ export function LoginScreen() {
     }
     if (password !== confirmPassword) {
       Alert.alert('Passwords don’t match', 'Double-check your password and try again.');
+      return;
+    }
+    if (!agreed) {
+      Alert.alert(
+        'Agree to continue',
+        'Please accept the Terms of Use and Privacy Policy to create an account.',
+      );
       return;
     }
 
@@ -166,10 +188,38 @@ export function LoginScreen() {
               </>
             )}
 
+            {isSignUp && (
+              <TouchableOpacity
+                style={styles.agreeRow}
+                onPress={() => { haptics.tap(); setAgreed(a => !a); }}
+                activeOpacity={0.7}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: agreed }}
+              >
+                <Feather
+                  name={agreed ? 'check-square' : 'square'}
+                  size={20}
+                  color={agreed ? colors.primary : colors.textMuted}
+                />
+                <Text style={styles.agreeText}>
+                  I agree to the{' '}
+                  <Text style={styles.agreeLink} onPress={() => openLegal(LEGAL.termsUrl)}>
+                    Terms of Use
+                  </Text>
+                  {' '}and{' '}
+                  <Text style={styles.agreeLink} onPress={() => openLegal(LEGAL.privacyUrl)}>
+                    Privacy Policy
+                  </Text>
+                  . There is no tolerance for objectionable content or abusive users.
+                </Text>
+              </TouchableOpacity>
+            )}
+
             <GradientButton
               title={isSignUp ? 'Sign Up' : 'Sign In'}
               onPress={handleSubmit}
               loading={submitting}
+              disabled={isSignUp && !agreed}
               style={styles.submitBtn}
             />
           </View>
@@ -220,6 +270,22 @@ const createStyles = (colors: ColorTokens) => StyleSheet.create({
     borderWidth:      1,
     borderColor:      colors.cardBorder,
     padding:         20,
+  },
+  agreeRow: {
+    flexDirection: 'row',
+    alignItems:    'flex-start',
+    gap:           10,
+    marginBottom:  16,
+  },
+  agreeText: {
+    flex:       1,
+    fontSize:   12,
+    lineHeight: 18,
+    color:      colors.textSub,
+  },
+  agreeLink: {
+    fontFamily: FONT.semibold,
+    color:      colors.primary,
   },
   submitBtn: {
     marginTop: 6,

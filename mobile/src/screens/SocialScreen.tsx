@@ -18,6 +18,7 @@ import { PostCard } from '../components/PostCard';
 import { EmptyState } from '../components/EmptyState';
 import { SharePickerModal } from '../components/SharePickerModal';
 import { SharePostModal } from '../components/SharePostModal';
+import { useContentActions } from '../components/ContentActions';
 import { haptics } from '../utils/haptics';
 
 type Nav = CompositeNavigationProp<
@@ -48,6 +49,13 @@ export function SocialScreen({ navigation }: Props) {
   // FlatList row was rendered with when the tap fired.
   const postsRef = useRef<Post[]>([]);
   postsRef.current = posts;
+
+  // RLS hides a blocked user's posts from the next fetch, but this feed
+  // was loaded before the block existed — drop them from it now rather
+  // than leaving them on screen until the next refresh.
+  const { openMenu, reportSheet } = useContentActions({
+    onBlocked: userId => setPosts(prev => prev.filter(p => p.user_id !== userId)),
+  });
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -184,7 +192,14 @@ export function SocialScreen({ navigation }: Props) {
               post={item}
               onToggleLike={toggleLike}
               onPressComments={() => navigation.navigate('PostDetail', { postId: item.id })}
-              onDelete={item.user_id === myId ? () => handleDelete(item) : undefined}
+              onMenu={() => item.user_id === myId
+                ? handleDelete(item)
+                : openMenu({
+                    kind:       'post',
+                    postId:     item.id,
+                    authorId:   item.user_id,
+                    authorName: item.username,
+                  })}
             />
           )}
           ListEmptyComponent={
@@ -215,6 +230,7 @@ export function SocialScreen({ navigation }: Props) {
         onClose={() => setShareTarget(null)}
         onShared={() => { setShareTarget(null); load(); }}
       />
+      {reportSheet}
     </View>
   );
 }
