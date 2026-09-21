@@ -14,6 +14,7 @@ import { Friendship, Profile } from '../types';
 import { friendsApi, profileApi } from '../services/social';
 import { PressableScale } from '../components/PressableScale';
 import { Avatar } from '../components/Avatar';
+import { useContentActions } from '../components/ContentActions';
 import { haptics } from '../utils/haptics';
 
 type SearchSection = { key: 'search'; title: string; data: Profile[] };
@@ -40,6 +41,16 @@ export function FriendsScreen() {
   }, []);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
+
+  // block_user() deletes the friendship or pending request as well, so
+  // reload rather than patching the list; the blocked user also drops
+  // out of search, which RLS now hides them from.
+  const { openMenu, reportSheet } = useContentActions({
+    onBlocked: userId => {
+      setResults(prev => prev.filter(p => p.id !== userId));
+      load();
+    },
+  });
 
   // Debounced username search. latestQueryRef guards against an older,
   // slower response landing after a newer one and overwriting its results.
@@ -187,6 +198,19 @@ export function FriendsScreen() {
                     ? <ActivityIndicator size="small" color={colors.primary} />
                     : <Feather name="user-plus" size={15} color={colors.primary} />}
                 </PressableScale>
+                <TouchableOpacity
+                  style={styles.menuBtn}
+                  accessibilityLabel="User options"
+                  onPress={() => openMenu({
+                    kind:       'user',
+                    userId:     profile.id,
+                    authorId:   profile.id,
+                    authorName: profile.username,
+                  })}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                  <Feather name="more-horizontal" size={16} color={colors.textMuted} />
+                </TouchableOpacity>
               </View>
             );
           }
@@ -230,6 +254,19 @@ export function FriendsScreen() {
                   </TouchableOpacity>
                 )
               )}
+              <TouchableOpacity
+                style={styles.menuBtn}
+                accessibilityLabel="User options"
+                onPress={() => openMenu({
+                  kind:       'user',
+                  userId:     f.other_user_id,
+                  authorId:   f.other_user_id,
+                  authorName: f.other_username,
+                })}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Feather name="more-horizontal" size={16} color={colors.textMuted} />
+              </TouchableOpacity>
             </View>
           );
         }}
@@ -241,6 +278,7 @@ export function FriendsScreen() {
           ) : null
         }
       />
+      {reportSheet}
     </SafeAreaView>
   );
 }
@@ -357,6 +395,9 @@ const createStyles = (colors: ColorTokens) => StyleSheet.create({
     height:          30,
     alignItems:      'center',
     justifyContent:  'center',
+  },
+  menuBtn: {
+    paddingLeft: 4,
   },
   emptyText: {
     fontSize:   13,
