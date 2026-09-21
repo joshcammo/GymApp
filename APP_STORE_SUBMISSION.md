@@ -14,7 +14,7 @@ as published September 2026.
 | Phase | Scope | Status |
 |-------|-------|--------|
 | 0 | Audit + this checklist | done |
-| 1 | Legal pages (privacy / terms / support) | done — Pages not yet enabled |
+| 1 | Legal pages (privacy / terms / support) | done — Pages on, serving after PR #36 merges |
 | 2 | Migration 023: blocks, reports, content filter, account deletion | applied to production 2026-09-21 |
 | 3 | Settings: legal links, blocked users, delete account | done |
 | 4 | Report + block UI, sign-up terms gate, AI disclaimer | done |
@@ -24,6 +24,28 @@ as published September 2026.
 Decisions made 2026-09-21:
 
 - Legal pages hosted on **GitHub Pages from `/docs` in this repo**.
+- **The repo was made public** on 2026-09-21, because GitHub Pages requires it
+  on the Free plan. Consequences, checked at the time:
+  - Git history was scanned and contains **no committed secrets** — no `.env`
+    has ever been tracked on any branch, and the only key-shaped match in the
+    whole history was a substring of an npm `sha512` integrity hash.
+  - The Supabase anon key is not in the repo (it lives in GitHub Actions
+    variables), and is safe to expose regardless — RLS is the access boundary.
+  - The RLS model in `supabase/migrations/` is now world-readable. That is
+    fine: the security model is the policies themselves, not obscurity.
+  - **The blocklist seed in migration 023 is now world-readable**, which
+    partly undercuts the reason `blocked_terms` has RLS with no policies. The
+    table stays locked because it keeps the list out of the app and the REST
+    API, but anyone who thinks to read the migration on GitHub can see it.
+    Accepted: the filter's job is to stop casual and accidental posting, and
+    report + block are what cover a determined evader. If that stops being
+    good enough, move the seed list out of the repo rather than loosening the
+    table.
+  - `eas-update.yml` triggers only on `push` to `main`, not `pull_request`, so
+    a fork cannot reach `secrets.EXPO_TOKEN`.
+  - Worth turning on: repo Settings → Code security → **Secret scanning** and
+    **Push protection**. Both are free on public repos and would catch a
+    future accidental key commit before it lands.
 - Moderation backend is **reports table + instant block**, no email alerts and
   no admin screen. Reports are read by querying `content_reports` in the SQL
   editor.
@@ -41,11 +63,11 @@ submission, and the first two before the app will even run correctly.
 1. ~~Run migration 023~~ — **done 2026-09-21**. Confirm it applied *completely*
    with the verification query in Phase 2 before trusting it; a partial apply
    is worse than none.
-2. **Enable GitHub Pages**: repo Settings → Pages → Deploy from branch → `main`
-   → `/docs`. Until this is live the three in-app legal links 404, which is
-   itself a rejection under 2.1 ("fully functional URLs"). **Note the pages
-   only exist on `feat/app-store-compliance` so far — they reach `main` when
-   PR #36 merges, and Pages serves from `main`.**
+2. ~~Enable GitHub Pages~~ — **done 2026-09-21** (Settings → Pages → `main` →
+   `/docs`; required making the repo public). **Still not serving:** `docs/`
+   only exists on `feat/app-store-compliance`, and Pages builds from `main`,
+   so the three legal URLs 404 until **PR #36 merges**. Confirm all three load
+   after merging — dead links are a 2.1 rejection on their own.
 3. **Test on a real device** — see "What has not been tested".
 4. **Create the demo account** for App Store Connect (Phase 6).
 5. **Decide on the app name** — see Phase 6.

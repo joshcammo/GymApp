@@ -30,6 +30,10 @@ Thumbs.db
 dist/
 web-build/
 
+# Supabase CLI local state — holds the linked project ref and pooler URL.
+# Not secret, but it has no business in a public repo.
+supabase/.temp/
+
 # Native
 ios/
 android/
