@@ -1,0 +1,49 @@
+name: Checks
+
+# The quality gate, defined once and called from everywhere that needs it:
+# every pull request (ci.yml), and — critically — before eas-update.yml
+# publishes an over-the-air bundle to installed production apps. An OTA update
+# reaches real users' phones with no App Store review in between, so it must
+# never ship code that has not passed this.
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Lint, typecheck, migrations
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          # One source of truth for the Node version, shared with local nvm
+          # users. The .npmrc/lockfile mismatch in PR #35 came from CI and
+          # local disagreeing about install behaviour; don't repeat it with
+          # the runtime.
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      # Migrations are applied by hand in the Supabase SQL editor, so this is
+      # the only automated check they get. Cheap, and runs without npm.
+      - name: Check migration numbering
+        run: node scripts/check-migrations.mjs
+
+      # `npm ci` rather than `npm install`: it fails loudly if package.json and
+      # the lockfile disagree, which is the thing worth catching.
+      - name: Install dependencies
+        run: npm ci
+        working-directory: mobile
+
+      - name: Lint
+        run: npm run lint
+        working-directory: mobile
+
+      - name: Typecheck
+        run: npm run typecheck
+        working-directory: mobile

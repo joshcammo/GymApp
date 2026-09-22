@@ -1,0 +1,21 @@
+name: CI
+
+# Runs the quality gate on every pull request, and again on main after merge
+# so a bad merge resolution is caught even though both parents were green.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# A force-push or a quick second commit supersedes the run in flight.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    uses: ./.github/workflows/checks.yml

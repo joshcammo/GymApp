@@ -1,0 +1,123 @@
+name: iOS release
+
+# Produces a real iOS build on EAS and, optionally, submits it to App Store
+# Connect. Manual only — this is the one pipeline that puts a binary in front
+# of Apple and then users, so it is never triggered by a push.
+#
+# Why this exists rather than running `eas build` from a laptop: a build is the
+# artefact Apple reviews, and it should come from a clean checkout of a known
+# commit with a verified lockfile, not from whatever happens to be in a working
+# tree. It also means the release path survives a laptop rebuild.
+#
+# ── Before the first run ────────────────────────────────────────────────────
+#   secrets.EXPO_TOKEN   already set (eas-update.yml uses it).
+#   vars.EXPO_PUBLIC_*   already set (same).
+#
+#   Submitting additionally needs App Store Connect credentials held by EAS,
+#   not by this repo. Run `eas credentials` once from your machine and upload
+#   an App Store Connect API key (.p8) for the app. `eas submit` then works
+#   non-interactively with no Apple secrets stored in GitHub at all.
+#
+#   Until that is done, run this with submit = false and upload the IPA from
+#   the EAS dashboard by hand.
+
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: "EAS build profile"
+        type: choice
+        options: [production, preview]
+        default: production
+      submit:
+        description: "Submit the finished build to App Store Connect"
+        type: boolean
+        default: false
+
+# One release at a time. Two concurrent production builds would both consume
+# an auto-incremented build number and make it unclear which is which.
+concurrency:
+  group: ios-release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  # Same gate as every pull request. A build that cannot pass lint and
+  # typecheck should not be burning an EAS build minute, let alone a review
+  # cycle with Apple.
+  checks:
+    uses: ./.github/workflows/checks.yml
+
+  build:
+    needs: checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - uses: expo/expo-github-action@v9
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - run: npm ci
+        working-directory: mobile
+
+      - name: Record what is being released
+        working-directory: mobile
+        run: |
+          VERSION=$(node -p "require('./app.json').expo.version")
+          {
+            echo "### iOS release"
+            echo
+            echo "| | |"
+            echo "|---|---|"
+            echo "| Profile | \`${{ inputs.profile }}\` |"
+            echo "| Marketing version | \`$VERSION\` |"
+            echo "| Commit | \`${{ github.sha }}\` |"
+            echo "| Submitting | \`${{ inputs.submit }}\` |"
+            echo
+            echo "Build number is assigned by EAS (\`appVersionSource: remote\` +"
+            echo "\`autoIncrement\`), so it is not set in this repo."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # --wait so the job's success actually means "there is an IPA", rather
+      # than "a build was queued". EXPO_PUBLIC_* are inlined into the bundle at
+      # build time, exactly as in eas-update.yml — without them the app throws
+      # in src/config/index.ts before rendering anything.
+      - name: Build
+        working-directory: mobile
+        env:
+          EXPO_PUBLIC_SUPABASE_URL: ${{ vars.EXPO_PUBLIC_SUPABASE_URL }}
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
+        run: eas build --platform ios --profile ${{ inputs.profile }} --non-interactive --wait
+
+      # Guarded on the profile as well as the input: `preview` is a simulator
+      # build and cannot be submitted, so a mis-set input fails loudly here
+      # instead of confusingly inside eas submit.
+      - name: Submit to App Store Connect
+        if: ${{ inputs.submit && inputs.profile == 'production' }}
+        working-directory: mobile
+        run: eas submit --platform ios --profile production --latest --non-interactive
+
+      - name: Next steps
+        if: success()
+        run: |
+          {
+            echo
+            echo "#### After this"
+            if [ "${{ inputs.submit }}" = "true" ]; then
+              echo "- Watch for an ITMS-91053 email about missing privacy-manifest reasons."
+              echo "- Complete the App Store Connect listing — see APP_STORE_CONNECT.md."
+            else
+              echo "- Download the IPA from the EAS dashboard, or re-run with submit = true."
+            fi
+            echo "- Confirm the built icon has no alpha channel (Apple rejects transparency)."
+          } >> "$GITHUB_STEP_SUMMARY"

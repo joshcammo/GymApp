@@ -5,7 +5,7 @@ name: EAS Update (production)
 # channel pick this up automatically next time the app is opened — no new
 # build, no new QR code. Native/config changes (new permissions, native
 # modules, app.json plugin changes) are NOT covered by this — those need a
-# new `eas build`, run manually.
+# new `eas build`, which is ios-release.yml.
 
 on:
   push:
@@ -23,17 +23,54 @@ permissions:
   contents: read
 
 jobs:
+  # An OTA update goes straight to installed apps with no App Store review in
+  # between, so it gets the same gate a pull request does — and has to pass it
+  # before anything is published.
+  checks:
+    uses: ./.github/workflows/checks.yml
+
   update:
+    needs: checks
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: mobile
     steps:
       - uses: actions/checkout@v7
+        with:
+          # Need the previous commit to diff against for the native-change check.
+          fetch-depth: 2
+
+      # `runtimeVersion` is the appVersion policy, so a bundle only reaches
+      # builds whose version matches. Changing app.json/eas.json, or adding or
+      # upgrading a dependency, can mean the thing you just merged is not
+      # actually what users receive. This does not block the publish — plenty
+      # of edits to these files are harmless — but it puts the warning where
+      # you will see it rather than leaving you to infer it from silence.
+      - name: Flag changes an OTA update cannot deliver
+        run: |
+          CHANGED=$(git diff --name-only HEAD^ HEAD -- \
+            mobile/app.json mobile/eas.json mobile/package.json mobile/package-lock.json)
+          if [ -n "$CHANGED" ]; then
+            {
+              echo "### Native or config change detected"
+              echo
+              echo "This push touched files an over-the-air update does not fully cover:"
+              echo
+              echo '```'
+              echo "$CHANGED"
+              echo '```'
+              echo
+              echo "The OTA bundle below still published, but if this change involved a"
+              echo "version bump, a plugin, a permission or a native module, run the"
+              echo "**iOS release** workflow to produce a real build. Users will not"
+              echo "receive it otherwise."
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "::warning title=OTA may not cover this change::Changed: $(echo "$CHANGED" | tr '\n' ' ')"
+          else
+            echo "JS/asset-only change — fully covered by OTA." >> "$GITHUB_STEP_SUMMARY"
+          fi
 
       - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version-file: .nvmrc
           cache: npm
           cache-dependency-path: mobile/package-lock.json
 
@@ -43,6 +80,7 @@ jobs:
           token: ${{ secrets.EXPO_TOKEN }}
 
       - run: npm ci
+        working-directory: mobile
 
       # Commit message is passed via env, not interpolated directly into the
       # run script, so it can't be used for shell/script injection.
@@ -54,6 +92,7 @@ jobs:
       # UI renders — every previous run of this workflow published a bundle
       # that crashed immediately for exactly this reason.
       - name: Publish EAS Update
+        working-directory: mobile
         env:
           UPDATE_MESSAGE: ${{ github.event.head_commit.message }}
           EXPO_PUBLIC_SUPABASE_URL: ${{ vars.EXPO_PUBLIC_SUPABASE_URL }}
