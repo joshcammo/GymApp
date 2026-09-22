@@ -14,12 +14,13 @@ as published September 2026.
 | Phase | Scope | Status |
 |-------|-------|--------|
 | 0 | Audit + this checklist | done |
-| 1 | Legal pages (privacy / terms / support) | done — Pages on, serving after PR #36 merges |
+| 1 | Legal pages (privacy / terms / support) | done — all three serving, verified 2026-09-22 |
 | 2 | Migration 023: blocks, reports, content filter, account deletion | applied to production 2026-09-21 |
 | 3 | Settings: legal links, blocked users, delete account | done |
 | 4 | Report + block UI, sign-up terms gate, AI disclaimer | done |
 | 5 | `app.json` / `eas.json` build + submit config | done |
-| 6 | App Store Connect submission pack | not started |
+| 6 | App Store Connect submission pack | drafted in `APP_STORE_CONNECT.md`; manual entry still to do |
+| 7 | CI/CD pipeline | done |
 
 Decisions made 2026-09-21:
 
@@ -63,14 +64,17 @@ submission, and the first two before the app will even run correctly.
 1. ~~Run migration 023~~ — **done 2026-09-21**. Confirm it applied *completely*
    with the verification query in Phase 2 before trusting it; a partial apply
    is worse than none.
-2. ~~Enable GitHub Pages~~ — **done 2026-09-21** (Settings → Pages → `main` →
-   `/docs`; required making the repo public). **Still not serving:** `docs/`
-   only exists on `feat/app-store-compliance`, and Pages builds from `main`,
-   so the three legal URLs 404 until **PR #36 merges**. Confirm all three load
-   after merging — dead links are a 2.1 rejection on their own.
+2. ~~Enable GitHub Pages~~ — **done 2026-09-21**, and ~~confirm the URLs
+   serve~~ — **done 2026-09-22**: PR #36 merged, and all three legal URLs
+   return 200. Re-check immediately before submitting; a dead privacy policy
+   link is a 2.1 rejection on its own.
 3. **Test on a real device** — see "What has not been tested".
-4. **Create the demo account** for App Store Connect (Phase 6).
-5. **Decide on the app name** — see Phase 6.
+4. **Create the demo account** for App Store Connect — two accounts, then
+   `supabase/scripts/seed_demo_account.sql`. See `APP_STORE_CONNECT.md` §2.
+5. **Decide on the app name.** "GymTracker" is **confirmed taken** — two
+   near-exact matches already ship on the App Store. `APP_STORE_CONNECT.md` §1
+   has the collision check and four clear alternatives. Renaming is a native
+   change, so settle it before the build rather than after.
 
 ---
 
@@ -96,8 +100,9 @@ carry a zero-tolerance clause (1.2).
 - [x] `docs/terms.html` — terms of use / EULA with zero-tolerance clause
 - [x] `docs/style.css` — shared styling, mirrors the app's dark palette
 - [x] `docs/.nojekyll` so Pages serves the HTML verbatim
-- [ ] **Manual:** enable GitHub Pages (see Blocking manual steps)
-- [ ] **Manual:** confirm all three URLs load publicly before submitting
+- [x] **Manual:** enable GitHub Pages — done 2026-09-21
+- [x] **Manual:** confirm all three URLs load publicly — done 2026-09-22, all
+      three return 200. Re-check immediately before submitting.
 
 URLs once Pages is on — these are what the app links to and what goes into App
 Store Connect:
@@ -291,11 +296,15 @@ makes the post itself unreadable, so it pops back to the feed.
 - [x] `eas.json` — `production` build profile with `distribution: "store"` and
       `autoIncrement: true`; a `preview` profile for internal builds; a named
       `submit.production` profile
-- [ ] **Manual:** `eas build --platform ios --profile production`
-- [ ] **Manual:** `eas submit --platform ios --profile production`. The submit
-      profile is intentionally empty so EAS prompts for your Apple ID, App Store
-      Connect app ID and team ID on first run, rather than this repo carrying
-      guessed values.
+- [ ] **Manual:** run the **iOS release** workflow (Actions → iOS release →
+      Run workflow). It runs the same gate a PR does, then
+      `eas build --platform ios --profile production`. Run it with
+      `submit: false` first.
+- [ ] **Manual:** upload App Store Connect credentials to EAS once, with
+      `eas credentials`, so the workflow's submit step can run
+      non-interactively. Until then, submit from the EAS dashboard by hand.
+      The submit profile in `eas.json` stays empty rather than carrying
+      guessed Apple ID / team ID values.
 - [ ] **Manual: verify the built IPA's app icon has no alpha channel.** All four
       PNGs in `mobile/assets/` are RGBA (colour type 6). Expo normally flattens
       the iOS icon during prebuild, but Apple rejects icons with transparency,
@@ -315,18 +324,27 @@ changes need a fresh `eas build`.
 
 ---
 
-## Phase 6 — App Store Connect (not started)
+## Phase 6 — App Store Connect (drafted)
 
 Not code. Do this after a build is uploaded.
 
-- [ ] **App name** — "GymTracker" is generic and very likely collides with
-      existing App Store apps. Search the store and check trademarks before
-      burning a review cycle. 30-character limit (2.3.7).
+**Written up in full in `APP_STORE_CONNECT.md`** — the name collision check,
+the demo-account procedure, copy-paste review notes, the nutrition label, the
+age-rating answers, the screenshot list and what to do about a rejection. The
+summary below stays here so this checklist reads end to end.
+
+- [ ] **App name** — **"GymTracker" is confirmed taken.** Checked against the
+      iTunes Search API on 2026-09-22: *GymTracker – Workout Log* and
+      *GymTracker: Track workouts* both already ship. It has to change.
+      `APP_STORE_CONNECT.md` §1 has four candidates that came back clear.
+      30-character limit (2.3.7).
 - [ ] **Demo account** (2.1) — the app is login-gated, so review *will* fail
-      without working credentials in the review notes. Create a dedicated
-      account and seed it with several weeks of workouts, at least one friend,
-      and a few posts and comments, so the reviewer can actually exercise the
-      social and moderation features instead of staring at an empty feed.
+      without working credentials in the review notes. **Two** accounts: the
+      reviewer needs someone else's content to report and block. Sign both up
+      through the app, then run `supabase/scripts/seed_demo_account.sql`,
+      which fills six weeks of progressive training, weekly cardio, an
+      accepted friendship, posts from both sides and comments in both
+      directions. Idempotent and scoped to the two demo users.
 - [ ] **Notes for Review** (2.3.1(a)) — describe the AI generator and the social
       features *specifically*; generic descriptions get rejected. State where
       Report and Block live, because a reviewer who cannot find them will reject
@@ -349,6 +367,73 @@ Not code. Do this after a build is uploaded.
 
 ---
 
+---
+
+## Phase 7 — CI/CD (done)
+
+Added 2026-09-22, because the pipeline was the weakest part of the submission
+and nothing in Phases 0–6 covered it. Before this the repo had **one** workflow
+and no gate anywhere: `eas-update.yml` pushed an over-the-air bundle to every
+installed production app on each push to `main` with nothing verified first.
+An OTA update reaches users' phones with no App Store review in between, so
+that was the widest hole in the lifecycle — wider than anything the guidelines
+audit found.
+
+| Workflow | Trigger | What it does |
+|---|---|---|
+| `checks.yml` | called by the others | migration numbering, `npm ci`, lint, typecheck |
+| `ci.yml` | every PR, and `main` after merge | runs the gate |
+| `eas-update.yml` | push to `main` (mobile paths) | **gate, then** publish OTA |
+| `ios-release.yml` | manual only | gate, then `eas build`, optionally `eas submit` |
+
+- [x] ESLint added — `eslint-config-expo` 57, zero errors and zero warnings,
+      so `npm run lint` is a hard gate rather than advisory noise. ESLint 9,
+      not 10: `eslint-plugin-react` caps its peer range at `^9.7` and crashes
+      on 10 inside the Expo config.
+- [x] `npm run typecheck` and `npm run lint` scripts, so local and CI run the
+      same commands
+- [x] `.nvmrc` pins the Node version for CI and local nvm alike
+- [x] OTA publishes now require the gate to pass first
+- [x] `eas-update.yml` warns in the job summary when a push touched
+      `app.json`, `eas.json` or the lockfile — with `runtimeVersion` on the
+      `appVersion` policy an OTA cannot deliver those, and the failure mode is
+      silence rather than an error
+- [x] `ios-release.yml` builds from a clean checkout of a known commit rather
+      than a laptop working tree. App Store Connect credentials live in EAS,
+      not in GitHub secrets.
+- [x] `scripts/check-migrations.mjs` fails on duplicate migration numbers and
+      malformed names. Migrations are applied by hand in the SQL editor, so
+      this is the only automated check they get. Gaps are reported, not
+      failed — 022 is legitimately reserved by an unmerged branch.
+
+Verified by reproducing the CI path locally: `rm -rf node_modules`, `npm ci`,
+`npm run lint`, `npm run typecheck`, all green, plus the migration check
+against both a clean tree and a seeded duplicate.
+
+### Two rules are deliberately not enforced
+
+`react/no-unescaped-entities` is **off**. It is a web rule: React Native has no
+HTML, so "fixing" `<Text>it's</Text>` to `&apos;` renders those six characters
+literally on screen. It flagged 21 sites and every fix would have been a
+visible regression.
+
+`react-hooks/set-state-in-effect` and `react-hooks/refs` — the React Compiler
+rules Expo 57 enables — are **off**, flagging 18 real sites. Each fix is a
+behavioural refactor of working screens, and this project has no tests, no
+simulator and no device in CI (see "What has not been tested"). Refactoring
+them blind immediately before an App Store submission is the wrong trade.
+`npm run lint:compiler` re-enables both so the debt stays greppable. **This is
+the first thing to work through once a device is available.**
+
+### Still manual, by choice
+
+Database migrations. They are applied by hand in the Supabase SQL editor;
+CI only checks their numbering. Automating `supabase db push` on merge would
+need the database password in GitHub secrets and a rollback story, against a
+single production database with no staging environment. Not worth it at this
+size — but it does mean a migration is still the least-protected change this
+project can make. Treat every one as production surgery.
+
 ## What has not been tested
 
 Being explicit, because none of this was verifiable from a coding session on
@@ -357,11 +442,20 @@ this machine:
 - **Migration 023 was applied to production without ever being executed in a
   test environment.** Its behaviour is unverified beyond static review.
 - **No app code has been run.** There is no simulator, emulator or device
-  available here. `tsc --noEmit` passes, and that is the only gate this project
-  has — there is no ESLint, Prettier or test setup in the repo.
-- The **legal pages have not been served**; they were link-checked on disk only.
+  available here. Lint and typecheck both pass and both now gate CI (Phase 7),
+  but neither runs the app: they catch types and syntax, not behaviour. There
+  are still **no tests** in this repo, which is the honest gap. Every UI claim
+  in Phases 3 and 4 rests on reading the code.
+- ~~The legal pages have not been served~~ — **served and verified 2026-09-22**,
+  all three returning 200.
 - **No iOS build has been produced**, so the icon-alpha and privacy-manifest
   items above are unverified.
+- **The demo seed script has never been executed.** Same constraint as
+  migration 023: no local Postgres on this machine. It was reviewed statically,
+  and its strings were checked against the content filter's blocklist by
+  re-implementing `normalize_for_filter()` and the word-boundary match — none
+  of the demo captions, comments or usernames trip it. Expect to iterate on
+  first run anyway.
 
 Worth walking through on a real device once the migration is applied, in this
 order, since later steps depend on earlier ones:
