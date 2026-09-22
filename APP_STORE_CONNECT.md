@@ -29,13 +29,19 @@ Confirm at [developer.apple.com/account](https://developer.apple.com/account):
   A free app still needs the Free Applications agreement accepted, and an
   unaccepted agreement silently blocks the app from being submitted.
 
-Decide **individual vs organization** enrolment before paying: it determines
-the seller name shown on the App Store listing, and switching afterwards is a
-support ticket, not a setting. `josh@camotechsolutions.com.au` suggests an
-organization is intended, which is the slower path.
+**Enrol as an organization (CamoTech Solutions), not as an individual.**
+Decided 2026-09-22. An individual enrolment **cannot be converted** into an
+organization later — moving afterwards means a second enrolment plus Apple's
+app-transfer process, which has conditions and is not guaranteed. The
+enrolment type also sets the seller name shown publicly on the listing.
 
-This was never verified in any working session — it is recorded here because
-it is the one prerequisite nothing else in the repo tracks.
+The organization path is the slower one: it needs a D-U-N-S number for
+CamoTech Solutions, which can take days to obtain on its own. Start it early.
+
+This is part of a wider move off personal accounts — see
+**`ACCOUNT_MIGRATION.md`**, which covers GitHub, Supabase, Expo and the Gemini
+key as well. Nothing was verified in any working session; it is recorded here
+because it is the one prerequisite nothing else in the repo tracks.
 
 ---
 
@@ -85,8 +91,15 @@ trade mark collision costs the listing.
 3. `docs/*.html` and `mobile/src/constants/legal.ts` if the name appears in
    the legal copy.
 
-`expo.slug`, `ios.bundleIdentifier` and the EAS project id should **not**
-change. The bundle id is permanent once the app exists in App Store Connect.
+`expo.slug` and the EAS project id should **not** change — the slug is tied to
+the existing EAS project and the project id is what `updates.url` points at.
+
+**`ios.bundleIdentifier` is changing too, but for a different reason.** It is
+currently `com.gymtracker.app`, which is reverse-DNS for a domain we do not
+own, and it is permanent once the App Store Connect record exists. It moves to
+`au.com.camotechsolutions.<name>` as part of the account migration — see
+`ACCOUNT_MIGRATION.md`. Since the name and the bundle ID are both native
+config, **settle both and change them in one PR**, then build once.
 
 ---
 
