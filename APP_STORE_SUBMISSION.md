@@ -12,27 +12,50 @@ below, then "Current state". Everything in Phases 0–7 is done and merged.**
 ## Pick up here — as of 2026-09-22
 
 All code work is finished and on `main`. **Nothing is left that a coding
-session can do unblocked.** What remains is manual, and one decision gates the
-end of it.
+session can do unblocked.** What remains is manual, and **two** things gate the
+build. Both are decisions, not work.
 
-**The one blocker: the app name has not been chosen.** "GymTracker" is
-confirmed taken (see `APP_STORE_CONNECT.md` §1 for the collision data and four
-candidates that came back clear). Renaming touches `mobile/app.json` →
-`expo.name`, which is a **native** change, so it must be settled *before* the
-build — changing it after means rebuilding and re-uploading.
+### Blocker 1 — the app name has not been chosen
 
-Once the name is chosen, the next coding task is a small PR changing it in
-three places: `mobile/app.json`, `docs/*.html`, and
-`mobile/src/constants/legal.ts`. Do **not** change `expo.slug`,
-`ios.bundleIdentifier` or the EAS project id — the bundle id is permanent once
-the app exists in App Store Connect.
+"GymTracker" is confirmed taken (see `APP_STORE_CONNECT.md` §1 for the
+collision data and four candidates that came back clear). Renaming touches
+`mobile/app.json` → `expo.name`, which is a **native** change, so it must be
+settled *before* the build — changing it after means rebuilding and
+re-uploading.
 
-**What can proceed in parallel, without the name** — in rough priority order:
+### Blocker 2 — everything is on personal accounts
 
-1. **Confirm Apple Developer Program enrolment is active.** Nothing can be
-   submitted without it, and enrolment can take days to approve. This has
-   never been verified in any session and is not tracked anywhere else in
-   this document.
+GitHub, Supabase, Expo and the Gemini key all sit on Josh's personal accounts
+and need to move to **CamoTech Solutions**. Deferred on 2026-09-22 with a full
+runbook in **`ACCOUNT_MIGRATION.md`** — read that, not this summary.
+
+It matters *now* rather than later because two things are one-way doors and
+both are still free: **Apple Developer enrolment cannot be converted from
+individual to organization**, and **the bundle identifier is permanent** once
+the App Store Connect record exists. `com.gymtracker.app` is also wrong twice
+over — reverse-DNS for a domain we do not own, and the name is changing anyway.
+
+Four decisions unblock it: Apple enrolment type, bundle ID, GitHub org name,
+and the legal-pages subdomain. `ACCOUNT_MIGRATION.md` → "Decisions needed".
+
+### These two land together
+
+Both change native config in `mobile/app.json` (`expo.name`,
+`ios.bundleIdentifier`, `android.package`, `expo.owner`), so a build made
+before either is settled is a build that gets thrown away. **Do them in one
+pass, in one PR**, then build once.
+
+Do **not** change `expo.slug` or the EAS `projectId` — the slug is tied to the
+existing EAS project and the project id is what `updates.url` points at.
+
+### What can proceed in parallel, without either decision
+
+In rough priority order:
+
+1. **Start the Apple Developer organization enrolment.** It is the long pole —
+   a D-U-N-S number plus identity verification can take days — and it blocks
+   nothing else while it runs. Do not create the App Store Connect app record
+   yet; that is what locks the bundle ID.
 2. **Create and seed the demo accounts** — `APP_STORE_CONNECT.md` §2. The
    emails and usernames do not contain the app name, so this is unaffected.
 3. **Work the device test list** in "What has not been tested". This is the
@@ -42,7 +65,7 @@ the app exists in App Store Connect.
    which is why they were parked rather than fixed blind.
 5. Turn on repo **Secret scanning** and **Push protection** (Settings → Code
    security). Free on public repos, and would catch a future accidental key
-   commit before it lands.
+   commit before it lands. Worth doing as part of the GitHub transfer.
 
 ---
 
@@ -58,6 +81,7 @@ the app exists in App Store Connect.
 | 5 | `app.json` / `eas.json` build + submit config | done |
 | 6 | App Store Connect submission pack | drafted in `APP_STORE_CONNECT.md`; manual entry still to do |
 | 7 | CI/CD pipeline | done — merged as PR #37, green on `main` 2026-09-22 |
+| 8 | Move off personal accounts to CamoTech | **deferred 2026-09-22** — runbook in `ACCOUNT_MIGRATION.md`, blocks the build |
 
 Decisions made 2026-09-21:
 
@@ -110,17 +134,23 @@ submission.
 
 **Outstanding, in the order they unblock each other:**
 
-3. **Confirm Apple Developer Program enrolment is active** ($149 AUD/year).
-   Never verified in any session. Enrolment can take days, so check it first
-   even though it is needed last.
-4. **Decide on the app name** — the one item blocking the build. See "Pick up
-   here" above and `APP_STORE_CONNECT.md` §1.
-5. **Create the demo accounts** for App Store Connect — two accounts, then
+3. **Enrol in the Apple Developer Program as an organization**
+   ($149 AUD/year). Not enrolled in any capacity. Enrolment can take days, so
+   start it first even though it is needed last — and enrol as CamoTech
+   Solutions, because an individual enrolment cannot be converted later. See
+   `ACCOUNT_MIGRATION.md` step 1.
+4. **Decide on the app name** — blocks the build. See "Pick up here" above and
+   `APP_STORE_CONNECT.md` §1.
+5. **Move off personal accounts** — GitHub, Supabase, Expo and the Gemini key
+   all sit on Josh's personal accounts. Also blocks the build, because the
+   bundle ID and `expo.owner` are native config. Full runbook in
+   `ACCOUNT_MIGRATION.md`.
+6. **Create the demo accounts** for App Store Connect — two accounts, then
    `supabase/scripts/seed_demo_account.sql`. See `APP_STORE_CONNECT.md` §2.
-   Not blocked by the name.
-6. **Test on a real device** — see "What has not been tested". Not blocked by
-   the name.
-7. **Run the iOS release workflow**, then submit. Blocked by 3 and 4.
+   Not blocked by 4 or 5.
+7. **Test on a real device** — see "What has not been tested". Not blocked by
+   4 or 5.
+8. **Run the iOS release workflow**, then submit. Blocked by 3, 4 and 5.
 
 ---
 
