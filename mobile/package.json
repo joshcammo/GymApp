@@ -6,7 +6,10 @@
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint . --max-warnings=0",
+    "lint:compiler": "eslint . --rule \"react-hooks/refs: warn\" --rule \"react-hooks/set-state-in-effect: warn\""
   },
   "dependencies": {
     "@expo-google-fonts/space-grotesk": "^0.4.1",
@@ -39,6 +42,8 @@
     "@babel/core": "^7.24.0",
     "@types/node": "^25.9.1",
     "@types/react": "~19.2.4",
+    "eslint": "^9.39.5",
+    "eslint-config-expo": "^57.0.2",
     "typescript": "~6.0.3"
   },
   "private": true

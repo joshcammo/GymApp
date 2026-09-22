@@ -9,15 +9,14 @@ import { FONT, RADIUS } from '../constants/theme';
 import { muscleGroupLabel, MUSCLE_GROUPS } from '../constants/muscleGroups';
 import { sinceDateForRange, parseDateStr } from '../utils/dateUtils';
 import {
-  ExerciseDef, MuscleGroup, MuscleGroupBalance, MuscleGroupVolume, OneRmTrendPoint, TimeRange,
-  WeeklyVolumePoint,
+  ExerciseDef, MuscleGroup, MuscleGroupBalance, MuscleGroupVolume, TimeRange,
 } from '../types';
 import { analyticsApi } from '../services/api';
 import { ExercisePickerModal } from '../components/ExercisePickerModal';
 import { PressableScale } from '../components/PressableScale';
 import { EmptyState } from '../components/EmptyState';
 import { haptics } from '../utils/haptics';
-import { BalanceRead, BucketStyle, classifyBalance, createBucketStyle } from '../utils/muscleBalance';
+import { BalanceRead, classifyBalance, createBucketStyle } from '../utils/muscleBalance';
 
 type Tab = '1RM' | 'VOLUME' | 'BREAKDOWN' | 'HEATMAP';
 type VolumeMode = 'EXERCISE' | 'MUSCLE_GROUP';

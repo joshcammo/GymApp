@@ -115,6 +115,9 @@ export function AddExerciseScreen({ navigation, route }: Props) {
       .then(pr => { if (!stale) setCurrentPr(pr); })
       .catch(() => { if (!stale) setCurrentPr(null); });
     return () => { stale = true; };
+  // Keyed on the id, not the object: `selectedDef` gets a new identity on
+  // every picker render, and depending on it would refetch needlessly.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDef?.id]);
 
   // Fetch the reference weight for the "Suggested Warm-up" ramp: best-effort,
@@ -126,6 +129,9 @@ export function AddExerciseScreen({ navigation, route }: Props) {
       .then(s => { if (!stale) setLastWorkingSet(s); })
       .catch(() => { if (!stale) setLastWorkingSet(null); });
     return () => { stale = true; };
+  // Keyed on the id, not the object: `selectedDef` gets a new identity on
+  // every picker render, and depending on it would refetch needlessly.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDef?.id]);
 
   // Load this day's other exercises for the superset picker, and resolve
