@@ -36,6 +36,10 @@ function fmtShortDate(dateStr: string): string {
   return parseDateStr(dateStr).toLocaleDateString('en-GB', { month: 'short', day: 'numeric' });
 }
 
+// Stable empty array for the loading and error states, so `rows` — and the
+// useMemo below that depends on it — don't change identity on every render.
+const NO_POINTS: DailyActivityPoint[] = [];
+
 /**
  * Training volume per day over the last 7 or 30 days, a single series, so
  * one hue and no legend (the title says what's plotted).
@@ -64,7 +68,7 @@ export function ActivityTrendCard() {
     return () => { stale = true; };
   }, [rangeDays]);
 
-  const rows = points === null || points === 'error' ? [] : points;
+  const rows = points === null || points === 'error' ? NO_POINTS : points;
 
   const totalVolume  = rows.reduce((sum, p) => sum + Number(p.volume_kg), 0);
   const trainedDays  = rows.filter(p => p.exercise_count > 0 || p.cardio_count > 0).length;

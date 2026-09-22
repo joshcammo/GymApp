@@ -68,7 +68,7 @@ export function PresetsScreen({ navigation }: Props) {
               await presetApi.delete(preset.id);
               haptics.success();
               setPresets(prev => prev.filter(p => p.id !== preset.id));
-            } catch (e) {
+            } catch {
               Alert.alert('Error', 'Could not delete preset. Please try again.');
             }
           },

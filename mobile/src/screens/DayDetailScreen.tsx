@@ -4,9 +4,8 @@ import {
   StyleSheet, Alert, ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RouteProp } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
 
 import { ColorTokens } from '../theme/colorways';
@@ -167,7 +166,7 @@ export function DayDetailScreen({ navigation, route }: Props) {
               await workoutApi.delete(id);
               haptics.success();
               setExercises(prev => prev.filter(e => e.id !== id));
-            } catch (e) {
+            } catch {
               Alert.alert('Error', 'Could not delete exercise. Please try again.');
             }
           },
@@ -195,7 +194,7 @@ export function DayDetailScreen({ navigation, route }: Props) {
               await cardioApi.delete(id);
               haptics.success();
               setCardioSessions(prev => prev.filter(s => s.id !== id));
-            } catch (e) {
+            } catch {
               Alert.alert('Error', 'Could not delete cardio session. Please try again.');
             }
           },

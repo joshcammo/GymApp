@@ -121,7 +121,7 @@ export function EditPresetScreen({ navigation, route }: Props) {
             await presetApi.delete(preset.id);
             haptics.success();
             navigation.goBack();
-          } catch (e) {
+          } catch {
             Alert.alert('Error', 'Could not delete preset. Please try again.');
           }
         },
