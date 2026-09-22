@@ -4,8 +4,45 @@ Living document. Started 2026-09-21 on branch `feat/app-store-compliance`.
 Audited against the [App Store Review Guidelines](https://developer.apple.com/app-store/review/guidelines/)
 as published September 2026.
 
-**If you are picking this up in a new session: read "Current state", then
-"Blocking manual steps", then work the next unchecked phase.**
+**If you are picking this up in a new session: read "Pick up here" directly
+below, then "Current state". Everything in Phases 0–7 is done and merged.**
+
+---
+
+## Pick up here — as of 2026-09-22
+
+All code work is finished and on `main`. **Nothing is left that a coding
+session can do unblocked.** What remains is manual, and one decision gates the
+end of it.
+
+**The one blocker: the app name has not been chosen.** "GymTracker" is
+confirmed taken (see `APP_STORE_CONNECT.md` §1 for the collision data and four
+candidates that came back clear). Renaming touches `mobile/app.json` →
+`expo.name`, which is a **native** change, so it must be settled *before* the
+build — changing it after means rebuilding and re-uploading.
+
+Once the name is chosen, the next coding task is a small PR changing it in
+three places: `mobile/app.json`, `docs/*.html`, and
+`mobile/src/constants/legal.ts`. Do **not** change `expo.slug`,
+`ios.bundleIdentifier` or the EAS project id — the bundle id is permanent once
+the app exists in App Store Connect.
+
+**What can proceed in parallel, without the name** — in rough priority order:
+
+1. **Confirm Apple Developer Program enrolment is active.** Nothing can be
+   submitted without it, and enrolment can take days to approve. This has
+   never been verified in any session and is not tracked anywhere else in
+   this document.
+2. **Create and seed the demo accounts** — `APP_STORE_CONNECT.md` §2. The
+   emails and usernames do not contain the app name, so this is unaffected.
+3. **Work the device test list** in "What has not been tested". This is the
+   largest untested surface in the project and does not need a build.
+4. **Clear the 18 parked React Compiler lint findings** —
+   `cd mobile && npm run lint:compiler`. Needs a device to verify against,
+   which is why they were parked rather than fixed blind.
+5. Turn on repo **Secret scanning** and **Push protection** (Settings → Code
+   security). Free on public repos, and would catch a future accidental key
+   commit before it lands.
 
 ---
 
@@ -20,7 +57,7 @@ as published September 2026.
 | 4 | Report + block UI, sign-up terms gate, AI disclaimer | done |
 | 5 | `app.json` / `eas.json` build + submit config | done |
 | 6 | App Store Connect submission pack | drafted in `APP_STORE_CONNECT.md`; manual entry still to do |
-| 7 | CI/CD pipeline | done |
+| 7 | CI/CD pipeline | done — merged as PR #37, green on `main` 2026-09-22 |
 
 Decisions made 2026-09-21:
 
@@ -59,7 +96,9 @@ Decisions made 2026-09-21:
 ## Blocking manual steps
 
 None of this can be done from a coding session. All of it has to happen before
-submission, and the first two before the app will even run correctly.
+submission.
+
+**Done:**
 
 1. ~~Run migration 023~~ — **done 2026-09-21**. Confirm it applied *completely*
    with the verification query in Phase 2 before trusting it; a partial apply
@@ -68,13 +107,20 @@ submission, and the first two before the app will even run correctly.
    serve~~ — **done 2026-09-22**: PR #36 merged, and all three legal URLs
    return 200. Re-check immediately before submitting; a dead privacy policy
    link is a 2.1 rejection on its own.
-3. **Test on a real device** — see "What has not been tested".
-4. **Create the demo account** for App Store Connect — two accounts, then
+
+**Outstanding, in the order they unblock each other:**
+
+3. **Confirm Apple Developer Program enrolment is active** ($149 AUD/year).
+   Never verified in any session. Enrolment can take days, so check it first
+   even though it is needed last.
+4. **Decide on the app name** — the one item blocking the build. See "Pick up
+   here" above and `APP_STORE_CONNECT.md` §1.
+5. **Create the demo accounts** for App Store Connect — two accounts, then
    `supabase/scripts/seed_demo_account.sql`. See `APP_STORE_CONNECT.md` §2.
-5. **Decide on the app name.** "GymTracker" is **confirmed taken** — two
-   near-exact matches already ship on the App Store. `APP_STORE_CONNECT.md` §1
-   has the collision check and four clear alternatives. Renaming is a native
-   change, so settle it before the build rather than after.
+   Not blocked by the name.
+6. **Test on a real device** — see "What has not been tested". Not blocked by
+   the name.
+7. **Run the iOS release workflow**, then submit. Blocked by 3 and 4.
 
 ---
 
@@ -369,7 +415,7 @@ summary below stays here so this checklist reads end to end.
 
 ---
 
-## Phase 7 — CI/CD (done)
+## Phase 7 — CI/CD (done, merged as PR #37)
 
 Added 2026-09-22, because the pipeline was the weakest part of the submission
 and nothing in Phases 0–6 covered it. Before this the repo had **one** workflow
@@ -409,6 +455,18 @@ audit found.
 Verified by reproducing the CI path locally: `rm -rf node_modules`, `npm ci`,
 `npm run lint`, `npm run typecheck`, all green, plus the migration check
 against both a clean tree and a seeded duplicate.
+
+**Then verified in production on merge**, which matters more: the PR run went
+green in 36s, and the push to `main` ran `checks` first, published the OTA
+update only after it passed, and correctly raised the native-change warning
+(`Changed: mobile/package-lock.json mobile/package.json`). The whole pipeline
+has now executed for real rather than only on paper.
+
+Expect that warning to fire on any dependency change, including a
+dev-only one like the ESLint install that triggered it here. It is
+deliberately conservative — a warning that is occasionally unnecessary is the
+right side to err on when the alternative is silently shipping an OTA update
+that users cannot receive.
 
 ### Two rules are deliberately not enforced
 

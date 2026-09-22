@@ -4,8 +4,38 @@ Everything that has to be typed into App Store Connect, written down so it is
 decided once rather than improvised in the submission form at 11pm.
 
 Companion to `APP_STORE_SUBMISSION.md`, which tracks the code work. This file
-is Phase 6. Nothing here is code; all of it is manual, and all of it happens
-**after** a build has been uploaded.
+is Phase 6. Nothing here is code; all of it is manual.
+
+Most of it happens **after** a build is uploaded, but **§0 (Apple Developer
+enrolment), §1 (the app name) and §2 (demo accounts) all have to happen
+before** — §0 because enrolment can take days, §1 because the name is a native
+change baked into the build, and §2 because the seed wants an account that
+already exists. §7 is the order to do everything in.
+
+---
+
+## 0. Apple Developer Program — check this first
+
+None of the rest of this document is reachable without an active **Apple
+Developer Program** membership ($149 AUD/year). It is needed last and should be
+checked first, because enrolment is not instant — identity verification can
+take days, and for a company entity it needs a D-U-N-S number, which is slower
+again.
+
+Confirm at [developer.apple.com/account](https://developer.apple.com/account):
+
+- Membership is **active**, not expired or pending.
+- The **Agreements, Tax, and Banking** section has no outstanding agreement.
+  A free app still needs the Free Applications agreement accepted, and an
+  unaccepted agreement silently blocks the app from being submitted.
+
+Decide **individual vs organization** enrolment before paying: it determines
+the seller name shown on the App Store listing, and switching afterwards is a
+support ticket, not a setting. `josh@camotechsolutions.com.au` suggests an
+organization is intended, which is the slower path.
+
+This was never verified in any working session — it is recorded here because
+it is the one prerequisite nothing else in the repo tracks.
 
 ---
 
@@ -206,6 +236,8 @@ Screenshot 6 is the cheapest insurance in this whole document.
 
 ## 7. Order of operations
 
+0. Confirm Apple Developer Program enrolment is active and agreements are
+   accepted (§0). Do this first; it can take days.
 1. Decide the app name (§1). If it changes, update `app.json` **before**
    building — it is a native change.
 2. Create and seed the demo accounts (§2).
