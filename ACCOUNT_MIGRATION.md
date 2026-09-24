@@ -3,12 +3,20 @@
 Everything currently sits on Josh's **personal** accounts. It needs to sit on
 **CamoTech Solutions** business accounts before the app ships.
 
-Deferred on 2026-09-22, picked back up 2026-09-24. **All four decisions are now
-made** and the code change is merged. What's left is entirely manual account
-work — see "Runbook".
+Deferred on 2026-09-22, picked back up 2026-09-24. All four decisions are made
+and the code change is merged (PR #40).
 
-**If you are picking this up in a new session: read "Decisions needed" for
-what was decided and why, then "Runbook" for what's still outstanding.**
+**Picking this up in a new session — start here:**
+
+- **Fully done:** Apple Developer (Individual, enrolled), app name + bundle ID
+  (code merged), GitHub transfer (`joshcamotech/CTS-Fitness`), custom domain —
+  DNS, Enforce HTTPS, and all three legal URLs verified returning 200 with the
+  correct content on 2026-09-24. Nothing left on the GitHub/domain side.
+- **Next up: Supabase, then Expo/EAS, then the Gemini key** — Runbook steps
+  4–6 below.
+- Once those three are done, the app is clear to build (`eas build`) and move
+  into App Store Connect submission — see `APP_STORE_SUBMISSION.md` /
+  `APP_STORE_CONNECT.md`.
 
 ---
 
@@ -66,11 +74,14 @@ Where each piece lives today, and what moving it costs.
 |---|---|---|---|---|
 | Apple Developer | **enrolled** (Individual, CamoTech email) | — done | done | no |
 | App name / Bundle ID | ~~GymTracker~~ / ~~`com.gymtracker.app`~~ | **CTS Fitness** / `au.com.camotechsolutions.ctsfitness` | done in code, needs a build | **yes — rebuild** |
-| GitHub | `joshcammo/GymApp` | `joshcamotech/CTS-Fitness` | ~20 min | Pages URL only |
+| GitHub | ~~`joshcammo/GymApp`~~ | **`joshcamotech/CTS-Fitness`** — done | done | Pages URL only |
+| Custom domain | ~~GitHub's default Pages URL~~ | **`ctsfitness.camotechsolutions.com.au`** — done, HTTPS on, all 3 URLs verified 200 | done | no |
 | Supabase | personal org | CamoTech org | ~5 min | **no** |
 | Expo / EAS | owner `joshcammo` | Expo org | ~15 min | `app.json` owner |
 | Gemini API key | personal Google | CamoTech Google | ~5 min | no |
 | Domain, support email | already CamoTech | — | — | — |
+
+**Next action: Runbook step 4 (Supabase).**
 
 **Code change landed 2026-09-24** — name, bundle ID, legal URLs and the
 custom-domain CNAME are all done:
@@ -136,46 +147,45 @@ in any order once step 1 is under way.
 - Do **not** create the App Store Connect app record yet — that is what locks
   the bundle ID, and the name is not decided.
 
-### 2. GitHub
+### 2. GitHub — done 2026-09-24
 
-- `joshcamotech/CTS-Fitness` already exists as an empty placeholder repo
-  (created to reserve the name). GitHub's ownership transfer refuses to land
-  if the destination name is taken, so **first rename or delete the
-  placeholder** (e.g. rename it to `CTS-Fitness-placeholder` temporarily).
-- Transfer `joshcammo/GymApp` to `joshcamotech`: repo Settings → General →
-  Danger Zone → Transfer ownership. Accept the transfer on the `joshcamotech`
-  side (may arrive as an email invite).
-- Rename the transferred repo from `GymApp` to `CTS-Fitness` — repo Settings →
-  General → repository name.
-- Delete the `CTS-Fitness-placeholder` repo once the rename above is confirmed,
-  if it had no other content.
-- **Then verify, before trusting the pipeline again:**
+- ~~Transfer `joshcammo/GymApp` to `joshcamotech`~~ — **done.** Repo is now
+  `joshcamotech/CTS-Fitness`.
+- **Still to verify** (not yet confirmed in this session — check before
+  trusting the pipeline):
   - `secrets.EXPO_TOKEN` still exists — Settings → Secrets and variables →
     Actions.
   - `vars.EXPO_PUBLIC_SUPABASE_URL` and `vars.EXPO_PUBLIC_SUPABASE_ANON_KEY`
     still exist. **If these are missing, the OTA workflow publishes a bundle
     that crashes on launch before any UI renders** — this has happened before,
     see the note in `.github/workflows/eas-update.yml`.
-  - GitHub Pages is still enabled and building from `main` → `/docs`.
-  - Actions are enabled on the org (some orgs default them off).
-- Re-check `gh auth status`. Pushes touching `.github/workflows/` need the
-  `workflow` scope; if it is missing, `gh auth refresh -h github.com -s workflow`.
-- Turn on **Secret scanning** and **Push protection** while in the settings —
-  free on public repos, and still not done.
+  - Actions are enabled on the account.
+  - Re-check `gh auth status` locally — pushes touching `.github/workflows/`
+    need the `workflow` scope; if it's missing,
+    `gh auth refresh -h github.com -s workflow`.
+  - Turn on **Secret scanning** and **Push protection** — Settings → Code
+    security. Free on public repos, still not confirmed done.
 
-### 3. Custom domain
+### 3. Custom domain — done 2026-09-24
 
-- DNS: `CNAME` record — `ctsfitness.camotechsolutions.com.au` →
+- ~~DNS: `CNAME` record~~ — **done**: `ctsfitness.camotechsolutions.com.au` →
   `joshcamotech.github.io`.
-- ~~Add `docs/CNAME`~~ — **done**, already in the repo, pointing at
-  `ctsfitness.camotechsolutions.com.au`.
-- Repo Settings → Pages → Custom domain → enter it → wait for the check → tick
-  **Enforce HTTPS**.
-- Confirm all three URLs return 200 on the new domain. `legal.ts` already
-  points there — until this step is done, those links are dead, which is fine
-  pre-submission but **must** be fixed before Apple review.
+- **Gotcha hit and fixed:** the Cloudflare DNS record was created **Proxied**
+  (orange cloud) by default. GitHub Pages can't verify or issue a certificate
+  through Cloudflare's proxy — it needs to see the CNAME resolve directly.
+  Fixed by switching the record to **DNS only** (grey cloud) in Cloudflare.
+  If this domain's DNS record is ever recreated, do that from the start.
+- ~~Add `docs/CNAME`~~ — **done**, already in the repo.
+- ~~Enforce HTTPS~~ — **on.**
+- ~~Confirm all three URLs return 200~~ — **verified 2026-09-24**, including
+  checking `/` actually serves the CTS Fitness page (not a cached/placeholder
+  response):
+  - `https://ctsfitness.camotechsolutions.com.au/` → 200, `<title>CTS Fitness
+    — Support</title>`
+  - `https://ctsfitness.camotechsolutions.com.au/privacy.html` → 200
+  - `https://ctsfitness.camotechsolutions.com.au/terms.html` → 200
 
-### 4. Supabase
+### 4. Supabase — pick up here
 
 - Create a CamoTech organization.
 - Project Settings → General → Transfer project.
