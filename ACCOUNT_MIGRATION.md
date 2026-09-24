@@ -8,16 +8,15 @@ and the code change is merged (PR #40).
 
 **Picking this up in a new session — start here:**
 
-- **Done:** Apple Developer (Individual, enrolled), app name + bundle ID
-  (code merged), GitHub transfer (`joshcamotech/CTS-Fitness`), DNS record for
-  the custom domain (Cloudflare proxy was the gotcha — see Runbook step 3).
-- **In progress, not yet actionable:** GitHub Pages "Enforce HTTPS" — greyed
-  out until GitHub finishes issuing the certificate off the now-passing DNS
-  check. Nothing to do but wait and re-check; don't build or submit until it's
-  ticked and all three legal URLs return 200 on the new domain.
+- **Fully done:** Apple Developer (Individual, enrolled), app name + bundle ID
+  (code merged), GitHub transfer (`joshcamotech/CTS-Fitness`), custom domain —
+  DNS, Enforce HTTPS, and all three legal URLs verified returning 200 with the
+  correct content on 2026-09-24. Nothing left on the GitHub/domain side.
 - **Next up: Supabase, then Expo/EAS, then the Gemini key** — Runbook steps
-  4–6 below. None of them are blocked by the HTTPS wait; start on Supabase
-  whenever you're ready.
+  4–6 below.
+- Once those three are done, the app is clear to build (`eas build`) and move
+  into App Store Connect submission — see `APP_STORE_SUBMISSION.md` /
+  `APP_STORE_CONNECT.md`.
 
 ---
 
@@ -76,7 +75,7 @@ Where each piece lives today, and what moving it costs.
 | Apple Developer | **enrolled** (Individual, CamoTech email) | — done | done | no |
 | App name / Bundle ID | ~~GymTracker~~ / ~~`com.gymtracker.app`~~ | **CTS Fitness** / `au.com.camotechsolutions.ctsfitness` | done in code, needs a build | **yes — rebuild** |
 | GitHub | ~~`joshcammo/GymApp`~~ | **`joshcamotech/CTS-Fitness`** — done | done | Pages URL only |
-| Custom domain | GitHub's default Pages URL | `ctsfitness.camotechsolutions.com.au` | **DNS check passed**; Enforce HTTPS pending GitHub's cert issuance | no |
+| Custom domain | ~~GitHub's default Pages URL~~ | **`ctsfitness.camotechsolutions.com.au`** — done, HTTPS on, all 3 URLs verified 200 | done | no |
 | Supabase | personal org | CamoTech org | ~5 min | **no** |
 | Expo / EAS | owner `joshcammo` | Expo org | ~15 min | `app.json` owner |
 | Gemini API key | personal Google | CamoTech Google | ~5 min | no |
@@ -167,24 +166,24 @@ in any order once step 1 is under way.
   - Turn on **Secret scanning** and **Push protection** — Settings → Code
     security. Free on public repos, still not confirmed done.
 
-### 3. Custom domain — DNS done, HTTPS pending
+### 3. Custom domain — done 2026-09-24
 
 - ~~DNS: `CNAME` record~~ — **done**: `ctsfitness.camotechsolutions.com.au` →
-  `joshcamotech.github.io`, DNS check passed 2026-09-24.
+  `joshcamotech.github.io`.
 - **Gotcha hit and fixed:** the Cloudflare DNS record was created **Proxied**
   (orange cloud) by default. GitHub Pages can't verify or issue a certificate
   through Cloudflare's proxy — it needs to see the CNAME resolve directly.
   Fixed by switching the record to **DNS only** (grey cloud) in Cloudflare.
   If this domain's DNS record is ever recreated, do that from the start.
 - ~~Add `docs/CNAME`~~ — **done**, already in the repo.
-- Repo Settings → Pages → Custom domain: entered, DNS check passed. **Enforce
-  HTTPS is still greyed out** — GitHub hasn't finished issuing the cert yet.
-  Nothing to do but wait and refresh the page periodically; tick it as soon as
-  it's selectable.
-- **Before building or submitting:** confirm all three URLs return 200 —
-  `https://ctsfitness.camotechsolutions.com.au/`, `/privacy.html`,
-  `/terms.html`. `legal.ts` already points there, so they're dead until
-  Enforce HTTPS is on.
+- ~~Enforce HTTPS~~ — **on.**
+- ~~Confirm all three URLs return 200~~ — **verified 2026-09-24**, including
+  checking `/` actually serves the CTS Fitness page (not a cached/placeholder
+  response):
+  - `https://ctsfitness.camotechsolutions.com.au/` → 200, `<title>CTS Fitness
+    — Support</title>`
+  - `https://ctsfitness.camotechsolutions.com.au/privacy.html` → 200
+  - `https://ctsfitness.camotechsolutions.com.au/terms.html` → 200
 
 ### 4. Supabase — pick up here
 
