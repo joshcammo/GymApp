@@ -29,14 +29,17 @@ Confirm at [developer.apple.com/account](https://developer.apple.com/account):
   A free app still needs the Free Applications agreement accepted, and an
   unaccepted agreement silently blocks the app from being submitted.
 
-**Enrol as an organization (CamoTech Solutions), not as an individual.**
-Decided 2026-09-22. An individual enrolment **cannot be converted** into an
-organization later — moving afterwards means a second enrolment plus Apple's
-app-transfer process, which has conditions and is not guaranteed. The
-enrolment type also sets the seller name shown publicly on the listing.
+**Enrol as an Individual, using the CamoTech email as the Apple ID.**
+Decided 2026-09-24, superseding the 2026-09-22 org-enrolment plan. CamoTech
+Solutions is an ABN sole trader, not a registered company, and D-U-N-S numbers
+go to registered legal entities — Organization enrolment isn't realistically
+available here. **Enrolled 2026-09-24.**
 
-The organization path is the slower one: it needs a D-U-N-S number for
-CamoTech Solutions, which can take days to obtain on its own. Start it early.
+Consequence: the App Store **Seller** name shows Josh's personal legal name,
+not "CamoTech Solutions" — fixed by Apple for Individual accounts regardless
+of enrolment email. This holds for any future CamoTech app on this account
+too, since Seller name is account-wide. Revisit only if CamoTech Solutions
+ever incorporates — see `ACCOUNT_MIGRATION.md`.
 
 This is part of a wider move off personal accounts — see
 **`ACCOUNT_MIGRATION.md`**, which covers GitHub, Supabase, Expo and the Gemini
@@ -45,7 +48,7 @@ because it is the one prerequisite nothing else in the repo tracks.
 
 ---
 
-## 1. App name — needs a decision before anything else
+## 1. App name — decided: CTS Fitness
 
 **"GymTracker" is taken.** Checked against the iTunes Search API on 2026-09-22
 (AU storefront), and there are two near-exact matches already shipping:
@@ -70,8 +73,13 @@ that word:
 | Setgrid | clear |
 | Liftwell | clear |
 | Rackside | clear |
+| **CTS Fitness** | **clear** — checked 2026-09-24, no exact match in AU storefront top results. **Decided.** |
 
-Re-check whatever you pick immediately before submitting — the store moves:
+Trade mark register not yet checked — do that before submitting, not before
+building; a name collision costs a review cycle, a trade mark collision costs
+the listing, but it doesn't block the code change below.
+
+Re-check immediately before submitting — the store moves:
 
 ```bash
 curl -s "https://itunes.apple.com/search?term=YOUR+NAME&country=au&entity=software&limit=10" \
@@ -94,12 +102,11 @@ trade mark collision costs the listing.
 `expo.slug` and the EAS project id should **not** change — the slug is tied to
 the existing EAS project and the project id is what `updates.url` points at.
 
-**`ios.bundleIdentifier` is changing too, but for a different reason.** It is
-currently `com.gymtracker.app`, which is reverse-DNS for a domain we do not
-own, and it is permanent once the App Store Connect record exists. It moves to
-`au.com.camotechsolutions.<name>` as part of the account migration — see
-`ACCOUNT_MIGRATION.md`. Since the name and the bundle ID are both native
-config, **settle both and change them in one PR**, then build once.
+**`ios.bundleIdentifier` changed too, for a different reason.** It was
+`com.gymtracker.app`, reverse-DNS for a domain we do not own, and it is
+permanent once the App Store Connect record exists. It is now
+`au.com.camotechsolutions.ctsfitness` — see `ACCOUNT_MIGRATION.md`. Name and
+bundle ID landed together in one PR, as planned.
 
 ---
 
@@ -217,14 +224,17 @@ kind of thing that gets found.
 |---|---|
 | Primary category | Health & Fitness |
 | Secondary category | leave empty, or Sports |
-| Privacy policy URL | `https://joshcammo.github.io/GymApp/privacy.html` |
-| Support URL | `https://joshcammo.github.io/GymApp/` |
+| Privacy policy URL | `https://ctsfitness.camotechsolutions.com.au/privacy.html` |
+| Support URL | `https://ctsfitness.camotechsolutions.com.au/` |
 | Marketing URL | leave empty |
 | Copyright | `2026 Camo Tech Solutions` |
 | Export compliance | already answered by `ITSAppUsesNonExemptEncryption: false` in `app.json` |
 
-All three URLs were confirmed serving 200 on 2026-09-22. Re-check right before
-submitting — a dead privacy policy link is a 2.1 rejection on its own.
+These are the **new** custom-domain URLs, decided 2026-09-24 — they replace the
+`joshcammo.github.io/GymApp/...` URLs confirmed serving 200 on 2026-09-22.
+**Do not submit until the new URLs also return 200** — DNS + GitHub Pages
+custom domain setup is still an outstanding manual step. See
+`ACCOUNT_MIGRATION.md` → "Custom domain".
 
 ### Screenshots
 

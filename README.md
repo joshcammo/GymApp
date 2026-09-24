@@ -1,4 +1,4 @@
-# 🏋️ GymTracker
+# 🏋️ CTS Fitness
 
 A clean, minimal gym progress tracking app — **React Native (Expo)** mobile frontend backed by **Supabase** (Postgres + Auth + Row Level Security).
 
