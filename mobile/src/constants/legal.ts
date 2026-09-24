@@ -13,8 +13,8 @@
  */
 
 export const LEGAL = {
-  privacyUrl:   'https://joshcammo.github.io/GymApp/privacy.html',
-  termsUrl:     'https://joshcammo.github.io/GymApp/terms.html',
-  supportUrl:   'https://joshcammo.github.io/GymApp/',
+  privacyUrl:   'https://ctsfitness.camotechsolutions.com.au/privacy.html',
+  termsUrl:     'https://ctsfitness.camotechsolutions.com.au/terms.html',
+  supportUrl:   'https://ctsfitness.camotechsolutions.com.au/',
   supportEmail: 'josh@camotechsolutions.com.au',
 } as const;

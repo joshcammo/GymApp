@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "GymTracker",
+    "name": "CTS Fitness",
     "slug": "gym-tracker",
     "version": "1.1.0",
     "orientation": "portrait",
@@ -8,7 +8,7 @@
     "icon": "./assets/icon.png",
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.gymtracker.app",
+      "bundleIdentifier": "au.com.camotechsolutions.ctsfitness",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -18,7 +18,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0B0B0E"
       },
-      "package": "com.gymtracker.app"
+      "package": "au.com.camotechsolutions.ctsfitness"
     },
     "web": {
       "favicon": "./assets/favicon.png"

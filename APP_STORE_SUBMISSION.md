@@ -9,53 +9,30 @@ below, then "Current state". Everything in Phases 0–7 is done and merged.**
 
 ---
 
-## Pick up here — as of 2026-09-22
+## Pick up here — as of 2026-09-24
 
-All code work is finished and on `main`. **Nothing is left that a coding
-session can do unblocked.** What remains is manual, and **two** things gate the
-build. Both are decisions, not work.
+**Both original blockers are resolved.** App is renamed to **CTS Fitness**,
+bundle ID is `au.com.camotechsolutions.ctsfitness`, Apple Developer is
+enrolled (Individual), and the GitHub destination is decided
+(`joshcamotech/CTS-Fitness`). Code changes for all of that landed in one PR —
+see `ACCOUNT_MIGRATION.md` for the full decision log.
 
-### Blocker 1 — the app name has not been chosen
-
-"GymTracker" is confirmed taken (see `APP_STORE_CONNECT.md` §1 for the
-collision data and four candidates that came back clear). Renaming touches
-`mobile/app.json` → `expo.name`, which is a **native** change, so it must be
-settled *before* the build — changing it after means rebuilding and
-re-uploading.
-
-### Blocker 2 — everything is on personal accounts
-
-GitHub, Supabase, Expo and the Gemini key all sit on Josh's personal accounts
-and need to move to **CamoTech Solutions**. Deferred on 2026-09-22 with a full
-runbook in **`ACCOUNT_MIGRATION.md`** — read that, not this summary.
-
-It matters *now* rather than later because two things are one-way doors and
-both are still free: **Apple Developer enrolment cannot be converted from
-individual to organization**, and **the bundle identifier is permanent** once
-the App Store Connect record exists. `com.gymtracker.app` is also wrong twice
-over — reverse-DNS for a domain we do not own, and the name is changing anyway.
-
-Four decisions unblock it: Apple enrolment type, bundle ID, GitHub org name,
-and the legal-pages subdomain. `ACCOUNT_MIGRATION.md` → "Decisions needed".
-
-### These two land together
-
-Both change native config in `mobile/app.json` (`expo.name`,
-`ios.bundleIdentifier`, `android.package`, `expo.owner`), so a build made
-before either is settled is a build that gets thrown away. **Do them in one
-pass, in one PR**, then build once.
+**What's left is entirely manual, on the account side** — repo transfer/rename,
+DNS + GitHub Pages custom domain, Supabase/Expo/Gemini transfers. None of it
+needs a coding session; `ACCOUNT_MIGRATION.md` has the ordered runbook.
 
 Do **not** change `expo.slug` or the EAS `projectId` — the slug is tied to the
 existing EAS project and the project id is what `updates.url` points at.
+Neither changed in this pass.
 
 ### What can proceed in parallel, without either decision
 
 In rough priority order:
 
-1. **Start the Apple Developer organization enrolment.** It is the long pole —
-   a D-U-N-S number plus identity verification can take days — and it blocks
-   nothing else while it runs. Do not create the App Store Connect app record
-   yet; that is what locks the bundle ID.
+1. ~~Start the Apple Developer organization enrolment.~~ **Done 2026-09-24** —
+   enrolled as an **Individual** (CamoTech is a sole trader, not eligible for
+   Organization/D-U-N-S). See `ACCOUNT_MIGRATION.md` for why. Do not create the
+   App Store Connect app record yet; that is what locks the bundle ID.
 2. **Create and seed the demo accounts** — `APP_STORE_CONNECT.md` §2. The
    emails and usernames do not contain the app name, so this is unaffected.
 3. **Work the device test list** in "What has not been tested". This is the
@@ -81,7 +58,7 @@ In rough priority order:
 | 5 | `app.json` / `eas.json` build + submit config | done |
 | 6 | App Store Connect submission pack | drafted in `APP_STORE_CONNECT.md`; manual entry still to do |
 | 7 | CI/CD pipeline | done — merged as PR #37, green on `main` 2026-09-22 |
-| 8 | Move off personal accounts to CamoTech | **deferred 2026-09-22** — runbook in `ACCOUNT_MIGRATION.md`, blocks the build |
+| 8 | Move off personal accounts to CamoTech | **in progress** — app name, bundle ID and Apple enrolment decided/done 2026-09-24; repo transfer, DNS and other account moves still manual. Runbook in `ACCOUNT_MIGRATION.md` |
 
 Decisions made 2026-09-21:
 
@@ -132,25 +109,28 @@ submission.
    return 200. Re-check immediately before submitting; a dead privacy policy
    link is a 2.1 rejection on its own.
 
+**Done, as of 2026-09-24:**
+
+3. ~~Enrol in the Apple Developer Program~~ — **enrolled as an Individual**,
+   using the CamoTech email. See `ACCOUNT_MIGRATION.md` for why Individual,
+   not Organization.
+4. ~~Decide on the app name~~ — **"CTS Fitness"**. `mobile/app.json`, the
+   `docs/*.html` legal pages and `mobile/src/constants/legal.ts` all updated
+   in one PR, along with the bundle ID.
+
 **Outstanding, in the order they unblock each other:**
 
-3. **Enrol in the Apple Developer Program as an organization**
-   ($149 AUD/year). Not enrolled in any capacity. Enrolment can take days, so
-   start it first even though it is needed last — and enrol as CamoTech
-   Solutions, because an individual enrolment cannot be converted later. See
-   `ACCOUNT_MIGRATION.md` step 1.
-4. **Decide on the app name** — blocks the build. See "Pick up here" above and
-   `APP_STORE_CONNECT.md` §1.
 5. **Move off personal accounts** — GitHub, Supabase, Expo and the Gemini key
-   all sit on Josh's personal accounts. Also blocks the build, because the
-   bundle ID and `expo.owner` are native config. Full runbook in
+   still sit on Josh's personal accounts. GitHub destination and the legal
+   subdomain are decided; the transfers themselves are manual. Full runbook in
    `ACCOUNT_MIGRATION.md`.
 6. **Create the demo accounts** for App Store Connect — two accounts, then
    `supabase/scripts/seed_demo_account.sql`. See `APP_STORE_CONNECT.md` §2.
-   Not blocked by 4 or 5.
+   Not blocked by 5.
 7. **Test on a real device** — see "What has not been tested". Not blocked by
-   4 or 5.
-8. **Run the iOS release workflow**, then submit. Blocked by 3, 4 and 5.
+   5.
+8. **Run the iOS release workflow**, then submit. Blocked by 5 (privacy/support
+   URLs must resolve on the new domain first).
 
 ---
 
@@ -183,11 +163,18 @@ carry a zero-tolerance clause (1.2).
 URLs once Pages is on — these are what the app links to and what goes into App
 Store Connect:
 
+Target URLs, decided 2026-09-24 (not yet live — DNS + Pages custom domain is
+still an outstanding manual step, see `ACCOUNT_MIGRATION.md`):
+
 | Page | URL |
 |------|-----|
-| Support | `https://joshcammo.github.io/GymApp/` |
-| Privacy policy | `https://joshcammo.github.io/GymApp/privacy.html` |
-| Terms of use | `https://joshcammo.github.io/GymApp/terms.html` |
+| Support | `https://ctsfitness.camotechsolutions.com.au/` |
+| Privacy policy | `https://ctsfitness.camotechsolutions.com.au/privacy.html` |
+| Terms of use | `https://ctsfitness.camotechsolutions.com.au/terms.html` |
+
+The old `joshcammo.github.io/GymApp/...` URLs returned 200 as of 2026-09-22,
+but will stop working once the repo is transferred off that account — re-verify
+the new URLs return 200 before submitting, not the old ones.
 
 The privacy policy names every processor and confirms equivalent protection, as
 5.1.1(i) requires:
@@ -409,11 +396,10 @@ the demo-account procedure, copy-paste review notes, the nutrition label, the
 age-rating answers, the screenshot list and what to do about a rejection. The
 summary below stays here so this checklist reads end to end.
 
-- [ ] **App name** — **"GymTracker" is confirmed taken.** Checked against the
-      iTunes Search API on 2026-09-22: *GymTracker – Workout Log* and
-      *GymTracker: Track workouts* both already ship. It has to change.
-      `APP_STORE_CONNECT.md` §1 has four candidates that came back clear.
-      30-character limit (2.3.7).
+- [x] **App name** — **decided: "CTS Fitness"**, 2026-09-24. "GymTracker" was
+      confirmed taken (iTunes Search API, 2026-09-22). "CTS Fitness" checked
+      clear the same way on 2026-09-24 — see `APP_STORE_CONNECT.md` §1. Trade
+      mark register check still outstanding, do before submitting.
 - [ ] **Demo account** (2.1) — the app is login-gated, so review *will* fail
       without working credentials in the review notes. **Two** accounts: the
       reviewer needs someone else's content to report and block. Sign both up
