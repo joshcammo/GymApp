@@ -4,19 +4,27 @@ Everything currently sits on Josh's **personal** accounts. It needs to sit on
 **CamoTech Solutions** business accounts before the app ships.
 
 Deferred on 2026-09-22, picked back up 2026-09-24. All four decisions are made
-and the code change is merged (PR #40).
+and the code change is merged (PR #40). Supabase, Expo and Gemini handled
+2026-09-25.
 
 **Picking this up in a new session — start here:**
 
 - **Fully done:** Apple Developer (Individual, enrolled), app name + bundle ID
   (code merged), GitHub transfer (`joshcamotech/CTS-Fitness`), custom domain —
   DNS, Enforce HTTPS, and all three legal URLs verified returning 200 with the
-  correct content on 2026-09-24. Nothing left on the GitHub/domain side.
-- **Next up: Supabase, then Expo/EAS, then the Gemini key** — Runbook steps
-  4–6 below.
-- Once those three are done, the app is clear to build (`eas build`) and move
-  into App Store Connect submission — see `APP_STORE_SUBMISSION.md` /
-  `APP_STORE_CONNECT.md`.
+  correct content on 2026-09-24. Supabase project transferred to the
+  Camotech Solutions org, data verified intact, 2026-09-25. Expo project
+  transferred to the `camotech` org, `expo.owner` updated, 2026-09-25.
+- **Gemini key deliberately stays on the personal Google account** — see
+  step 6 for why.
+- **Loose ends (manual, no code):** remove the personal login from the
+  Supabase org team; confirm the first OTA run on `main` passes with the
+  `camotech` robot token, then remove `joshcammo` from the Expo org and delete
+  its old access token; delete the unused key(s) in the CamoTech AI Studio;
+  turn on secret scanning + push protection on the GitHub repo.
+- Once the loose ends are done, the app is clear to build (`eas build`, logged
+  in to the CLI as the CamoTech Expo account) and move into App Store Connect
+  submission — see `APP_STORE_SUBMISSION.md` / `APP_STORE_CONNECT.md`.
 
 ---
 
@@ -76,12 +84,12 @@ Where each piece lives today, and what moving it costs.
 | App name / Bundle ID | ~~GymTracker~~ / ~~`com.gymtracker.app`~~ | **CTS Fitness** / `au.com.camotechsolutions.ctsfitness` | done in code, needs a build | **yes — rebuild** |
 | GitHub | ~~`joshcammo/GymApp`~~ | **`joshcamotech/CTS-Fitness`** — done | done | Pages URL only |
 | Custom domain | ~~GitHub's default Pages URL~~ | **`ctsfitness.camotechsolutions.com.au`** — done, HTTPS on, all 3 URLs verified 200 | done | no |
-| Supabase | personal org | CamoTech org | ~5 min | **no** |
-| Expo / EAS | owner `joshcammo` | Expo org | ~15 min | `app.json` owner |
-| Gemini API key | personal Google | CamoTech Google | ~5 min | no |
+| Supabase | ~~personal org~~ | **Camotech Solutions org** — done, ref unchanged | done | **no** |
+| Expo / EAS | ~~owner `joshcammo`~~ | **`camotech` org** (owned by the CamoTech Expo account) — done | done | `app.json` owner — done |
+| Gemini API key | personal Google | **stays personal, on purpose** — see step 6 | — | no |
 | Domain, support email | already CamoTech | — | — | — |
 
-**Next action: Runbook step 4 (Supabase).**
+**Next action: the loose ends listed at the top, then the first `eas build`.**
 
 **Code change landed 2026-09-24** — name, bundle ID, legal URLs and the
 custom-domain CNAME are all done:
@@ -97,8 +105,8 @@ APP_STORE_SUBMISSION.md          URL table, blocker status
 APP_STORE_CONNECT.md             enrolment type, app name, listing URLs
 ```
 
-`expo.owner` was deliberately left as `joshcammo` — the Expo org transfer
-hasn't happened yet, so changing it now would break EAS Update.
+`expo.owner` was deliberately left as `joshcammo` at the time; it changed to
+`camotech` on 2026-09-25, together with the Expo org transfer (step 5).
 
 ---
 
@@ -151,20 +159,19 @@ in any order once step 1 is under way.
 
 - ~~Transfer `joshcammo/GymApp` to `joshcamotech`~~ — **done.** Repo is now
   `joshcamotech/CTS-Fitness`.
-- **Still to verify** (not yet confirmed in this session — check before
-  trusting the pipeline):
-  - `secrets.EXPO_TOKEN` still exists — Settings → Secrets and variables →
-    Actions.
+- **Verified 2026-09-25:**
+  - `secrets.EXPO_TOKEN` exists (replaced 2026-09-25 with a `camotech` org
+    robot token — see step 5).
   - `vars.EXPO_PUBLIC_SUPABASE_URL` and `vars.EXPO_PUBLIC_SUPABASE_ANON_KEY`
-    still exist. **If these are missing, the OTA workflow publishes a bundle
+    exist. **If these are ever missing, the OTA workflow publishes a bundle
     that crashes on launch before any UI renders** — this has happened before,
     see the note in `.github/workflows/eas-update.yml`.
-  - Actions are enabled on the account.
-  - Re-check `gh auth status` locally — pushes touching `.github/workflows/`
-    need the `workflow` scope; if it's missing,
-    `gh auth refresh -h github.com -s workflow`.
-  - Turn on **Secret scanning** and **Push protection** — Settings → Code
-    security. Free on public repos, still not confirmed done.
+  - Actions are enabled; CI on `main` green after the transfer.
+  - Local `gh` has two logins: `joshcammo` (active, has `workflow` scope) and
+    `joshcamotech` (repo owner). Admin-level API calls (security settings,
+    Actions permissions) need `gh auth switch -u joshcamotech`.
+- **Still open:** **Secret scanning** and **Push protection** are **off**
+  (checked 2026-09-25) — Settings → Code security. Free on public repos.
 
 ### 3. Custom domain — done 2026-09-24
 
@@ -185,43 +192,74 @@ in any order once step 1 is under way.
   - `https://ctsfitness.camotechsolutions.com.au/privacy.html` → 200
   - `https://ctsfitness.camotechsolutions.com.au/terms.html` → 200
 
-### 4. Supabase — pick up here
+### 4. Supabase — done 2026-09-25
 
-- Create a CamoTech organization.
-- Project Settings → General → Transfer project.
-- **The project ref does not change on an organization transfer**, so
-  `EXPO_PUBLIC_SUPABASE_URL` and the anon key stay valid: no data migration, no
-  downtime, no app change. Confirm the project URL really is unchanged before
-  assuming it — if it changed, the two GitHub Actions variables and every
-  installed app's config need updating, which is a much bigger job.
-- Free tier allows one free project per org, so the target org must be empty.
-- Re-check the `GEMINI_API_KEY` secret survived, under Edge Functions secrets.
+- Project "Gym App" now sits in the **Camotech Solutions** org (Free plan).
+- **How it was done** (a transfer needs one login that is Owner of *both*
+  orgs — a project belongs to an org, not a login): the CamoTech-email
+  Supabase account created the org and invited the personal login as Owner;
+  the personal login ran Project Settings → General → Transfer project.
+  If the transfer dialog says "You do not have any organizations you can
+  transfer your project to", that's the missing piece.
+- **Data verified intact:** a read-only per-table row count (all `public`
+  tables, `auth.users`, `storage.objects`) was exported before the transfer
+  and matched exactly after it.
+- **Project ref unchanged:** `dghklsegfqklwpjpnhry`. Auth health and a REST
+  read with the app's anon key both returned 200 after the transfer — no app
+  or GitHub-variable change needed. (The bare project URL returns
+  `{"error":"requested path is invalid"}` — that's normal, it's an API host.)
+- Correction to the earlier note: the free-tier limit is on active free
+  projects per *user* across the orgs they own/admin, not "one per org".
+- **Still open:** remove the personal login from the org's Team once the
+  CamoTech account is confirmed Owner.
 
-### 5. Expo / EAS
+### 5. Expo / EAS — done 2026-09-25
 
-- Create an Expo organization account.
-- Transfer the project to it from the EAS dashboard.
-- `expo.owner` in `mobile/app.json` then changes to the org slug — a code
-  change, done in the same PR.
-- Doing this before the first build avoids moving credentials and an OTA
-  channel that already has users on it.
+- Project now at `expo.dev/accounts/camotech/projects/gym-tracker`. The
+  `camotech` org is owned by the **CamoTech-email Expo account**, fully
+  separate from `joshcammo`. Same pattern as Supabase: CamoTech created the
+  org and invited `joshcammo` temporarily so it could run the transfer.
+- `expo.owner` in `mobile/app.json` → `camotech`. `expo.slug`
+  (`gym-tracker`) and the EAS `projectId` (`ef0d32f5-…`) are unchanged — the
+  project id is what `updates.url` points at, so existing Expo Go group links
+  keep working.
+- `secrets.EXPO_TOKEN` replaced with a token for a **robot user** in the
+  `camotech` org, so CI doesn't depend on a personal login.
+- **Still open, in this order:** (1) confirm the first OTA workflow run on
+  `main` after this change passes; (2) only then remove `joshcammo` from the
+  org's Members and delete `joshcammo`'s old access token — removing it
+  first would not break CI now, but confirming first proves the robot token
+  works; (3) locally, `eas logout` then `eas login` as the CamoTech account
+  before the first `eas build`, so Apple credentials are created under the
+  org.
 
-### 6. Google Gemini key
+### 6. Google Gemini key — stays on the personal account, deliberately
 
-- Create the key on the CamoTech Google account at
-  [aistudio.google.com/apikey](https://aistudio.google.com/apikey).
-- Replace the `GEMINI_API_KEY` secret on the Supabase Edge Function.
-- Revoke the personal key **after** confirming the AI Workout screen still
-  works, not before.
-- No code change — the key is only ever read from the function's environment.
+- Tried 2026-09-25: a key from the CamoTech Google Workspace account got
+  `403 PERMISSION_DENIED — "Your project has been denied access"`, and the
+  AI Studio playground on that account demands a paid upgrade. Workspace
+  accounts don't get the Gemini free tier here, and paying isn't justified
+  for a nice-to-have feature.
+- **Decision:** `GEMINI_API_KEY` is back on the personal key. Don't revoke
+  the personal key — it's the live one.
+- Tradeoff accepted: AI Workout depends on the personal Google account.
+  Nothing else does. If that ever matters, a free consumer Gmail owned by the
+  business (e.g. `ctsfitness.app@gmail.com`) gets the free tier — swap the
+  secret, no code change.
+- Free tier means Google may use prompts to improve its products — unchanged
+  from before, but the privacy policy should reflect it.
+- Gemini 503 "model is currently experiencing high demand" is transient and
+  proves the key authenticated. The function doesn't retry, and failed
+  attempts count toward the 15/day per-user cap.
+- **Still open:** delete the unused key(s) in the CamoTech AI Studio.
 
 ---
 
 ## The code change — done 2026-09-24
 
 Landed: `mobile/app.json` (`expo.name`, `ios.bundleIdentifier`,
-`android.package` — **not** `expo.owner`, that's still pending the Expo
-transfer), `mobile/src/constants/legal.ts`, `docs/CNAME` (new),
+`android.package` — **not** `expo.owner`, which followed on 2026-09-25 with
+the Expo transfer), `mobile/src/constants/legal.ts`, `docs/CNAME` (new),
 `docs/privacy.html`/`terms.html`/`index.html`/`style.css`, `README.md`,
 `APP_STORE_SUBMISSION.md`, `APP_STORE_CONNECT.md`.
 
