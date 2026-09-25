@@ -17,14 +17,20 @@ and the code change is merged (PR #40). Supabase, Expo and Gemini handled
   transferred to the `camotech` org, `expo.owner` updated, 2026-09-25.
 - **Gemini key deliberately stays on the personal Google account** — see
   step 6 for why.
-- **Loose ends (manual, no code):** remove the personal login from the
-  Supabase org team; confirm the first OTA run on `main` passes with the
-  `camotech` robot token, then remove `joshcammo` from the Expo org and delete
-  its old access token; delete the unused key(s) in the CamoTech AI Studio;
-  turn on secret scanning + push protection on the GitHub repo.
-- Once the loose ends are done, the app is clear to build (`eas build`, logged
-  in to the CLI as the CamoTech Expo account) and move into App Store Connect
-  submission — see `APP_STORE_SUBMISSION.md` / `APP_STORE_CONNECT.md`.
+- **Migration complete 2026-09-25.** All loose ends closed: personal login
+  removed from the Supabase org; first OTA run on the `camotech` robot token
+  passed, then `joshcammo` removed from the Expo org and its old token
+  deleted; unused CamoTech AI Studio keys deleted; secret scanning + push
+  protection on (0 open alerts). Local EAS CLI verified logged in as
+  `camotech-solutions` (Owner of `camotech`) via `npx eas-cli whoami`.
+- **Next: the first `eas build --profile production --platform ios`**, then
+  App Store Connect submission — see `APP_STORE_SUBMISSION.md` /
+  `APP_STORE_CONNECT.md`. Allow ~30 min: it prompts for the Apple ID + 2FA to
+  create signing credentials (these land under the `camotech` org), then
+  builds in the cloud.
+- **Build from an up-to-date `main`**, not an older branch — branches cut
+  before PR #42 still have `"owner": "joshcammo"` in `app.json`. Re-run
+  `npx eas-cli whoami` first; it must show `camotech-solutions`.
 
 ---
 
@@ -89,7 +95,7 @@ Where each piece lives today, and what moving it costs.
 | Gemini API key | personal Google | **stays personal, on purpose** — see step 6 | — | no |
 | Domain, support email | already CamoTech | — | — | — |
 
-**Next action: the loose ends listed at the top, then the first `eas build`.**
+**Next action: the first `eas build` from an up-to-date `main`.**
 
 **Code change landed 2026-09-24** — name, bundle ID, legal URLs and the
 custom-domain CNAME are all done:
@@ -170,8 +176,8 @@ in any order once step 1 is under way.
   - Local `gh` has two logins: `joshcammo` (active, has `workflow` scope) and
     `joshcamotech` (repo owner). Admin-level API calls (security settings,
     Actions permissions) need `gh auth switch -u joshcamotech`.
-- **Still open:** **Secret scanning** and **Push protection** are **off**
-  (checked 2026-09-25) — Settings → Code security. Free on public repos.
+- **Secret scanning** and **Push protection** turned **on** 2026-09-25 (via
+  the API as `joshcamotech`); history scan found 0 open alerts.
 
 ### 3. Custom domain — done 2026-09-24
 
@@ -210,8 +216,8 @@ in any order once step 1 is under way.
   `{"error":"requested path is invalid"}` — that's normal, it's an API host.)
 - Correction to the earlier note: the free-tier limit is on active free
   projects per *user* across the orgs they own/admin, not "one per org".
-- **Still open:** remove the personal login from the org's Team once the
-  CamoTech account is confirmed Owner.
+- Personal login removed from the org's Team 2026-09-25 — the
+  CamoTech-email account is the sole Owner.
 
 ### 5. Expo / EAS — done 2026-09-25
 
@@ -225,13 +231,12 @@ in any order once step 1 is under way.
   keep working.
 - `secrets.EXPO_TOKEN` replaced with a token for a **robot user** in the
   `camotech` org, so CI doesn't depend on a personal login.
-- **Still open, in this order:** (1) confirm the first OTA workflow run on
-  `main` after this change passes; (2) only then remove `joshcammo` from the
-  org's Members and delete `joshcammo`'s old access token — removing it
-  first would not break CI now, but confirming first proves the robot token
-  works; (3) locally, `eas logout` then `eas login` as the CamoTech account
-  before the first `eas build`, so Apple credentials are created under the
-  org.
+- Closed out 2026-09-25, in this order: (1) the OTA workflow run for PR #42
+  on `main` passed on the robot token; (2) `joshcammo` removed from the org's
+  Members and its old access token deleted; (3) local CLI switched —
+  `npx eas-cli whoami` shows `camotech-solutions`, Owner of `camotech` and
+  `camotech-solutions`, no `joshcammo`. The first `eas build` will create
+  Apple credentials under the org.
 
 ### 6. Google Gemini key — stays on the personal account, deliberately
 
@@ -251,7 +256,7 @@ in any order once step 1 is under way.
 - Gemini 503 "model is currently experiencing high demand" is transient and
   proves the key authenticated. The function doesn't retry, and failed
   attempts count toward the 15/day per-user cap.
-- **Still open:** delete the unused key(s) in the CamoTech AI Studio.
+- Unused key(s) in the CamoTech AI Studio deleted 2026-09-25.
 
 ---
 
