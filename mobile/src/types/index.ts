@@ -241,7 +241,7 @@ export type RootStackParamList = {
   Appearance:     undefined;
   ChangePassword: undefined;
   ChangeUsername: undefined;
-  DayDetail:      { date: string; dayFull: string };
+  DayDetail:      { date: string; dayFull: string; highlightExerciseId?: number; highlightNonce?: number };
   AddExercise:    { date: string; dayFull: string; editExercise?: Exercise; initialMuscleGroup?: MuscleGroup };
   AddCardio:      { date: string; dayFull: string; editSession?: CardioSession };
   AiWorkout:      { date: string; dayFull: string; initialPrompt?: string };

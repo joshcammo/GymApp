@@ -14,10 +14,12 @@ interface Props {
   onEdit:   (exercise: Exercise) => void;
   onDelete: (id: number, name: string) => void;
   onShare?: (exercise: Exercise) => void;
+  /** Exercise id to draw attention to, e.g. arriving from a PR chip. */
+  highlightedId?: number;
 }
 
 /** Brackets two paired exercises under a shared "Superset" header, with A1/A2 labels. */
-export function SupersetCard({ a, b, onEdit, onDelete, onShare }: Props) {
+export function SupersetCard({ a, b, onEdit, onDelete, onShare, highlightedId }: Props) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   return (
@@ -32,6 +34,7 @@ export function SupersetCard({ a, b, onEdit, onDelete, onShare }: Props) {
         onEdit={()   => onEdit(a)}
         onDelete={() => onDelete(a.id, a.name)}
         onShare={onShare ? () => onShare(a) : undefined}
+        highlighted={a.id === highlightedId}
       />
       <ExerciseItem
         exercise={b}
@@ -39,6 +42,7 @@ export function SupersetCard({ a, b, onEdit, onDelete, onShare }: Props) {
         onEdit={()   => onEdit(b)}
         onDelete={() => onDelete(b.id, b.name)}
         onShare={onShare ? () => onShare(b) : undefined}
+        highlighted={b.id === highlightedId}
       />
     </View>
   );

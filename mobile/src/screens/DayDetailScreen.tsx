@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useLayoutEffect, useMemo } from 'react';
+import React, { useState, useCallback, useLayoutEffect, useMemo, useRef, useEffect } from 'react';
 import {
   View, Text, TouchableOpacity, ScrollView,
   StyleSheet, Alert, ActivityIndicator,
@@ -65,12 +65,50 @@ function bestSetOf(exercise: Exercise): ExerciseSet | null {
 export function DayDetailScreen({ navigation, route }: Props) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const { date, dayFull } = route.params;
+  const { date, dayFull, highlightExerciseId, highlightNonce } = route.params;
   const [exercises,     setExercises]     = useState<Exercise[]>([]);
   const [cardioSessions, setCardioSessions] = useState<CardioSession[]>([]);
   const [loading,   setLoading]   = useState(true);
   const [presetPickerVisible, setPresetPickerVisible] = useState(false);
   const [shareTarget, setShareTarget] = useState<ShareTarget | null>(null);
+
+  // Arriving from a PR chip: scroll to and briefly highlight the exercise
+  // card the record was set on. Cleared after a few seconds so it doesn't
+  // look "stuck" if the user lingers on the day.
+  const [highlightedId, setHighlightedId] = useState<number | null>(highlightExerciseId ?? null);
+  const scrollRef = useRef<ScrollView>(null);
+  // Card y-positions from onLayout, and the one card still waiting to be
+  // scrolled to. The scroll fires once per arrival — later layout passes
+  // (refresh, delete, highlight border change) must not yank the user back.
+  const cardYRef = useRef(new Map<number, number>());
+  const pendingScrollRef = useRef<number | null>(null);
+
+  const scrollToY = (y: number) =>
+    scrollRef.current?.scrollTo({ y: Math.max(y - 16, 0), animated: true });
+
+  useEffect(() => {
+    if (highlightExerciseId == null) return;
+    setHighlightedId(highlightExerciseId);
+    const knownY = cardYRef.current.get(highlightExerciseId);
+    if (knownY != null) {
+      scrollToY(knownY);
+      pendingScrollRef.current = null;
+    } else {
+      pendingScrollRef.current = highlightExerciseId;
+    }
+    const timer = setTimeout(() => setHighlightedId(null), 4000);
+    return () => clearTimeout(timer);
+  }, [highlightExerciseId, highlightNonce]);
+
+  // Records each card's position as the list renders, and performs the
+  // pending scroll once the target card has been laid out.
+  const scrollToHighlighted = (exerciseId: number, y: number) => {
+    cardYRef.current.set(exerciseId, y);
+    if (exerciseId === pendingScrollRef.current) {
+      pendingScrollRef.current = null;
+      scrollToY(y);
+    }
+  };
 
   // Pretty header date: 'Thursday, 22 May'
   const displayDate = parseDateStr(date).toLocaleDateString('en-GB', {
@@ -237,24 +275,37 @@ export function DayDetailScreen({ navigation, route }: Props) {
           }
         />
       ) : (
-        <ScrollView contentContainerStyle={styles.listContent}>
+        <ScrollView ref={scrollRef} contentContainerStyle={styles.listContent}>
           {groupExercises(exercises).map(item => item.type === 'single' ? (
-            <ExerciseItem
+            <View
               key={item.exercise.id}
-              exercise={item.exercise}
-              onEdit={()   => handleEdit(item.exercise)}
-              onDelete={() => handleDelete(item.exercise.id, item.exercise.name)}
-              onShare={item.exercise.has_pr ? () => handleShare(item.exercise) : undefined}
-            />
+              onLayout={e => scrollToHighlighted(item.exercise.id, e.nativeEvent.layout.y)}
+            >
+              <ExerciseItem
+                exercise={item.exercise}
+                onEdit={()   => handleEdit(item.exercise)}
+                onDelete={() => handleDelete(item.exercise.id, item.exercise.name)}
+                onShare={item.exercise.has_pr ? () => handleShare(item.exercise) : undefined}
+                highlighted={item.exercise.id === highlightedId}
+              />
+            </View>
           ) : (
-            <SupersetCard
+            <View
               key={`superset-${item.a.id}-${item.b.id}`}
-              a={item.a}
-              b={item.b}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              onShare={handleShare}
-            />
+              onLayout={e => {
+                scrollToHighlighted(item.a.id, e.nativeEvent.layout.y);
+                scrollToHighlighted(item.b.id, e.nativeEvent.layout.y);
+              }}
+            >
+              <SupersetCard
+                a={item.a}
+                b={item.b}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                onShare={handleShare}
+                highlightedId={highlightedId ?? undefined}
+              />
+            </View>
           ))}
 
           {cardioSessions.length > 0 && (

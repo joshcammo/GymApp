@@ -334,10 +334,13 @@ export type CreateCustomResult =
   | { created: true;  def: { id: number; name: string; muscle_group: MuscleGroup; equipment: string } }
   | { created: false; suggestions: CustomSuggestion[] };
 
-/** Best current lifts for one exercise def, or nulls if never logged. */
+/** Best current lifts for one exercise def, or nulls if never logged.
+ *  `date`/`exercise_id` identify the day and entry the PR was set on, so
+ *  the UI can jump back to it. Optional because a database without
+ *  migration 022 doesn't return them. */
 export interface ExercisePr {
-  best_weight: { weight: number; unit: WeightUnit; reps: number | null } | null;
-  best_e1rm:   { weight: number; unit: WeightUnit; reps: number; e1rm_kg: number } | null;
+  best_weight: { weight: number; unit: WeightUnit; reps: number | null; date?: string; exercise_id?: number } | null;
+  best_e1rm:   { weight: number; unit: WeightUnit; reps: number; e1rm_kg: number; date?: string; exercise_id?: number } | null;
 }
 
 /** Heaviest weighted set from the most recent session logged against an

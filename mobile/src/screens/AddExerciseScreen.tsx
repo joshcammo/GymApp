@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useLayoutEffect, useMemo } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
   ScrollView, StyleSheet, Alert,
@@ -21,7 +21,7 @@ import { SupersetPickerModal } from '../components/SupersetPickerModal';
 import { RestTimer } from '../components/RestTimer';
 import { WarmupSuggestion } from '../components/WarmupSuggestion';
 import { haptics } from '../utils/haptics';
-import { parseDateStr } from '../utils/dateUtils';
+import { parseDateStr, getDayFull } from '../utils/dateUtils';
 
 type Nav   = NativeStackNavigationProp<RootStackParamList, 'AddExercise'>;
 type Route = RouteProp<RootStackParamList, 'AddExercise'>;
@@ -171,6 +171,44 @@ export function AddExerciseScreen({ navigation, route }: Props) {
     });
   }, [navigation, isEditing]);
 
+  // ── Keyboard "Next" chaining ─────────────────────────────────
+  // Numeric keypads have no return key of their own, but iOS still shows
+  // a "Next" accessory when returnKeyType="next" is set; without a submit
+  // handler it does nothing. Keyed by field identity so it survives rows
+  // being added/removed rather than by array index alone.
+  const fieldRefs = useRef<Record<string, TextInput | null>>({});
+  const registerField = (key: string) => (el: TextInput | null) => { fieldRefs.current[key] = el; };
+  const focusField = (key: string) => fieldRefs.current[key]?.focus();
+
+  // Advances from one reps/weight box to the next in visual order: across
+  // a set's drops, then into the following set, dismissing the keyboard
+  // once there's nowhere left to go.
+  const focusNextAfter = (rowIndex: number, field: 'reps' | 'weight', dropIndex?: number) => {
+    const row = setRows[rowIndex];
+    if (field === 'reps' && dropIndex == null) {
+      focusField(`weight-${rowIndex}`);
+      return;
+    }
+    if (field === 'reps' && dropIndex != null) {
+      focusField(`drop-weight-${rowIndex}-${dropIndex}`);
+      return;
+    }
+    // field === 'weight'
+    if (dropIndex == null && row.drops.length > 0) {
+      focusField(`drop-reps-${rowIndex}-0`);
+      return;
+    }
+    if (dropIndex != null && dropIndex + 1 < row.drops.length) {
+      focusField(`drop-reps-${rowIndex}-${dropIndex + 1}`);
+      return;
+    }
+    if (rowIndex + 1 < setRows.length) {
+      focusField(`reps-${rowIndex + 1}`);
+      return;
+    }
+    Keyboard.dismiss();
+  };
+
   // ── Set row helpers ──────────────────────────────────────────
   const updateRow = (index: number, field: 'reps' | 'weight', value: string) => {
     setSetRows(prev => prev.map((r, i) => i === index ? { ...r, [field]: value } : r));
@@ -214,6 +252,19 @@ export function AddExerciseScreen({ navigation, route }: Props) {
   const selectUnit = (u: WeightUnit) => {
     haptics.tap();
     setUnit(u);
+  };
+
+  // Jump to the day and exercise entry the current PR was hit on. The nonce
+  // makes a repeat tap re-trigger the highlight even with identical params.
+  const viewPrSource = (pr: { date?: string; exercise_id?: number }) => {
+    if (!pr.date || pr.exercise_id == null) return;
+    haptics.tap();
+    navigation.navigate('DayDetail', {
+      date:                pr.date,
+      dayFull:             getDayFull(parseDateStr(pr.date)),
+      highlightExerciseId: pr.exercise_id,
+      highlightNonce:      Date.now(),
+    });
   };
 
   // ── Validation ───────────────────────────────────────────────
@@ -356,13 +407,19 @@ export function AddExerciseScreen({ navigation, route }: Props) {
             </TouchableOpacity>
 
             {currentPr?.best_weight ? (
-              <View style={styles.prChip}>
+              <TouchableOpacity
+                style={styles.prChip}
+                onPress={() => viewPrSource(currentPr.best_weight!)}
+                disabled={!currentPr.best_weight.date || currentPr.best_weight.exercise_id == null}
+                activeOpacity={0.7}
+              >
                 <Feather name="award" size={12} color={colors.success} />
                 <Text style={styles.prChipText}>
                   Current PR: {currentPr.best_weight.weight} {currentPr.best_weight.unit}
                   {currentPr.best_weight.reps != null ? ` × ${currentPr.best_weight.reps}` : ''}
                 </Text>
-              </View>
+                <Feather name="chevron-right" size={13} color={colors.success} />
+              </TouchableOpacity>
             ) : null}
 
             {/* Unit toggle (KG / LBS) */}
@@ -446,6 +503,7 @@ export function AddExerciseScreen({ navigation, route }: Props) {
                   </View>
 
                   <TextInput
+                    ref={registerField(`reps-${i}`)}
                     style={[formStyles.input, styles.setInput]}
                     value={row.reps}
                     onChangeText={v => updateRow(i, 'reps', v)}
@@ -453,9 +511,12 @@ export function AddExerciseScreen({ navigation, route }: Props) {
                     placeholderTextColor={colors.textMuted}
                     keyboardType="number-pad"
                     returnKeyType="next"
+                    blurOnSubmit={false}
+                    onSubmitEditing={() => focusNextAfter(i, 'reps')}
                   />
 
                   <TextInput
+                    ref={registerField(`weight-${i}`)}
                     style={[formStyles.input, styles.setInput]}
                     value={row.weight}
                     onChangeText={v => updateRow(i, 'weight', v)}
@@ -463,6 +524,8 @@ export function AddExerciseScreen({ navigation, route }: Props) {
                     placeholderTextColor={colors.textMuted}
                     keyboardType="decimal-pad"
                     returnKeyType="next"
+                    blurOnSubmit={false}
+                    onSubmitEditing={() => focusNextAfter(i, 'weight')}
                   />
 
                   <TouchableOpacity
@@ -482,6 +545,7 @@ export function AddExerciseScreen({ navigation, route }: Props) {
                     </View>
 
                     <TextInput
+                      ref={registerField(`drop-reps-${i}-${di}`)}
                       style={[formStyles.input, styles.setInput, styles.dropInput]}
                       value={drop.reps}
                       onChangeText={v => updateDrop(i, di, 'reps', v)}
@@ -489,9 +553,12 @@ export function AddExerciseScreen({ navigation, route }: Props) {
                       placeholderTextColor={colors.textMuted}
                       keyboardType="number-pad"
                       returnKeyType="next"
+                      blurOnSubmit={false}
+                      onSubmitEditing={() => focusNextAfter(i, 'reps', di)}
                     />
 
                     <TextInput
+                      ref={registerField(`drop-weight-${i}-${di}`)}
                       style={[formStyles.input, styles.setInput, styles.dropInput]}
                       value={drop.weight}
                       onChangeText={v => updateDrop(i, di, 'weight', v)}
@@ -499,6 +566,8 @@ export function AddExerciseScreen({ navigation, route }: Props) {
                       placeholderTextColor={colors.textMuted}
                       keyboardType="decimal-pad"
                       returnKeyType="next"
+                      blurOnSubmit={false}
+                      onSubmitEditing={() => focusNextAfter(i, 'weight', di)}
                     />
 
                     <TouchableOpacity

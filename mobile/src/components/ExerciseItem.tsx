@@ -16,6 +16,9 @@ interface Props {
   onShare?: () => void;
   /** Shown as a small badge next to the name when part of a superset pair. */
   supersetLabel?: 'A1' | 'A2';
+  /** True when this card was navigated to directly (e.g. from a PR chip),
+   *  so it should stand out from the rest of the day's list. */
+  highlighted?: boolean;
 }
 
 /** '8 × 60 KG', '60 KG' (no reps) or '12 reps' (bodyweight) */
@@ -32,7 +35,7 @@ function dropsSummary(drops: ExerciseSet['drops'], unit: string): string {
   return ' → ' + drops.map(d => setSummary(d, unit)).join(' → ');
 }
 
-export function ExerciseItem({ exercise, onEdit, onDelete, onShare, supersetLabel }: Props) {
+export function ExerciseItem({ exercise, onEdit, onDelete, onShare, supersetLabel, highlighted }: Props) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const setsCount = exercise.sets.length;
@@ -46,7 +49,11 @@ export function ExerciseItem({ exercise, onEdit, onDelete, onShare, supersetLabe
   );
 
   return (
-    <PressableScale style={styles.container} onPress={onEdit} pressScale={0.98}>
+    <PressableScale
+      style={[styles.container, highlighted && styles.containerHighlighted]}
+      onPress={onEdit}
+      pressScale={0.98}
+    >
       <View style={styles.topRow}>
         <View style={styles.accentBar} />
         {supersetLabel && (
@@ -115,6 +122,10 @@ const createStyles = (colors: ColorTokens) => StyleSheet.create({
     marginBottom:    10,
     borderWidth:      1,
     borderColor:      colors.cardBorder,
+  },
+  containerHighlighted: {
+    borderWidth: 2,
+    borderColor: colors.primary,
   },
   topRow: {
     flexDirection: 'row',
