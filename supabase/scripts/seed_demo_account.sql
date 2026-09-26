@@ -27,7 +27,7 @@
 -- content, not just their own.
 --
 -- ── Idempotent ──────────────────────────────────────────────────
--- Re-running wipes and rebuilds these two users' workout, cardio,
+-- Re-running wipes and rebuilds these two users' workout,
 -- social and friendship rows, scoped strictly by their user ids.
 -- Nothing outside the two demo accounts is touched. Run it again
 -- after review feedback, or to freshen the dates before a
@@ -85,7 +85,6 @@ begin
   delete from public.post_comments   where user_id in (v_main, v_friend);
   delete from public.post_likes      where user_id in (v_main, v_friend);
   delete from public.posts           where user_id in (v_main, v_friend);
-  delete from public.cardio_sessions where user_id in (v_main, v_friend);
   delete from public.exercises       where user_id in (v_main, v_friend);
   delete from public.friendships
    where (requester_id = v_main   and addressee_id = v_friend)
@@ -169,23 +168,6 @@ begin
     end loop;
   end loop;
 
-  -- ── Cardio ────────────────────────────────────────────────────
-  -- One session a week, so the dashboard's cardio totals are not
-  -- zero and the activity trend has non-strength days on it.
-  for v_week in 0 .. c_weeks - 1 loop
-    insert into public.cardio_sessions
-      (user_id, activity_type, date, duration_seconds, distance_meters, notes, source)
-    values (
-      v_main,
-      case when v_week % 3 = 0 then 'bike' else 'run' end,
-      current_date - (v_week * 7 + 1),
-      1500 + (v_week * 90),
-      5000 + (v_week * 250),
-      'Easy pace.',
-      'manual'
-    );
-  end loop;
-
   -- ── A few sessions for the friend ─────────────────────────────
   -- Just enough that their profile is not empty if the reviewer
   -- looks, and that they have something of their own to post.
@@ -249,9 +231,7 @@ begin
 
   raise notice '──────────────────────────────────────────────';
   raise notice 'Demo seed complete.';
-  raise notice '  demo_lifter %  (% exercises, % cardio sessions)',
-    v_main, v_rows,
-    (select count(*) from public.cardio_sessions where user_id = v_main);
+  raise notice '  demo_lifter %  (% exercises)', v_main, v_rows;
   raise notice '  demo_friend %', v_friend;
   raise notice '  posts %, comments %, friendship accepted',
     (select count(*) from public.posts         where user_id in (v_main, v_friend)),

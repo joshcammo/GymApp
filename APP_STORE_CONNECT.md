@@ -129,7 +129,7 @@ and block; they cannot demonstrate moderation against their own posts.
 
 The seed gives the main account six weeks of training on a four-day split with
 progressive loading (so the 1RM trend, volume chart, muscle-group breakdown and
-PR detection all have real data), weekly cardio, an accepted friendship, posts
+PR detection all have real data), an accepted friendship, posts
 from both sides, and comments in both directions. It is idempotent and scoped
 strictly to those two user ids — re-run it to freshen the dates before a
 resubmission.
@@ -177,7 +177,7 @@ tracking?" is **No**, and no ATT prompt is required.
 | Category | Data type | Purpose |
 |---|---|---|
 | Contact Info | Email Address | App Functionality (account, sign-in, password reset) |
-| Health & Fitness | Fitness | App Functionality (the workout and cardio history) |
+| Health & Fitness | Fitness | App Functionality (the workout history) |
 | User Content | Other User Content | App Functionality (post captions, comments) |
 | Identifiers | User ID | App Functionality (account id, username) |
 
