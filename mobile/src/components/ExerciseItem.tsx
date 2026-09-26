@@ -6,6 +6,7 @@ import { ColorTokens } from '../theme/colorways';
 import { useTheme } from '../theme/ThemeContext';
 import { FONT, RADIUS } from '../constants/theme';
 import { Exercise, ExerciseSet } from '../types';
+import { formatSet } from '../utils/setFormat';
 import { PressableScale } from './PressableScale';
 
 interface Props {
@@ -18,18 +19,10 @@ interface Props {
   supersetLabel?: 'A1' | 'A2';
 }
 
-/** '8 × 60 KG', '60 KG' (no reps) or '12 reps' (bodyweight) */
-function setSummary(s: { reps?: number | null; weight?: number | null }, unit: string): string {
-  if (s.weight != null) {
-    return s.reps ? `${s.reps} × ${s.weight} ${unit}` : `${s.weight} ${unit}`;
-  }
-  return `${s.reps ?? '?'} reps`;
-}
-
-/** ' → 6 × 40 KG → 4 × 20 KG', or '' if the set has no drops. */
+/** ' → 40 KG × 6 → 20 KG × 4', or '' if the set has no drops. */
 function dropsSummary(drops: ExerciseSet['drops'], unit: string): string {
   if (!drops.length) return '';
-  return ' → ' + drops.map(d => setSummary(d, unit)).join(' → ');
+  return ' → ' + drops.map(d => formatSet(d, unit)).join(' → ');
 }
 
 export function ExerciseItem({ exercise, onEdit, onDelete, onShare, supersetLabel }: Props) {
@@ -84,13 +77,13 @@ export function ExerciseItem({ exercise, onEdit, onDelete, onShare, supersetLabe
         {allIdentical ? (
           <View style={styles.chip}>
             <Text style={styles.chipCount}>{setsCount} × </Text>
-            <Text style={styles.chipText}>{setSummary(exercise.sets[0], exercise.unit)}</Text>
+            <Text style={styles.chipText}>{formatSet(exercise.sets[0], exercise.unit)}</Text>
           </View>
         ) : (
           exercise.sets.map(s => (
             <View key={s.set_number} style={styles.chip}>
               <Text style={styles.chipText}>
-                {setSummary(s, exercise.unit)}{dropsSummary(s.drops, exercise.unit)}
+                {formatSet(s, exercise.unit)}{dropsSummary(s.drops, exercise.unit)}
               </Text>
             </View>
           ))

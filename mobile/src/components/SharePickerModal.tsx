@@ -13,6 +13,7 @@ import { MyExercisePr, ShareTarget } from '../types';
 import { postsApi } from '../services/social';
 import { PressableScale } from './PressableScale';
 import { haptics } from '../utils/haptics';
+import { formatSet } from '../utils/setFormat';
 
 interface Props {
   visible: boolean;
@@ -92,7 +93,7 @@ export function SharePickerModal({ visible, onClose, onPick }: Props) {
                 <View style={styles.rowText}>
                   <Text style={styles.rowTitle}>{item.name}</Text>
                   <Text style={styles.rowSub}>
-                    {item.reps ? `${item.reps} × ${item.weight} ${item.unit}` : `${item.weight} ${item.unit}`}
+                    {formatSet(item, item.unit)}
                   </Text>
                 </View>
                 <Feather name="chevron-right" size={18} color={colors.textMuted} />
