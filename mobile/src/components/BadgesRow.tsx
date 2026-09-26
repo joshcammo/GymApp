@@ -56,11 +56,6 @@ const BADGES: BadgeDef[] = [
     requirement: '10,000 kg lifted',
   },
   {
-    key: 'cardio', label: 'Cardio Habit', icon: 'run',
-    progress: s => clamp01(s.total_cardio / 10),
-    requirement: '10 cardio sessions',
-  },
-  {
     key: 'thirty_days', label: '30 Days In', icon: 'calendar-check',
     progress: s => clamp01(s.total_training_days / 30),
     requirement: '30 training days',

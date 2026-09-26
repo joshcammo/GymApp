@@ -44,10 +44,9 @@ const NO_POINTS: DailyActivityPoint[] = [];
  * Training volume per day over the last 7 or 30 days, a single series, so
  * one hue and no legend (the title says what's plotted).
  *
- * Volume is strength-only by definition (kg x reps), which is why the
- * caption says so outright: a cardio-only week reads as a flat zero line
- * here, and that would otherwise look like a bug rather than a category
- * that has no tonnage. Cardio's own totals live in the hero card above.
+ * Volume is strength load by definition (kg x reps), which the caption
+ * says outright so a bodyweight-only week reading as a flat zero line
+ * doesn't look like a bug.
  *
  * A one-line summary sits under the chart so every headline value is
  * readable without touching the chart: the tooltip enhances, it doesn't
@@ -71,7 +70,7 @@ export function ActivityTrendCard() {
   const rows = points === null || points === 'error' ? NO_POINTS : points;
 
   const totalVolume  = rows.reduce((sum, p) => sum + Number(p.volume_kg), 0);
-  const trainedDays  = rows.filter(p => p.exercise_count > 0 || p.cardio_count > 0).length;
+  const trainedDays  = rows.filter(p => p.exercise_count > 0).length;
   const bestDay      = rows.reduce<DailyActivityPoint | null>(
     (best, p) => (best === null || Number(p.volume_kg) > Number(best.volume_kg) ? p : best),
     null,

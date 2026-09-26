@@ -7,7 +7,6 @@ import { useTheme } from '../theme/ThemeContext';
 import { FONT, RADIUS } from '../constants/theme';
 import { DayInfo } from '../types';
 import { PressableScale } from './PressableScale';
-import { CARDIO_ACTIVITY_META } from '../utils/cardioFormat';
 
 interface Props {
   day:     DayInfo;
@@ -18,18 +17,11 @@ export function DayCard({ day, onPress }: Props) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const hasExercises = day.exercises.length > 0;
-  const hasCardio = day.cardioSessions.length > 0;
   const previewNames = hasExercises
     ? day.exercises
         .slice(0, 2)
         .map(e => e.name)
         .join('  ·  ') + (day.exercises.length > 2 ? `  +${day.exercises.length - 2}` : '')
-    : '';
-  const cardioPreview = hasCardio
-    ? day.cardioSessions
-        .slice(0, 2)
-        .map(s => CARDIO_ACTIVITY_META[s.activity_type].label)
-        .join('  ·  ') + (day.cardioSessions.length > 2 ? `  +${day.cardioSessions.length - 2}` : '')
     : '';
 
   return (
@@ -47,9 +39,9 @@ export function DayCard({ day, onPress }: Props) {
         </Text>
       </View>
 
-      {/* Middle: exercise + cardio summary */}
+      {/* Middle: exercise summary */}
       <View style={styles.summaryCol}>
-        {hasExercises && (
+        {hasExercises ? (
           <>
             <View style={styles.countRow}>
               <View style={styles.countBubble}>
@@ -61,18 +53,7 @@ export function DayCard({ day, onPress }: Props) {
             </View>
             <Text style={styles.preview} numberOfLines={1}>{previewNames}</Text>
           </>
-        )}
-        {hasCardio && (
-          <View style={hasExercises ? styles.cardioRow : styles.countRow}>
-            <View style={styles.cardioBubble}>
-              <Feather name="activity" size={12} color={colors.primary} />
-            </View>
-            <Text style={hasExercises ? styles.cardioText : styles.exerciseWord} numberOfLines={1}>
-              {cardioPreview}
-            </Text>
-          </View>
-        )}
-        {!hasExercises && !hasCardio && (
+        ) : (
           <Text style={styles.emptyLabel}>
             {day.isToday ? 'Tap to log today’s workout' : day.isPast ? 'Rest day' : 'Upcoming'}
           </Text>
@@ -170,25 +151,6 @@ const createStyles = (colors: ColorTokens) => StyleSheet.create({
     fontSize:  12,
     color:     colors.textMuted,
     marginTop:  5,
-  },
-  cardioRow: {
-    flexDirection: 'row',
-    alignItems:    'center',
-    gap:           6,
-    marginTop:     6,
-  },
-  cardioBubble: {
-    width:           20,
-    height:          20,
-    borderRadius:    RADIUS.sm,
-    backgroundColor: colors.primaryBg,
-    alignItems:      'center',
-    justifyContent:  'center',
-  },
-  cardioText: {
-    flex:       1,
-    fontSize:   12,
-    color:      colors.textMuted,
   },
   emptyLabel: {
     fontSize: 14,

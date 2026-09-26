@@ -10,8 +10,8 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { ColorTokens } from '../theme/colorways';
 import { useTheme } from '../theme/ThemeContext';
-import { RootStackParamList, MainTabParamList, DayInfo, Exercise, CardioSession } from '../types';
-import { workoutApi, cardioApi } from '../services/api';
+import { RootStackParamList, MainTabParamList, DayInfo, Exercise } from '../types';
+import { workoutApi } from '../services/api';
 import { WeekNavigator } from '../components/WeekNavigator';
 import { DayCard } from '../components/DayCard';
 import { EmptyState } from '../components/EmptyState';
@@ -27,14 +27,13 @@ type Nav = CompositeNavigationProp<
 >;
 interface Props { navigation: Nav }
 
-/** Day-by-day browser for logging/reviewing exercises and cardio, split out
+/** Day-by-day browser for logging/reviewing exercises, split out
  *  of HomeScreen so Home can be a pure dashboard and this can be its own tab. */
 export function WorkoutScreen({ navigation }: Props) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [weekOffset, setWeekOffset] = useState(0);
   const [exercises,  setExercises]  = useState<Exercise[]>([]);
-  const [cardioSessions, setCardioSessions] = useState<CardioSession[]>([]);
   const [loading,    setLoading]    = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error,      setError]      = useState<string | null>(null);
@@ -52,12 +51,7 @@ export function WorkoutScreen({ navigation }: Props) {
     try {
       const start = toDateStr(weekDays[0]);
       const end   = toDateStr(weekDays[6]);
-      const [exerciseData, cardioData] = await Promise.all([
-        workoutApi.getByRange(start, end),
-        cardioApi.getByRange(start, end),
-      ]);
-      setExercises(exerciseData);
-      setCardioSessions(cardioData);
+      setExercises(await workoutApi.getByRange(start, end));
     } catch (e) {
       setError((e as Error).message ?? 'Failed to load workouts');
     } finally {
@@ -89,7 +83,6 @@ export function WorkoutScreen({ navigation }: Props) {
       isToday:     isToday(date),
       isPast:      isPastDay(date),
       exercises:   exercises.filter(e => e.date === ds),
-      cardioSessions: cardioSessions.filter(s => s.date === ds),
     };
   });
 
