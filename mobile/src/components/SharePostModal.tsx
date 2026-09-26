@@ -14,6 +14,7 @@ import { ShareTarget } from '../types';
 import { postsApi } from '../services/social';
 import { GradientButton } from './GradientButton';
 import { haptics } from '../utils/haptics';
+import { formatSet } from '../utils/setFormat';
 
 interface Props {
   /** What's being shared; null while the modal is closed/animating out. */
@@ -85,7 +86,7 @@ export function SharePostModal({ target, onClose, onShared }: Props) {
                   <Text style={styles.previewName}>{target.exerciseName}</Text>
                 </View>
                 <Text style={styles.previewSet}>
-                  {target.reps ? `${target.reps} × ${target.weight} ${target.unit}` : `${target.weight} ${target.unit}`}
+                  {formatSet(target, target.unit)}
                 </Text>
               </View>
             )}

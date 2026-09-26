@@ -7,6 +7,7 @@ import { useTheme } from '../theme/ThemeContext';
 import { FONT, RADIUS } from '../constants/theme';
 import { Post } from '../types';
 import { timeAgo } from '../utils/dateUtils';
+import { formatSet } from '../utils/setFormat';
 import { PressableScale } from './PressableScale';
 import { Avatar } from './Avatar';
 import { haptics } from '../utils/haptics';
@@ -22,11 +23,6 @@ interface Props {
    * 1.2 wants both reachable from the content itself). Omit to hide it.
    */
   onMenu?:          () => void;
-}
-
-/** '8 × 60 KG' or '60 KG' if reps weren't logged for the shared set. */
-function setSummary(post: Post): string {
-  return post.reps ? `${post.reps} × ${post.weight} ${post.unit}` : `${post.weight} ${post.unit}`;
 }
 
 export function PostCard({ post, onToggleLike, onPressComments, onMenu }: Props) {
@@ -61,7 +57,7 @@ export function PostCard({ post, onToggleLike, onPressComments, onMenu }: Props)
 
       <View style={styles.chipsRow}>
         <View style={styles.chip}>
-          <Text style={styles.chipText}>{setSummary(post)}</Text>
+          <Text style={styles.chipText}>{formatSet(post, post.unit)}</Text>
         </View>
         {post.e1rm_kg != null && (
           <View style={styles.chip}>
