@@ -76,7 +76,7 @@ export function ExerciseItem({ exercise, onEdit, onDelete, onShare, supersetLabe
       <View style={styles.chipsRow}>
         {allIdentical ? (
           <View style={styles.chip}>
-            <Text style={styles.chipCount}>{setsCount} × </Text>
+            <Text style={styles.chipCount}>{setsCount} {setsCount === 1 ? 'set' : 'sets'} · </Text>
             <Text style={styles.chipText}>{formatSet(exercise.sets[0], exercise.unit)}</Text>
           </View>
         ) : (
