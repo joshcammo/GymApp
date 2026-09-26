@@ -2,7 +2,7 @@ import React, { useState, useEffect, useLayoutEffect, useMemo, useRef } from 're
 import {
   View, Text, TextInput, TouchableOpacity,
   ScrollView, StyleSheet, Alert,
-  KeyboardAvoidingView, Keyboard, Platform, InputAccessoryView,
+  KeyboardAvoidingView, Keyboard, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -20,6 +20,7 @@ import { ExercisePickerModal } from '../components/ExercisePickerModal';
 import { SupersetPickerModal } from '../components/SupersetPickerModal';
 import { RestTimer } from '../components/RestTimer';
 import { WarmupSuggestion } from '../components/WarmupSuggestion';
+import { KeyboardNextBar } from '../components/KeyboardNextBar';
 import { haptics } from '../utils/haptics';
 import { parseDateStr } from '../utils/dateUtils';
 
@@ -176,9 +177,8 @@ export function AddExerciseScreen({ navigation, route }: Props) {
 
   // ── Keyboard "Next" chaining ─────────────────────────────────
   // Android's numeric keyboard has a next key that fires onSubmitEditing.
-  // iOS number/decimal pads have no return key at all (returnKeyType does
-  // nothing there), so iOS gets a Done/Next bar via InputAccessoryView
-  // that drives the same focusNextAfter from whichever box has focus.
+  // iOS number/decimal pads have no return key, so KeyboardNextBar drives
+  // the same focusNextAfter from whichever box has focus.
   // Refs are keyed by row/drop index; an unmounted input nulls its own.
   const fieldRefs = useRef<Record<string, TextInput | null>>({});
   const focusedRef = useRef<{ row: number; field: 'reps' | 'weight'; drop?: number } | null>(null);
@@ -641,24 +641,7 @@ export function AddExerciseScreen({ navigation, route }: Props) {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {Platform.OS === 'ios' && (
-        <InputAccessoryView nativeID={SET_ENTRY_ACCESSORY_ID}>
-          <View style={styles.keyboardBar}>
-            <TouchableOpacity
-              onPress={() => Keyboard.dismiss()}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Text style={styles.keyboardBarDone}>Done</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={focusNextFromCurrent}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Text style={styles.keyboardBarNext}>Next</Text>
-            </TouchableOpacity>
-          </View>
-        </InputAccessoryView>
-      )}
+      <KeyboardNextBar nativeID={SET_ENTRY_ACCESSORY_ID} onNext={focusNextFromCurrent} />
 
       <ExercisePickerModal
         visible={pickerVisible}
@@ -686,26 +669,6 @@ const createStyles = (colors: ColorTokens) => StyleSheet.create({
     backgroundColor: colors.bg,
   },
   scroll: { flex: 1 },
-  keyboardBar: {
-    flexDirection:     'row',
-    justifyContent:    'space-between',
-    alignItems:        'center',
-    paddingHorizontal: 16,
-    paddingVertical:   10,
-    backgroundColor:   colors.card,
-    borderTopWidth:    StyleSheet.hairlineWidth,
-    borderTopColor:    colors.border,
-  },
-  keyboardBarDone: {
-    fontFamily: FONT.medium,
-    fontSize:   16,
-    color:      colors.textMuted,
-  },
-  keyboardBarNext: {
-    fontFamily: FONT.semibold,
-    fontSize:   16,
-    color:      colors.primary,
-  },
   content: {
     padding:       16,
     paddingBottom: 40,
