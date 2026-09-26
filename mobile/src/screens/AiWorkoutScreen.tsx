@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import React, { useLayoutEffect, useMemo, useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
   ScrollView, StyleSheet, Alert,
@@ -17,7 +17,8 @@ import { muscleGroupLabel } from '../constants/muscleGroups';
 import { RootStackParamList, WeightUnit, MuscleGroup } from '../types';
 import { aiApi, catalogApi, workoutApi } from '../services/api';
 import { GradientButton } from '../components/GradientButton';
-import { KeyboardNextBar } from '../components/KeyboardNextBar';
+import { KeyboardFieldBar } from '../components/KeyboardFieldBar';
+import { useFieldChain } from '../hooks/useFieldChain';
 import { haptics } from '../utils/haptics';
 import { parseDateStr } from '../utils/dateUtils';
 
@@ -53,9 +54,6 @@ interface SuggestionRow {
 }
 
 type SuggestionField = 'sets' | 'weight' | 'reps';
-
-// iOS keyboard bar shared by every sets/weight/reps input on this screen.
-const SUGGESTION_ACCESSORY_ID = 'ai-suggestion-keyboard-bar';
 
 export function AiWorkoutScreen({ navigation, route }: Props) {
   const { colors } = useTheme();
@@ -123,39 +121,10 @@ export function AiWorkoutScreen({ navigation, route }: Props) {
     }
   };
 
-  // ── Keyboard "Next" chaining ─────────────────────────────────
-  // Same approach as AddExerciseScreen: Android's numeric keyboard fires
-  // onSubmitEditing, iOS uses KeyboardNextBar. Order within a row is
-  // sets -> weight -> reps, then the next row's sets.
-  const fieldRefs = useRef<Record<string, TextInput | null>>({});
-  const focusedRef = useRef<{ row: number; field: SuggestionField } | null>(null);
-  const registerField = (key: string) => (el: TextInput | null) => { fieldRefs.current[key] = el; };
-  const focusField = (key: string) => fieldRefs.current[key]?.focus();
-
-  const focusNextAfter = (rowIndex: number, field: SuggestionField) => {
-    if (field === 'sets') {
-      focusField(`weight-${rowIndex}`);
-      return;
-    }
-    if (field === 'weight') {
-      focusField(`reps-${rowIndex}`);
-      return;
-    }
-    if (suggestions && rowIndex + 1 < suggestions.length) {
-      focusField(`sets-${rowIndex + 1}`);
-      return;
-    }
-    Keyboard.dismiss();
-  };
-
-  const focusNextFromCurrent = () => {
-    const f = focusedRef.current;
-    if (!f) {
-      Keyboard.dismiss();
-      return;
-    }
-    focusNextAfter(f.row, f.field);
-  };
+  // ── Keyboard Back/Next chaining ──────────────────────────────
+  // Same as AddExerciseScreen: sets -> weight -> reps, then the next row.
+  const fieldKeys = (suggestions ?? []).flatMap((_, i) => [`sets-${i}`, `weight-${i}`, `reps-${i}`]);
+  const chain = useFieldChain('ai-workout', fieldKeys);
 
   // ── Edit / remove suggestion rows ────────────────────────────────
   const updateRow = (index: number, field: SuggestionField, value: string) => {
@@ -318,50 +287,35 @@ export function AiWorkoutScreen({ navigation, route }: Props) {
                     <View style={styles.suggestionField}>
                       <Text style={styles.suggestionFieldLabel}>Sets</Text>
                       <TextInput
-                        ref={registerField(`sets-${i}`)}
+                        {...chain.inputProps(`sets-${i}`)}
                         style={[formStyles.input, styles.suggestionInput]}
                         value={row.sets}
                         onChangeText={v => updateRow(i, 'sets', v)}
                         keyboardType="number-pad"
-                        returnKeyType="next"
-                        blurOnSubmit={false}
-                        onSubmitEditing={() => focusNextAfter(i, 'sets')}
-                        onFocus={() => { focusedRef.current = { row: i, field: 'sets' }; }}
-                        inputAccessoryViewID={SUGGESTION_ACCESSORY_ID}
                       />
                     </View>
                     <View style={styles.suggestionField}>
                       <Text style={styles.suggestionFieldLabel}>Weight ({row.unit})</Text>
                       <TextInput
-                        ref={registerField(`weight-${i}`)}
+                        {...chain.inputProps(`weight-${i}`)}
                         style={[formStyles.input, styles.suggestionInput]}
                         value={row.weight}
                         onChangeText={v => updateRow(i, 'weight', v)}
                         placeholder="0"
                         placeholderTextColor={colors.textMuted}
                         keyboardType="decimal-pad"
-                        returnKeyType="next"
-                        blurOnSubmit={false}
-                        onSubmitEditing={() => focusNextAfter(i, 'weight')}
-                        onFocus={() => { focusedRef.current = { row: i, field: 'weight' }; }}
-                        inputAccessoryViewID={SUGGESTION_ACCESSORY_ID}
                       />
                     </View>
                     <View style={styles.suggestionField}>
                       <Text style={styles.suggestionFieldLabel}>Reps</Text>
                       <TextInput
-                        ref={registerField(`reps-${i}`)}
+                        {...chain.inputProps(`reps-${i}`)}
                         style={[formStyles.input, styles.suggestionInput]}
                         value={row.reps}
                         onChangeText={v => updateRow(i, 'reps', v)}
                         placeholder="0"
                         placeholderTextColor={colors.textMuted}
                         keyboardType="number-pad"
-                        returnKeyType="next"
-                        blurOnSubmit={false}
-                        onSubmitEditing={() => focusNextAfter(i, 'reps')}
-                        onFocus={() => { focusedRef.current = { row: i, field: 'reps' }; }}
-                        inputAccessoryViewID={SUGGESTION_ACCESSORY_ID}
                       />
                     </View>
                   </View>
@@ -398,7 +352,14 @@ export function AiWorkoutScreen({ navigation, route }: Props) {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      <KeyboardNextBar nativeID={SUGGESTION_ACCESSORY_ID} onNext={focusNextFromCurrent} />
+      {chain.keys.map(key => (
+        <KeyboardFieldBar
+          key={key}
+          nativeID={chain.accessoryId(key)}
+          onBack={chain.hasPrev(key) ? () => chain.prev(key) : null}
+          onNext={chain.hasNext(key) ? () => chain.next(key) : null}
+        />
+      ))}
     </SafeAreaView>
   );
 }
