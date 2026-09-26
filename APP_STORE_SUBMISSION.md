@@ -256,7 +256,8 @@ just the missing tail by hand.
       `auth.users` row. Every user-owned table cascades from `auth.users`, so
       this is sufficient. Verified 2026-09-21 across `exercises`,
       `exercise_defs`, `presets`, `profiles`, `friendships`, `posts`,
-      `post_likes`, `post_comments`, `ai_generation_log`, `cardio_sessions`.
+      `post_likes`, `post_comments`, `ai_generation_log`, `cardio_sessions`
+      (the last since dropped in migration 024).
 - [x] **Manual:** run it in the Supabase SQL editor — done 2026-09-21
 
 > **Applied to production 2026-09-21 by Josh.** It was never executed from a
@@ -404,7 +405,7 @@ summary below stays here so this checklist reads end to end.
       without working credentials in the review notes. **Two** accounts: the
       reviewer needs someone else's content to report and block. Sign both up
       through the app, then run `supabase/scripts/seed_demo_account.sql`,
-      which fills six weeks of progressive training, weekly cardio, an
+      which fills six weeks of progressive training, an
       accepted friendship, posts from both sides and comments in both
       directions. Idempotent and scoped to the two demo users.
 - [ ] **Notes for Review** (2.3.1(a)) — describe the AI generator and the social

@@ -100,7 +100,7 @@ export function DeleteAccountModal({ visible, onClose }: Props) {
           <View style={styles.list}>
             {[
               'Every workout, set and personal record you have logged',
-              'Your cardio sessions and workout presets',
+              'Your workout presets',
               'Any custom exercises you created',
               'Your profile, username and display name',
               'Your posts, comments and likes',

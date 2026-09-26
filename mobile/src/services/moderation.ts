@@ -78,7 +78,7 @@ export const accountApi = {
   /**
    * Permanently delete the caller's account and everything in it
    * (Guideline 5.1.1(v)). Irreversible — the server cascade erases
-   * workouts, cardio, presets, profile, posts, comments and
+   * workouts, presets, profile, posts, comments and
    * friendships along with the auth row.
    *
    * Signs out locally afterwards rather than through the server: the

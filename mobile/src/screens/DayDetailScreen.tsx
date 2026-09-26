@@ -11,11 +11,10 @@ import { Feather } from '@expo/vector-icons';
 import { ColorTokens } from '../theme/colorways';
 import { useTheme } from '../theme/ThemeContext';
 import { FONT, RADIUS } from '../constants/theme';
-import { RootStackParamList, Exercise, ExerciseSet, ShareTarget, CardioSession } from '../types';
-import { workoutApi, cardioApi } from '../services/api';
+import { RootStackParamList, Exercise, ExerciseSet, ShareTarget } from '../types';
+import { workoutApi } from '../services/api';
 import { ExerciseItem } from '../components/ExerciseItem';
 import { SupersetCard } from '../components/SupersetCard';
-import { CardioItem } from '../components/CardioItem';
 import { EmptyState } from '../components/EmptyState';
 import { GradientButton } from '../components/GradientButton';
 import { PresetPickerModal } from '../components/PresetPickerModal';
@@ -67,7 +66,6 @@ export function DayDetailScreen({ navigation, route }: Props) {
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { date, dayFull } = route.params;
   const [exercises,     setExercises]     = useState<Exercise[]>([]);
-  const [cardioSessions, setCardioSessions] = useState<CardioSession[]>([]);
   const [loading,   setLoading]   = useState(true);
   const [presetPickerVisible, setPresetPickerVisible] = useState(false);
   const [shareTarget, setShareTarget] = useState<ShareTarget | null>(null);
@@ -99,28 +97,16 @@ export function DayDetailScreen({ navigation, route }: Props) {
             <Feather name="layers" size={15} color={colors.primary} />
             <Text style={styles.headerAddText}>Preset</Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.headerAdd}
-            onPress={() => { haptics.tap(); navigation.navigate('AddCardio', { date, dayFull }); }}
-          >
-            <Feather name="activity" size={15} color={colors.primary} />
-            <Text style={styles.headerAddText}>Cardio</Text>
-          </TouchableOpacity>
         </View>
       ),
     });
   }, [navigation, date, dayFull, styles, colors]);
 
-  // ── Load exercises + cardio ─────────────────────────────────────
+  // ── Load exercises ─────────────────────────────────────
   const loadExercises = useCallback(async () => {
     setLoading(true);
     try {
-      const [exerciseData, cardioData] = await Promise.all([
-        workoutApi.getByDate(date),
-        cardioApi.getByDate(date),
-      ]);
-      setExercises(exerciseData);
-      setCardioSessions(cardioData);
+      setExercises(await workoutApi.getByDate(date));
     } catch (e) {
       Alert.alert('Error', (e as Error).message ?? 'Failed to load exercises');
     } finally {
@@ -175,34 +161,6 @@ export function DayDetailScreen({ navigation, route }: Props) {
     );
   };
 
-  const handleEditCardio = (session: CardioSession) => {
-    navigation.navigate('AddCardio', { date, dayFull, editSession: session });
-  };
-
-  const handleDeleteCardio = (id: number) => {
-    haptics.warning();
-    Alert.alert(
-      'Delete Cardio Session',
-      'Remove this session from this day?',
-      [
-        { text: 'Cancel',  style: 'cancel' },
-        {
-          text:  'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await cardioApi.delete(id);
-              haptics.success();
-              setCardioSessions(prev => prev.filter(s => s.id !== id));
-            } catch {
-              Alert.alert('Error', 'Could not delete cardio session. Please try again.');
-            }
-          },
-        },
-      ]
-    );
-  };
-
   // ── Render ────────────────────────────────────────────────────
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
@@ -213,10 +171,10 @@ export function DayDetailScreen({ navigation, route }: Props) {
         <View style={styles.centred}>
           <ActivityIndicator size="large" color={colors.primary} />
         </View>
-      ) : exercises.length === 0 && cardioSessions.length === 0 ? (
+      ) : exercises.length === 0 ? (
         <EmptyState
           message="Nothing logged"
-          subMessage="Tap 'Add' at the bottom of the screen to log your first exercise or cardio session of the day."
+          subMessage="Tap 'Add' at the bottom of the screen to log your first exercise of the day."
           action={
             <View style={styles.emptyStateLinks}>
               <TouchableOpacity
@@ -256,20 +214,6 @@ export function DayDetailScreen({ navigation, route }: Props) {
               onShare={handleShare}
             />
           ))}
-
-          {cardioSessions.length > 0 && (
-            <>
-              <Text style={styles.sectionHeading}>Cardio</Text>
-              {cardioSessions.map(session => (
-                <CardioItem
-                  key={session.id}
-                  session={session}
-                  onEdit={()   => handleEditCardio(session)}
-                  onDelete={() => handleDeleteCardio(session.id)}
-                />
-              ))}
-            </>
-          )}
         </ScrollView>
       )}
 
@@ -319,15 +263,6 @@ const createStyles = (colors: ColorTokens) => StyleSheet.create({
   listContent: {
     padding:       16,
     paddingBottom: 100,
-  },
-  sectionHeading: {
-    fontFamily:    FONT.semibold,
-    fontSize:      12,
-    color:         colors.textSub,
-    letterSpacing: 1,
-    textTransform: 'uppercase',
-    marginTop:     4,
-    marginBottom:  10,
   },
   headerActions: {
     flexDirection: 'row',

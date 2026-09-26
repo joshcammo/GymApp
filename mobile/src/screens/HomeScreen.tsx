@@ -13,8 +13,8 @@ import { Feather } from '@expo/vector-icons';
 import { ColorTokens } from '../theme/colorways';
 import { useTheme } from '../theme/ThemeContext';
 import { RADIUS } from '../constants/theme';
-import { RootStackParamList, MainTabParamList, DayInfo, Exercise, CardioSession, MuscleGroup } from '../types';
-import { workoutApi, cardioApi } from '../services/api';
+import { RootStackParamList, MainTabParamList, DayInfo, Exercise, MuscleGroup } from '../types';
+import { workoutApi } from '../services/api';
 import { Logo, Wordmark } from '../components/Logo';
 import { PressableScale } from '../components/PressableScale';
 import { EmptyState } from '../components/EmptyState';
@@ -40,7 +40,6 @@ export function HomeScreen({ navigation }: Props) {
   const { colors, effectiveMode } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [exercises,  setExercises]  = useState<Exercise[]>([]);
-  const [cardioSessions, setCardioSessions] = useState<CardioSession[]>([]);
   const [loading,    setLoading]    = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error,      setError]      = useState<string | null>(null);
@@ -57,12 +56,7 @@ export function HomeScreen({ navigation }: Props) {
     try {
       const start = toDateStr(weekDays[0]);
       const end   = toDateStr(weekDays[6]);
-      const [exerciseData, cardioData] = await Promise.all([
-        workoutApi.getByRange(start, end),
-        cardioApi.getByRange(start, end),
-      ]);
-      setExercises(exerciseData);
-      setCardioSessions(cardioData);
+      setExercises(await workoutApi.getByRange(start, end));
     } catch (e) {
       setError((e as Error).message ?? 'Failed to load workouts');
     } finally {
@@ -89,7 +83,6 @@ export function HomeScreen({ navigation }: Props) {
       isToday:     isToday(date),
       isPast:      isPastDay(date),
       exercises:   exercises.filter(e => e.date === ds),
-      cardioSessions: cardioSessions.filter(s => s.date === ds),
     };
   });
 

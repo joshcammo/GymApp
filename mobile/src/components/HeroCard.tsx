@@ -7,7 +7,6 @@ import { ColorTokens } from '../theme/colorways';
 import { useTheme } from '../theme/ThemeContext';
 import { FONT, RADIUS, gradientPrimary, glow } from '../constants/theme';
 import { DayInfo } from '../types';
-import { formatDuration } from '../utils/cardioFormat';
 
 interface Props {
   days: DayInfo[];
@@ -50,12 +49,12 @@ export function HeroCard({ days }: Props) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
-  const trainedDays = days.map(d => d.exercises.length > 0 || d.cardioSessions.length > 0);
+  const trainedDays = days.map(d => d.exercises.length > 0);
   const daysTrained = trainedDays.filter(Boolean).length;
 
   const totalExercises = days.reduce((sum, d) => sum + d.exercises.length, 0);
-  const cardioSessions = days.flatMap(d => d.cardioSessions);
-  const cardioSeconds  = cardioSessions.reduce((sum, s) => sum + s.duration_seconds, 0);
+  const totalSets      = days.reduce(
+    (sum, d) => sum + d.exercises.reduce((n, e) => n + e.sets.length, 0), 0);
 
   return (
     <LinearGradient
@@ -113,11 +112,8 @@ export function HeroCard({ days }: Props) {
         </View>
         <View style={styles.statDivider} />
         <View style={styles.stat}>
-          <Text style={styles.statNumber}>{cardioSessions.length}</Text>
-          <Text style={styles.statLabel}>Cardio</Text>
-          {cardioSeconds > 0 && (
-            <Text style={styles.statSub}>{formatDuration(cardioSeconds)}</Text>
-          )}
+          <Text style={styles.statNumber}>{totalSets}</Text>
+          <Text style={styles.statLabel}>{totalSets === 1 ? 'Set' : 'Sets'}</Text>
         </View>
       </View>
     </LinearGradient>
@@ -236,10 +232,5 @@ const createStyles = (colors: ColorTokens) => StyleSheet.create({
     fontFamily: FONT.medium,
     fontSize:   12,
     color:      'rgba(255,255,255,0.85)',
-  },
-  statSub: {
-    fontSize:  11,
-    color:     'rgba(255,255,255,0.7)',
-    marginTop: 1,
   },
 });
