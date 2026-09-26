@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useLayoutEffect, useMemo } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
   ScrollView, StyleSheet, Alert,
-  KeyboardAvoidingView, Keyboard, Platform,
+  KeyboardAvoidingView, Keyboard, Platform, InputAccessoryView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -25,6 +25,9 @@ import { parseDateStr } from '../utils/dateUtils';
 
 type Nav   = NativeStackNavigationProp<RootStackParamList, 'AddExercise'>;
 type Route = RouteProp<RootStackParamList, 'AddExercise'>;
+
+// iOS keyboard bar shared by every weight/reps input on this screen.
+const SET_ENTRY_ACCESSORY_ID = 'set-entry-keyboard-bar';
 interface Props { navigation: Nav; route: Route }
 
 /** A drop performed immediately after a set, no rest between, same
@@ -170,6 +173,60 @@ export function AddExerciseScreen({ navigation, route }: Props) {
       title: isEditing ? 'Edit Exercise' : 'Add Exercise',
     });
   }, [navigation, isEditing]);
+
+  // ── Keyboard "Next" chaining ─────────────────────────────────
+  // Android's numeric keyboard has a next key that fires onSubmitEditing.
+  // iOS number/decimal pads have no return key at all (returnKeyType does
+  // nothing there), so iOS gets a Done/Next bar via InputAccessoryView
+  // that drives the same focusNextAfter from whichever box has focus.
+  // Refs are keyed by row/drop index; an unmounted input nulls its own.
+  const fieldRefs = useRef<Record<string, TextInput | null>>({});
+  const focusedRef = useRef<{ row: number; field: 'reps' | 'weight'; drop?: number } | null>(null);
+  const registerField = (key: string) => (el: TextInput | null) => { fieldRefs.current[key] = el; };
+  const focusField = (key: string) => fieldRefs.current[key]?.focus();
+
+  // Advances from one weight/reps box to the next in visual order (weight
+  // then reps, the order you actually log a set): across a set's drops,
+  // then into the following set, dismissing the keyboard once there's
+  // nowhere left to go.
+  const focusNextAfter = (rowIndex: number, field: 'reps' | 'weight', dropIndex?: number) => {
+    const row = setRows[rowIndex];
+    if (!row) {
+      Keyboard.dismiss();
+      return;
+    }
+    if (field === 'weight' && dropIndex == null) {
+      focusField(`reps-${rowIndex}`);
+      return;
+    }
+    if (field === 'weight' && dropIndex != null) {
+      focusField(`drop-reps-${rowIndex}-${dropIndex}`);
+      return;
+    }
+    // field === 'reps'
+    if (dropIndex == null && row.drops.length > 0) {
+      focusField(`drop-weight-${rowIndex}-0`);
+      return;
+    }
+    if (dropIndex != null && dropIndex + 1 < row.drops.length) {
+      focusField(`drop-weight-${rowIndex}-${dropIndex + 1}`);
+      return;
+    }
+    if (rowIndex + 1 < setRows.length) {
+      focusField(`weight-${rowIndex + 1}`);
+      return;
+    }
+    Keyboard.dismiss();
+  };
+
+  const focusNextFromCurrent = () => {
+    const f = focusedRef.current;
+    if (!f) {
+      Keyboard.dismiss();
+      return;
+    }
+    focusNextAfter(f.row, f.field, f.drop);
+  };
 
   // ── Set row helpers ──────────────────────────────────────────
   const updateRow = (index: number, field: 'reps' | 'weight', value: string) => {
@@ -423,8 +480,8 @@ export function AddExerciseScreen({ navigation, route }: Props) {
             {/* Column headings */}
             <View style={styles.setRowHeader}>
               <Text style={[styles.setRowHeaderText, { width: 36 }]}>#</Text>
-              <Text style={[styles.setRowHeaderText, { flex: 1 }]}>Reps</Text>
               <Text style={[styles.setRowHeaderText, { flex: 1 }]}>Weight ({unit})</Text>
+              <Text style={[styles.setRowHeaderText, { flex: 1 }]}>Reps</Text>
               <View style={{ width: 36 }} />
             </View>
 
@@ -446,16 +503,7 @@ export function AddExerciseScreen({ navigation, route }: Props) {
                   </View>
 
                   <TextInput
-                    style={[formStyles.input, styles.setInput]}
-                    value={row.reps}
-                    onChangeText={v => updateRow(i, 'reps', v)}
-                    placeholder="0"
-                    placeholderTextColor={colors.textMuted}
-                    keyboardType="number-pad"
-                    returnKeyType="next"
-                  />
-
-                  <TextInput
+                    ref={registerField(`weight-${i}`)}
                     style={[formStyles.input, styles.setInput]}
                     value={row.weight}
                     onChangeText={v => updateRow(i, 'weight', v)}
@@ -463,6 +511,25 @@ export function AddExerciseScreen({ navigation, route }: Props) {
                     placeholderTextColor={colors.textMuted}
                     keyboardType="decimal-pad"
                     returnKeyType="next"
+                    blurOnSubmit={false}
+                    onSubmitEditing={() => focusNextAfter(i, 'weight')}
+                    onFocus={() => { focusedRef.current = { row: i, field: 'weight' }; }}
+                    inputAccessoryViewID={SET_ENTRY_ACCESSORY_ID}
+                  />
+
+                  <TextInput
+                    ref={registerField(`reps-${i}`)}
+                    style={[formStyles.input, styles.setInput]}
+                    value={row.reps}
+                    onChangeText={v => updateRow(i, 'reps', v)}
+                    placeholder="0"
+                    placeholderTextColor={colors.textMuted}
+                    keyboardType="number-pad"
+                    returnKeyType="next"
+                    blurOnSubmit={false}
+                    onSubmitEditing={() => focusNextAfter(i, 'reps')}
+                    onFocus={() => { focusedRef.current = { row: i, field: 'reps' }; }}
+                    inputAccessoryViewID={SET_ENTRY_ACCESSORY_ID}
                   />
 
                   <TouchableOpacity
@@ -482,16 +549,7 @@ export function AddExerciseScreen({ navigation, route }: Props) {
                     </View>
 
                     <TextInput
-                      style={[formStyles.input, styles.setInput, styles.dropInput]}
-                      value={drop.reps}
-                      onChangeText={v => updateDrop(i, di, 'reps', v)}
-                      placeholder="0"
-                      placeholderTextColor={colors.textMuted}
-                      keyboardType="number-pad"
-                      returnKeyType="next"
-                    />
-
-                    <TextInput
+                      ref={registerField(`drop-weight-${i}-${di}`)}
                       style={[formStyles.input, styles.setInput, styles.dropInput]}
                       value={drop.weight}
                       onChangeText={v => updateDrop(i, di, 'weight', v)}
@@ -499,6 +557,25 @@ export function AddExerciseScreen({ navigation, route }: Props) {
                       placeholderTextColor={colors.textMuted}
                       keyboardType="decimal-pad"
                       returnKeyType="next"
+                      blurOnSubmit={false}
+                      onSubmitEditing={() => focusNextAfter(i, 'weight', di)}
+                      onFocus={() => { focusedRef.current = { row: i, field: 'weight', drop: di }; }}
+                      inputAccessoryViewID={SET_ENTRY_ACCESSORY_ID}
+                    />
+
+                    <TextInput
+                      ref={registerField(`drop-reps-${i}-${di}`)}
+                      style={[formStyles.input, styles.setInput, styles.dropInput]}
+                      value={drop.reps}
+                      onChangeText={v => updateDrop(i, di, 'reps', v)}
+                      placeholder="0"
+                      placeholderTextColor={colors.textMuted}
+                      keyboardType="number-pad"
+                      returnKeyType="next"
+                      blurOnSubmit={false}
+                      onSubmitEditing={() => focusNextAfter(i, 'reps', di)}
+                      onFocus={() => { focusedRef.current = { row: i, field: 'reps', drop: di }; }}
+                      inputAccessoryViewID={SET_ENTRY_ACCESSORY_ID}
                     />
 
                     <TouchableOpacity
@@ -564,6 +641,25 @@ export function AddExerciseScreen({ navigation, route }: Props) {
         </ScrollView>
       </KeyboardAvoidingView>
 
+      {Platform.OS === 'ios' && (
+        <InputAccessoryView nativeID={SET_ENTRY_ACCESSORY_ID}>
+          <View style={styles.keyboardBar}>
+            <TouchableOpacity
+              onPress={() => Keyboard.dismiss()}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Text style={styles.keyboardBarDone}>Done</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={focusNextFromCurrent}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Text style={styles.keyboardBarNext}>Next</Text>
+            </TouchableOpacity>
+          </View>
+        </InputAccessoryView>
+      )}
+
       <ExercisePickerModal
         visible={pickerVisible}
         onClose={() => setPickerVisible(false)}
@@ -590,6 +686,26 @@ const createStyles = (colors: ColorTokens) => StyleSheet.create({
     backgroundColor: colors.bg,
   },
   scroll: { flex: 1 },
+  keyboardBar: {
+    flexDirection:     'row',
+    justifyContent:    'space-between',
+    alignItems:        'center',
+    paddingHorizontal: 16,
+    paddingVertical:   10,
+    backgroundColor:   colors.card,
+    borderTopWidth:    StyleSheet.hairlineWidth,
+    borderTopColor:    colors.border,
+  },
+  keyboardBarDone: {
+    fontFamily: FONT.medium,
+    fontSize:   16,
+    color:      colors.textMuted,
+  },
+  keyboardBarNext: {
+    fontFamily: FONT.semibold,
+    fontSize:   16,
+    color:      colors.primary,
+  },
   content: {
     padding:       16,
     paddingBottom: 40,
